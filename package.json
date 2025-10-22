@@ -9,7 +9,8 @@
     "start": "react-native start",
     "test": "jest",
     "apk": "cd android && ./gradlew assembleRelease",
-    "aab": "cd android && ./gradlew bundleRelease"
+    "aab": "cd android && ./gradlew bundleRelease",
+    "install": "cd android/app/build/outputs/apk/release && adb install app-release.apk"
   },
   "dependencies": {
     "@react-native-vector-icons/ant-design": "^12.3.0",
