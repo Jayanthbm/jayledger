@@ -3249,11 +3249,11 @@ __metadata:
   linkType: hard
 
 "baseline-browser-mapping@npm:^2.8.9":
-  version: 2.8.18
-  resolution: "baseline-browser-mapping@npm:2.8.18"
+  version: 2.8.19
+  resolution: "baseline-browser-mapping@npm:2.8.19"
   bin:
     baseline-browser-mapping: dist/cli.js
-  checksum: 833787afd8b6566da1866903b46497d6bff3139d5e41053d80df3632bcea3008f9097ecdaeff9c4f73f0b12785ec19e4e7449bca8fb6e014e526a10489c2bff5
+  checksum: 0e9d202bfda2e3753543cb2a14dfc1ab6178639b575b8bf75fa3d4c83cde2810b9bc17d84918a8c6673d9a85548d5dbba8ff2faafe8b5a4d424d1f16ae7b0b31
   languageName: node
   linkType: hard
 
@@ -3621,42 +3621,6 @@ __metadata:
   checksum: 01c3c16058b182a4ab4c126a65a75faa4d38a20fa7c845090b25453acec6c371bb2c5dceb0a2338511f17902b9d1a9af0cadd8509c9403894b79311032c256c3
   languageName: node
   linkType: hard
-
-"com.jayanth.jayledger@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "com.jayanth.jayledger@workspace:."
-  dependencies:
-    "@babel/core": ^7.25.2
-    "@babel/preset-env": ^7.25.3
-    "@babel/runtime": ^7.25.0
-    "@react-native-community/cli": 20.0.0
-    "@react-native-community/cli-platform-android": 20.0.0
-    "@react-native-community/cli-platform-ios": 20.0.0
-    "@react-native-vector-icons/ant-design": ^12.3.0
-    "@react-native-vector-icons/common": ^12.3.1
-    "@react-native-vector-icons/feather": ^12.3.0
-    "@react-native-vector-icons/fontawesome": ^12.3.0
-    "@react-native/babel-preset": 0.82.1
-    "@react-native/eslint-config": 0.82.1
-    "@react-native/metro-config": 0.82.1
-    "@react-native/typescript-config": 0.82.1
-    "@types/jest": ^29.5.13
-    "@types/react": ^19.1.1
-    "@types/react-test-renderer": ^19.1.0
-    eslint: ^8.19.0
-    jest: ^29.6.3
-    prettier: 2.8.8
-    react: 19.1.1
-    react-native: 0.82.1
-    react-native-gesture-handler: ^2.28.0
-    react-native-reanimated: ^4.1.3
-    react-native-safe-area-context: ^5.6.1
-    react-native-svg: ^15.14.0
-    react-native-worklets: ^0.6.1
-    react-test-renderer: 19.1.1
-    typescript: ^5.8.3
-  languageName: unknown
-  linkType: soft
 
 "command-exists@npm:^1.2.8":
   version: 1.2.9
@@ -4069,9 +4033,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.227":
-  version: 1.5.237
-  resolution: "electron-to-chromium@npm:1.5.237"
-  checksum: 5905e2808dc6243ced0a83537afbafedec20c063feb6403a678b612a7855d79bc6ecb7d094bdab71f54173cf2ae5d1d8070b0c31572025001c94de62af84f5f8
+  version: 1.5.238
+  resolution: "electron-to-chromium@npm:1.5.238"
+  checksum: d476c77576a58853d8b3f94c2d5835849eebe1acb0e05abc4e48610b47d5a8fe0858da94d39aeb656addc535b55eaf7bebb29af0343ecf37df3e8b32f76389b5
   languageName: node
   linkType: hard
 
@@ -5800,6 +5764,43 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jayledger@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "jayledger@workspace:."
+  dependencies:
+    "@babel/core": ^7.25.2
+    "@babel/preset-env": ^7.25.3
+    "@babel/runtime": ^7.25.0
+    "@react-native-community/cli": 20.0.0
+    "@react-native-community/cli-platform-android": 20.0.0
+    "@react-native-community/cli-platform-ios": 20.0.0
+    "@react-native-vector-icons/ant-design": ^12.3.0
+    "@react-native-vector-icons/common": ^12.3.1
+    "@react-native-vector-icons/feather": ^12.3.0
+    "@react-native-vector-icons/fontawesome": ^12.3.0
+    "@react-native/babel-preset": 0.82.1
+    "@react-native/eslint-config": 0.82.1
+    "@react-native/metro-config": 0.82.1
+    "@react-native/typescript-config": 0.82.1
+    "@types/jest": ^29.5.13
+    "@types/react": ^19.1.1
+    "@types/react-test-renderer": ^19.1.0
+    eslint: ^8.19.0
+    jest: ^29.6.3
+    material-loader-react-native: ^1.0.0
+    prettier: 2.8.8
+    react: 19.1.1
+    react-native: 0.82.1
+    react-native-gesture-handler: ^2.28.0
+    react-native-reanimated: ^4.1.3
+    react-native-safe-area-context: ^5.6.1
+    react-native-svg: ^15.14.0
+    react-native-worklets: ^0.6.1
+    react-test-renderer: 19.1.1
+    typescript: ^5.8.3
+  languageName: unknown
+  linkType: soft
+
 "jest-changed-files@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest-changed-files@npm:29.7.0"
@@ -6568,6 +6569,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"material-loader-react-native@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "material-loader-react-native@npm:1.0.0"
+  peerDependencies:
+    react: ">=18.0.0"
+    react-native: ">=0.73.0"
+    react-native-reanimated: ">=3.0.0"
+    react-native-svg: ">=13.0.0"
+  checksum: 4a009422d5789378986dc0bd9adb6fe6f2616650a8304ce20a79c69cbed8932281c40fa666ea7a7eab95a2c9963471e6b6583aad45135f290cb924958d3756cc
+  languageName: node
+  linkType: hard
+
 "math-intrinsics@npm:^1.1.0":
   version: 1.1.0
   resolution: "math-intrinsics@npm:1.1.0"
@@ -7073,9 +7086,9 @@ __metadata:
   linkType: hard
 
 "node-releases@npm:^2.0.21":
-  version: 2.0.25
-  resolution: "node-releases@npm:2.0.25"
-  checksum: 9a23149cf3f6778e62440b1f26f91927aff06c3606a29996f3d196c7c0f5e31c17c24c324b5ef1f571cebef6b5a8db9adce9c09381ca271bc6422aac91463f75
+  version: 2.0.26
+  resolution: "node-releases@npm:2.0.26"
+  checksum: c20b82e5d51356e04c343816d53a9500d16cf6cb7d0f4e68f265ed7bd45b489fd8ba907ea959afa866cf7f71bf83994c17a778875c8cb3efc3243d0d0420daca
   languageName: node
   linkType: hard
 

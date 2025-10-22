@@ -6,16 +6,14 @@ import Card from '../components/core/Card';
 import Divider from '../components/core/Divider';
 import FontAwesome from '@react-native-vector-icons/fontawesome';
 import Loader from '../components/core/Loader';
-import Penatagon from '../assets/shapes/Pentagon';
+import { M3eLoader } from "material-loader-react-native";
 import ProgressBar from '../components/core/ProgressBar';
 import React from 'react';
 import RowText from '../components/core/RowText'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Skeleton from '../components/core/Skeleton';
-import Spinner from '../assets/shapes/Spinner';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import Text from '../components/core/Text';
-import Triangle from '../assets/shapes/Triangle';
 import { useTheme } from '../theme/ThemeContext';
 
 export default function Main() {
@@ -27,18 +25,16 @@ export default function Main() {
             <View style={{ marginLeft: 10, marginRight: 10 }}>
                <Text variant="headingLarge">JayLedger 💰</Text>
                <Text variant="subtitle">Track your expenses easily</Text>
-
-               <Penatagon width={40} height={40} color={theme.colors.spinnerColor} />
-               <Spinner width={40} height={40} color={theme.colors.spinnerColor} />
-               <Triangle width={40} height={40} color={theme.colors.spinnerColor} />
+               <Loader inline />
 
                <Text variant="bodyLarge">Current Theme: {theme.mode}</Text>
 
+               <View style={{ flex: 1, alignItems: "center", justifyContent: "center", marginBottom: 5 }}>
+                  <M3eLoader duration={1000} />
+               </View>
+
                <Button title="Toggle Theme" onPress={toggleTheme} />
 
-               <Loader inline size="medium" position="center" text="Please wait..." />
-               <Loader size='large' text="Loading..." />
-               <Loader inline size="small" text="Loading..." />
                <View style={{ marginTop: 10 }}>
                   <Card title="Groceries" subtitle="Today">
                      <Text style={{ color: theme.colors.onSurface }}>Expense: $50</Text>
@@ -50,7 +46,7 @@ export default function Main() {
                <View style={{ width: '80%', marginVertical: 16 }}>
                   <ProgressBar progress={0.8} height={12} />
                </View>
-               <Loader size="large" text="Fetching data..." inline />
+
                <View style={{ width: '80%', marginVertical: 16 }}>
                   <ProgressBar indeterminate height={10} />
                </View>
@@ -83,7 +79,6 @@ export default function Main() {
                   rightSecondaryIcon={<FontAwesome name="clock-o" size={14} color="#485C91" />}
                />
 
-
                <SwipeableListItem
                   leftActions={[
                      { label: 'Archive', color: '#4CAF50', onPress: () => console.log('Archive pressed') },
@@ -104,7 +99,6 @@ export default function Main() {
                </SwipeableListItem>
 
                <Loader inline text="Saving..." />
-
             </View>
          </ScrollView>
 
