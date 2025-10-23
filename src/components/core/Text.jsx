@@ -1,7 +1,7 @@
 import { Text as RNText, StyleSheet } from 'react-native';
 
 import React from 'react';
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Text({ children, variant = 'bodyMedium', style, color, ...props }) {
    const { theme } = useTheme();

@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import React from 'react';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const SwipeableListItem = ({
    leftActions = [],

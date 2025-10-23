@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import React from 'react';
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const RowText = ({
    left = '',

@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import React from 'react';
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Divider({
    orientation = 'horizontal', // 'horizontal' | 'vertical'

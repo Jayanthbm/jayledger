@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Skeleton from '../components/core/Skeleton';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import Text from '../components/core/Text';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from 'context/ThemeContext';
 
 export default function Main() {
    const { theme, toggleTheme } = useTheme();

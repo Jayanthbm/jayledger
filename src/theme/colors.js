@@ -1,84 +1,88 @@
 // Light theme colors (Google Tasks inspired + Material 3)
 export const lightColors = {
-   primary: '#485C91',           // Active text / Selected tab
-   onPrimary: '#FFFFFF',
-   primaryContainer: '#D9E2FF', // Button background
-   onPrimaryContainer: '#1A3D8F',
+   // Primary System
+   primary: "#0B57D0",
+   onPrimary: "#FFFFFF",
+   primaryContainer: "#D2E3FF",
+   onPrimaryContainer: "#001D35",
 
-   secondary: '#625B71',
-   onSecondary: '#FFFFFF',
-   secondaryContainer: '#E8DEF8',
-   onSecondaryContainer: '#1D192B',
+   // Accent / Focus
+   focus: "#1A73E8",
+   outline: "#C7C7C7",
 
-   tertiary: '#7D5260',
-   onTertiary: '#FFFFFF',
-   tertiaryContainer: '#FFD8E4',
-   onTertiaryContainer: '#31111D',
+   // Secondary & Surface
+   secondary: "#535F70",
+   onSecondary: "#FFFFFF",
+   secondaryContainer: "#D7E3F0",
+   onSecondaryContainer: "#101C2B",
 
-   error: '#B3261E',
-   onError: '#FFFFFF',
-   errorContainer: '#F9DEDC',
-   onErrorContainer: '#410E0B',
+   background: "#FFFFFF",
+   onBackground: "#1B1B1B",
 
-   background: '#EEEDF3',       // Layout background
-   onBackground: '#202124',     // Text color
+   surface: "#FFFFFF",
+   onSurface: "#1B1B1B",
+   surfaceVariant: "#EFF3F8", // bottom bar background
+   onSurfaceVariant: "#444746", // unselected icon/text
 
-   surface: '#F9F8FE',          // Card background
-   onSurface: '#202124',
-   surfaceVariant: '#E7E0EC',
-   onSurfaceVariant: '#49454F',
+   // Navigation Active (pill)
+   activeIndicator: "#C3E7FF",    // pill bubble
+   onActiveIndicator: "#004A77",  // icon/text in pill
 
-   outline: '#79747E',
-   shadow: '#000000',
+   // Error
+   error: "#B3261E",
+   onError: "#FFFFFF",
+   errorContainer: "#F9DEDC",
+   onErrorContainer: "#410E0B",
 
-   success: '#4CAF50',
-   warning: '#FBC02D',
-   info: '#2196F3',
-
-   skeletonBackground: '#E0E0E0',  // subtle gray
-   skeletonShimmer: 'rgba(255,255,255,0.6)',  // soft highlight
-   spinnerColor: "#6750A4"
+   // Misc
+   shadow: "#000000",
+   inverseSurface: "#313033",
+   inverseOnSurface: "#F4EFF4",
+   income: '#43a047',
+   expense: '#e53935'
 };
 
 // Dark theme colors (Google Tasks inspired + Material 3)
 export const darkColors = {
-   primary: '#AFC7FF',           // Active text / Selected tab
-   onPrimary: '#1E1F24',
-   primaryContainer: '#2F4477',  // Button background
-   onPrimaryContainer: '#E9EAED',
+   // Primary System
+   primary: "#A8C7FA",
+   onPrimary: "#00325A",
+   primaryContainer: "#1E3A5F",
+   onPrimaryContainer: "#D2E3FF",
 
-   secondary: '#CCC2DC',
-   onSecondary: '#332D41',
-   secondaryContainer: '#4A4458',
-   onSecondaryContainer: '#E8DEF8',
+   // Accent / Focus
+   focus: "#8AB4F8",
+   outline: "#5F6368",
 
-   tertiary: '#EFB8C8',
-   onTertiary: '#492532',
-   tertiaryContainer: '#633B48',
-   onTertiaryContainer: '#FFD8E4',
+   // Background & Surface
+   background: "#121212",
+   onBackground: "#E3E3E3",
+   surface: "#121212",
+   onSurface: "#E3E3E3",
+   surfaceVariant: "#1E1E1E",
+   onSurfaceVariant: "#C3C7CE",
 
-   error: '#F2B8B5',
-   onError: '#601410',
-   errorContainer: '#8C1D18',
-   onErrorContainer: '#F9DEDC',
+   // Navigation Active (pill)
+   activeIndicator: "#004A77",     // pill bubble
+   onActiveIndicator: "#C3E7FF",   // icon/text in pill
 
-   background: '#1E1F24',       // Layout background
-   onBackground: '#E9EAED',     // Text color
+   // Secondary
+   secondary: "#BBC7DB",
+   onSecondary: "#1B1F23",
+   secondaryContainer: "#3B4858",
+   onSecondaryContainer: "#E8EAED",
 
-   surface: '#121219',          // Card background
-   onSurface: '#E9EAED',
-   surfaceVariant: '#49454F',
-   onSurfaceVariant: '#CAC4D0',
+   // Error
+   error: "#F28B82",
+   onError: "#601410",
+   errorContainer: "#8C1D18",
+   onErrorContainer: "#F9DEDC",
 
-   outline: '#938F99',
-   shadow: '#000000',
-
-   success: '#4CAF50',
-   warning: '#FBC02D',
-   info: '#2196F3',
-
-   skeletonBackground: '#2C2C2C', // visible on dark bg
-   skeletonShimmer: 'rgba(255,255,255,0.1)', // soft shimmer
-
-   spinnerColor: "#D0BCFF"
+   // Misc
+   outlineVariant: "#8C9199",
+   shadow: "#000000",
+   inverseSurface: "#E3E3E3",
+   inverseOnSurface: "#121212",
+   income: '#66bb6a',
+   expense: '#ef5350'
 };

@@ -1,7 +1,7 @@
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import React, { useEffect, useRef } from 'react';
 
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ProgressBar({
    progress = 0,

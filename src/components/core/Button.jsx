@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import React from 'react';
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Button({ title, onPress, variant = 'filled', icon, style }) {
    const { theme } = useTheme();

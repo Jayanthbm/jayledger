@@ -2,7 +2,7 @@ import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { M3eLoader } from "material-loader-react-native";
 import React from 'react';
-import { useTheme } from '../../theme/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
