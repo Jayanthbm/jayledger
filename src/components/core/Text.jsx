@@ -3,17 +3,21 @@ import { Text as RNText, StyleSheet } from 'react-native';
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function Text({ children, variant = 'bodyMedium', style, color, ...props }) {
+export default function Text({ children, variant = 'bodyMedium', style, numberOfLines = 1, ellipsizeMode = 'none', color, ...props }) {
    const { theme } = useTheme();
 
-   // Default color based on variant
-   const defaultColor =
-      color || variant === 'caption' || variant === 'label'
-         ? theme.colors.onSurfaceVariant
-         : theme.colors.onBackground;
+   let defaultColor = theme.colors.onBackground;
+
+   if (variant === 'caption' || variant === 'label') {
+      defaultColor = theme.colors.onSurfaceVariant;
+   }
+
+   if (color) {
+      defaultColor = color;
+   }
 
    return (
-      <RNText style={[styles[variant], { color: defaultColor }, style]} {...props}>
+      <RNText style={[styles[variant], { color: defaultColor }, style]} {...props} numberOfLines={numberOfLines} ellipsizeMode={ellipsizeMode}>
          {children}
       </RNText>
    );

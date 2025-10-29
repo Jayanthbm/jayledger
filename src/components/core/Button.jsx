@@ -53,7 +53,6 @@ const styles = StyleSheet.create({
       fontSize: 16,
    },
    iconContainer: {
-      marginRight: 8,
       alignItems: 'center',
       justifyContent: 'center',
    },

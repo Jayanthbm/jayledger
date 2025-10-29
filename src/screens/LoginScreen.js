@@ -1,7 +1,8 @@
-import { Button, Text, View } from 'react-native';
+import { Button, View } from 'react-native';
 
 import React from 'react';
-import { useAuth } from '../../context/AuthContext';
+import Text from '../components/core/Text';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginScreen() {
    const { login } = useAuth();

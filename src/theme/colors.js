@@ -16,11 +16,11 @@ export const lightColors = {
    secondaryContainer: "#D7E3F0",
    onSecondaryContainer: "#101C2B",
 
-   background: "#FFFFFF",
+   background: "#EEEDF3",
    onBackground: "#1B1B1B",
 
-   surface: "#FFFFFF",
-   onSurface: "#1B1B1B",
+   surface: "#F9F8FE",
+   onSurface: "#191A1F",
    surfaceVariant: "#EFF3F8", // bottom bar background
    onSurfaceVariant: "#444746", // unselected icon/text
 
@@ -55,9 +55,9 @@ export const darkColors = {
    outline: "#5F6368",
 
    // Background & Surface
-   background: "#121212",
+   background: "#1D1F24",
    onBackground: "#E3E3E3",
-   surface: "#121212",
+   surface: "#111218",
    onSurface: "#E3E3E3",
    surfaceVariant: "#1E1E1E",
    onSurfaceVariant: "#C3C7CE",

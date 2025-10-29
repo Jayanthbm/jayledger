@@ -1,13 +1,14 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableHighlight, TouchableWithoutFeedback, View } from 'react-native';
 
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function Card({ title, subtitle, children, style }) {
+export default function Card({ title, subtitle, children, style, onPress }) {
    const { theme } = useTheme();
 
    return (
-      <View
+      <TouchableWithoutFeedback onPress={onPress}>
+         <View
          style={[
             styles.card,
             { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow },
@@ -22,6 +23,7 @@ export default function Card({ title, subtitle, children, style }) {
          )}
          <View style={styles.body}>{children}</View>
       </View>
+      </TouchableWithoutFeedback>
    );
 }
 

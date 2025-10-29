@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
-const SIZE_MAP = { small: 24, medium: 36, large: 48 };
+const SIZE_MAP = { small: 24, medium: 36, large: 48, xlarge: 60 };
 
 const Loader = ({
    loading = true,
@@ -32,7 +32,7 @@ const Loader = ({
 
       return (
          <View style={[styles.inlineWrapper, { justifyContent }, style]}>
-            <M3eLoader color={spinnerColor} size={spinnerSize} />
+            <M3eLoader color={spinnerColor} size={spinnerSize} duration={1500} />
             {text ? (
                <Text style={[styles.inlineText, { color: theme.colors.onSurface }]}>{text}</Text>
             ) : null}

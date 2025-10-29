@@ -36,7 +36,9 @@ const SwipeableListItem = ({
          renderLeftActions={() => (leftActions.length > 0 ? <View style={styles.actionsContainer}>{renderActions(leftActions)}</View> : null)}
          renderRightActions={() => (rightActions.length > 0 ? <View style={styles.actionsContainer}>{renderActions(rightActions)}</View> : null)}
       >
-         <View style={[styles.itemContainer, { backgroundColor: theme.colors.surface }, style]}>
+         <View style={[styles.itemContainer, {
+            backgroundColor: theme.colors.surface
+         }, style]}>
             {children}
          </View>
       </Swipeable>
