@@ -24,7 +24,7 @@ export const lightColors = {
    onSurfaceVariant: "#444746",
 
    // 🔹 Search bar background
-   searchContainer: "#E9EEF6",
+   searchContainer: "#CBD8EB",
 
    // Navigation Active (pill)
    activeIndicator: "#C3E7FF",
@@ -37,8 +37,8 @@ export const lightColors = {
    onErrorContainer: "#410E0B",
 
    // Skeleton (new 👇)
-   skeletonBackground: "#E0E0E0",     // soft grey background for skeleton
-   skeletonShimmer: "#F5F5F5",        // light shimmer gradient overlay
+   skeletonBackground: "#E0E0E0",
+   skeletonShimmer: "#F5F5F5",
 
    // Misc
    shadow: "#000000",
@@ -72,8 +72,8 @@ export const darkColors = {
    searchContainer: "#2B2C30",
 
    // Navigation Active (pill)
-   activeIndicator: "#004A77",     // pill bubble
-   onActiveIndicator: "#C3E7FF",   // icon/text in pill
+   activeIndicator: "#004A77",
+   onActiveIndicator: "#C3E7FF",
 
    // Secondary
    secondary: "#BBC7DB",
@@ -88,8 +88,8 @@ export const darkColors = {
    onErrorContainer: "#F9DEDC",
 
    // Skeleton (new 👇)
-   skeletonBackground: "#2A2C30",    // darker muted tone
-   skeletonShimmer: "#3A3C40",       // soft shimmer gradient for dark mode
+   skeletonBackground: "#2A2C30",
+   skeletonShimmer: "#3A3C40",
 
    // Misc
    outlineVariant: "#8C9199",
