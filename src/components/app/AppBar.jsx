@@ -1,17 +1,15 @@
 // src/components/app/AppBar.jsx
 
-import { TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Loader from '../core/Loader';
 import React from 'react';
-import Text from '../../components/core/Text';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 
 const ICON_SIZE = 22;
 const ICON_TOUCH = 40;
-
 
 const AppBar = ({
    showBack = true,
@@ -28,48 +26,44 @@ const AppBar = ({
       if (navigation.canGoBack()) navigation.goBack();
    };
 
-   const IconButton = ({ name, onPress }) => (
-      <TouchableOpacity
-         onPress={onPress}
-         activeOpacity={0.7}
-         style={{
-            width: ICON_TOUCH,
-            height: ICON_TOUCH,
-            borderRadius: ICON_TOUCH / 2,
-            justifyContent: "center",
-            alignItems: "center",
-         }}
+   const IconButton = ({ name, onPress }) => {
+      return (
+         <Pressable
+            onPress={onPress}
+            style={({ pressed }) => [
+               styles.iconButton,
+               {
+                  backgroundColor: pressed
+                     ? theme.colors.surfaceVariant
+                     : theme.colors.surfaceVariant,
+                  shadowColor: theme.colors.shadow,
+                  elevation: pressed ? 2 : 1,
+               },
+            ]}
       >
-         <Ionicons name={name} size={ICON_SIZE} color={iconColor} />
-      </TouchableOpacity>
-   );
+            <Ionicons name={name} size={ICON_SIZE} color={theme.colors.onBackground} />
+         </Pressable>
+      );
+   };
 
    return (
       <>
-         <View style={{
+         <View style={[
+            styles.container,
+            {
             backgroundColor,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: 56, // Material AppBar height
-            paddingHorizontal: 4,
-            elevation: 0,
-            shadowOpacity: 0,
-         }}>
+            },
+         ]}>
             {/* Left */}
-            <View style={{ width: ICON_TOUCH, alignItems: "flex-start" }}>
-               {showBack && (
-                  <IconButton name="chevron-back" onPress={onBackPress} />
-               )}
+            <View style={[styles.sideContainer, { alignItems: "flex-start" }]}>
+               {showBack && <IconButton name="chevron-back" onPress={onBackPress} />}
             </View>
 
-            {/* Center (SearchBar or empty) */}
-            <View style={{ flex: 1, justifyContent: "center", marginHorizontal: 4 }}>
-               {children}
-            </View>
+            {/* Center (SearchBar or custom children) */}
+            <View style={styles.centerContainer}>{children}</View>
 
             {/* Right */}
-            <View style={{ width: ICON_TOUCH, alignItems: "flex-end" }}>
+            <View style={[styles.sideContainer, { alignItems: "flex-end" }]}>
                {!hideRightIcon && (
                   <IconButton
                      name="settings-outline"
@@ -80,9 +74,35 @@ const AppBar = ({
             </View>
          </View>
 
-         {loading && <Loader inline position='center' size='medium' variant='contained' />}
+         {loading && (
+            <Loader inline position="center" size="medium" variant="contained" />
+         )}
       </>
    );
 };
 
+const styles = StyleSheet.create({
+   container: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      height: 60,
+   },
+   sideContainer: {
+      width: ICON_TOUCH,
+      justifyContent: "center",
+   },
+   centerContainer: {
+      flex: 1,
+      justifyContent: "center",
+      marginHorizontal: 6,
+   },
+   iconButton: {
+      width: ICON_TOUCH,
+      height: ICON_TOUCH,
+      borderRadius: 10,
+      justifyContent: "center",
+      alignItems: "center",
+   },
+});
 export default AppBar;

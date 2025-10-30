@@ -1,3 +1,5 @@
+import AllCategories from '../screens/AllCategories'
+import AllPayees from '../screens/AllPayees';
 import BudgetsScreen from '../screens/BudgetsScreen';
 import CalendarView from '../screens/CalendarView';
 import GoalsScreen from '../screens/GoalsScreen';
@@ -45,6 +47,8 @@ export default function MainStackNavigator() {
          <Stack.Screen name="IncomeVsExpense" component={IncomeVsExpense} />
          <Stack.Screen name="SubscriptionAndBills" component={SubscriptionAndBills} />
          <Stack.Screen name="Settings" component={SettingsScreen} />
+         <Stack.Screen name="AllCategories" component={AllCategories} />
+         <Stack.Screen name="AllPayees" component={AllPayees} />
       </Stack.Navigator>
    );
 }

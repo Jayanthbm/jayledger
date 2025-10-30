@@ -108,7 +108,7 @@ const OverviewScreen = () => {
                textAlign: 'center'
             }}>JayLedger</Text>
          </AppBar>
-         <ScrollView style={{ flex: 1 }}
+         <ScrollView
             contentContainerStyle={{
                paddingBottom: 80,
             }}

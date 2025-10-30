@@ -9,7 +9,6 @@ const CalendarView = () => {
     <>
       <AppBar title='Calendar View' />
 
-
     </>
   );
 };
