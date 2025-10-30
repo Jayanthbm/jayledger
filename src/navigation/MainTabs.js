@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: "500",
-    marginTop: 4,
+    marginTop: 6,
   },
   activePill: {
     position: "absolute",

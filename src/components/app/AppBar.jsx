@@ -1,30 +1,27 @@
 // src/components/app/AppBar.jsx
 
-import { Platform, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
 
-import Button from '../core/Button';
 import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Loader from '../core/Loader';
-import { MAINSTYLE } from '../../styles/style'
 import React from 'react';
 import Text from '../../components/core/Text';
-import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 
 const ICON_SIZE = 22;
+const ICON_TOUCH = 40;
+
 
 const AppBar = ({
-   title = "JayLedger",
    showBack = true,
-   hideRightIcons = false,
-   loading = false, }) => {
-
+   hideRightIcon = false,
+   loading = false,
+   children, }) => {
    const navigation = useNavigation();
-   const { logout } = useAuth();
    const { theme, toggleTheme } = useTheme();
 
-   const backgroundColor = theme.colors.background; // 👈 blends with page background
+   const backgroundColor = theme.colors.background;
    const iconColor = theme.colors.onBackground;
 
    const onBackPress = () => {
@@ -34,10 +31,11 @@ const AppBar = ({
    const IconButton = ({ name, onPress }) => (
       <TouchableOpacity
          onPress={onPress}
-         activeOpacity={0.6}
+         activeOpacity={0.7}
          style={{
-            padding: 10,
-            borderRadius: 100,
+            width: ICON_TOUCH,
+            height: ICON_TOUCH,
+            borderRadius: ICON_TOUCH / 2,
             justifyContent: "center",
             alignItems: "center",
          }}
@@ -53,46 +51,36 @@ const AppBar = ({
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 16,
-            paddingBottom: 14,
-            borderBottomWidth: 0, // 👈 no border
-            elevation: 0, // 👈 flat look
-            shadowOpacity: 0, // 👈 no shadow
+            height: 56, // Material AppBar height
+            paddingHorizontal: 4,
+            elevation: 0,
+            shadowOpacity: 0,
          }}>
-            {/* Left section */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {/* Left */}
+            <View style={{ width: ICON_TOUCH, alignItems: "flex-start" }}>
                {showBack && (
                   <IconButton name="chevron-back" onPress={onBackPress} />
                )}
-               <Text
-                  variant="headingMedium"
-                  style={{
-                     color: iconColor,
-                     fontWeight: "600",
-                     flexShrink: 1,
-                  }}
-                  numberOfLines={1}
-               >
-                  {title}
-               </Text>
             </View>
 
-            {/* Right section */}
-            {!hideRightIcons && (
-               <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Center (SearchBar or empty) */}
+            <View style={{ flex: 1, justifyContent: "center", marginHorizontal: 4 }}>
+               {children}
+            </View>
+
+            {/* Right */}
+            <View style={{ width: ICON_TOUCH, alignItems: "flex-end" }}>
+               {!hideRightIcon && (
                   <IconButton
-                     name={theme.mode === "dark" ? "moon" : "sunny"}
+                     name="settings-outline"
+                     // onPress={() => navigation.navigate("Settings")}
                      onPress={toggleTheme}
                   />
-                  <IconButton
-                     name="cog-outline"
-                     onPress={() => navigation.navigate("Settings")}
-                  />
-                  <IconButton name="exit-outline" onPress={logout} />
-               </View>
-            )}
+               )}
+            </View>
          </View>
-         {loading && <Loader inline position='center' size='xlarge' variant='contained' />}
+
+         {loading && <Loader inline position='center' size='medium' variant='contained' />}
       </>
    );
 };

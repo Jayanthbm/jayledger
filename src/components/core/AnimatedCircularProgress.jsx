@@ -14,6 +14,7 @@ const AnimatedCircularProgress = ({
    showText = true,
    text = '',
    valuePrefix = '',
+   valueSuffix = '',
    duration = 1200,
    color, // optional custom color
 }) => {
@@ -98,8 +99,9 @@ const AnimatedCircularProgress = ({
                      color: theme.colors.onSurface,
                   }}
                >
-                  {animatedRemaining}
                   {valuePrefix}
+                  {animatedRemaining}
+                  {valueSuffix}
                </Text>
                {text !== '' && (
                   <Text

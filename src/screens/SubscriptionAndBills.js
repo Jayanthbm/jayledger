@@ -2,8 +2,6 @@
 
 import AppBar from '../components/app/AppBar';
 import Card from '../components/core/Card';
-import { MAINSTYLE } from '../styles/style';
-import MainTabs from '../navigation/MainTabs';
 import React from 'react';
 import Text from '../components/core/Text';
 import { View } from 'react-native';
@@ -14,7 +12,7 @@ const SubscriptionAndBills = () => {
    return (
       <>
          <AppBar title="SubscriptionAndBills" />
-         <View style={MAINSTYLE}>
+         <View>
             <Card title="Subscrptions" subtitle="Total spent on subscriptions in Oct, 2025" onPress={() => {
                navigation.navigate("Transactions", {
                   data: []

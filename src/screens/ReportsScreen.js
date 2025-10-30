@@ -1,7 +1,5 @@
 import AppBar from '../components/app/AppBar';
 import Card from '../components/core/Card';
-import { MAINSTYLE } from '../styles/style';
-import MainTabs from '../navigation/MainTabs';
 import React from 'react';
 import { ScrollView, } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -48,9 +46,7 @@ const ReportsScreen = () => {
    return (
       <>
          <AppBar title='Reports' />
-         <ScrollView
-            style={MAINSTYLE}
-         >
+         <ScrollView>
             {reportsList.map((report, index) => {
                return (
                   <Card key={index} title={report.title} subtitle={report.description} onPress={() => navigation.navigate(report.onPress)} />

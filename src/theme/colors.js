@@ -18,21 +18,27 @@ export const lightColors = {
 
    background: "#EEEDF3",
    onBackground: "#1B1B1B",
-
    surface: "#F9F8FE",
    onSurface: "#191A1F",
-   surfaceVariant: "#EFF3F8", // bottom bar background
-   onSurfaceVariant: "#444746", // unselected icon/text
+   surfaceVariant: "#EFF3F8",
+   onSurfaceVariant: "#444746",
+
+   // 🔹 Search bar background
+   searchContainer: "#E9EEF6",
 
    // Navigation Active (pill)
-   activeIndicator: "#C3E7FF",    // pill bubble
-   onActiveIndicator: "#004A77",  // icon/text in pill
+   activeIndicator: "#C3E7FF",
+   onActiveIndicator: "#004A77",
 
    // Error
    error: "#B3261E",
    onError: "#FFFFFF",
    errorContainer: "#F9DEDC",
    onErrorContainer: "#410E0B",
+
+   // Skeleton (new 👇)
+   skeletonBackground: "#E0E0E0",     // soft grey background for skeleton
+   skeletonShimmer: "#F5F5F5",        // light shimmer gradient overlay
 
    // Misc
    shadow: "#000000",
@@ -62,6 +68,9 @@ export const darkColors = {
    surfaceVariant: "#1E1E1E",
    onSurfaceVariant: "#C3C7CE",
 
+   // 🔹 Search bar background
+   searchContainer: "#2B2C30",
+
    // Navigation Active (pill)
    activeIndicator: "#004A77",     // pill bubble
    onActiveIndicator: "#C3E7FF",   // icon/text in pill
@@ -77,6 +86,10 @@ export const darkColors = {
    onError: "#601410",
    errorContainer: "#8C1D18",
    onErrorContainer: "#F9DEDC",
+
+   // Skeleton (new 👇)
+   skeletonBackground: "#2A2C30",    // darker muted tone
+   skeletonShimmer: "#3A3C40",       // soft shimmer gradient for dark mode
 
    // Misc
    outlineVariant: "#8C9199",

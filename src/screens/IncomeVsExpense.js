@@ -1,8 +1,6 @@
 import { TouchableOpacity, View } from 'react-native';
 
 import AppBar from '../components/app/AppBar';
-import { MAINSTYLE } from '../styles/style';
-import MainTabs from '../navigation/MainTabs';
 import React from 'react';
 import RowText from '../components/core/RowText';
 import SwipeableListItem from '../components/core/SwipeableListItem';
@@ -44,7 +42,7 @@ const IncomeVsExpense = () => {
    return (
       <>
          <AppBar title='IncomeVsExpense' />
-         <View style={MAINSTYLE}>
+         <View >
             <Text variant='subtitle'>Expense</Text>
             {EXPENSES.map((expense) => {
                return (

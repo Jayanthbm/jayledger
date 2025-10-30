@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 
 import Loader from '../components/core/Loader';
 import LoginScreen from '../screens/LoginScreen';
+import { MAINSTYLE } from '../styles/style';
 import MainStackNavigator from './MainStackNavigator'
 // Custom bottom tabs
 import MainTabs from './MainTabs';
@@ -14,7 +15,7 @@ const Stack = createNativeStackNavigator();
 
 function MainLayout() {
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ ...MAINSTYLE, flex: 1 }}>
       {/* Stack and Tabs share the same navigation context */}
       <MainStackNavigator />
       {/* ✅ Persistent Bottom Tabs */}

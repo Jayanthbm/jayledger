@@ -17,9 +17,9 @@ const PayDayCard = ({ onPress }) => {
       const payDayDate = now.add(1, "month").startOf("month").format("MMM DD");
       const totalDays = now.daysInMonth();
       const today = now.date();
-      const remaining = totalDays - today;
+      const remaining = totalDays - today + 1;
 
-      const dots = Array.from({ length: totalDays }).map((_, i) => i + 1 > today);
+      const dots = Array.from({ length: totalDays }).map((_, i) => i + 2 > today);
 
       return {
          payDay: payDayDate,
@@ -71,9 +71,7 @@ const PayDayCard = ({ onPress }) => {
    };
 
    return (
-      <Card title="Pay Day" subtitle="Days until next salary" style={{
-         marginTop: 5, marginBottom: 5
-      }} onPress={onPress}>
+      <Card title="Pay Day" subtitle="Days until next salary" onPress={onPress}>
          <View style={styles.row}>
             {/* Left Column: Salary date & dots */}
             <View style={styles.leftColumn}>
@@ -85,7 +83,7 @@ const PayDayCard = ({ onPress }) => {
 
             {/* Right Column: Circular Progress */}
             <View style={styles.rightColumn}>
-               <AnimatedCircularProgress currentValue={remainingDays} totalValue={daysInMonth} value={remainingDays} text="Days" />
+               <AnimatedCircularProgress currentValue={remainingDays} totalValue={daysInMonth} text="Days" />
             </View>
 
          </View>

@@ -1,83 +1,84 @@
-// src/components/app/DailyLimitCard.js
-
-import { StyleSheet, View } from "react-native";
-
 import Card from '../core/Card';
-import Divider from '../core/Divider'
+import ProgressBar from '../core/ProgressBar';
 import React from 'react';
 import Skeleton from '../core/Skeleton';
-import Text from '../core/Text'
+import Text from '../core/Text';
+import { View } from 'react-native';
+import dayjs from 'dayjs';
 import { useTheme } from '../../context/ThemeContext';
 
-const DailyLimitCard = ({ limit = 3129, remaining = 3129, spent = 0, loading = false, onPress }) => {
-
+const DailyLimitCard = ({
+   limit = 0,
+   remaining = 0,
+   spent = 0,
+   loading = false,
+   onPress,
+}) => {
    const { theme } = useTheme();
-   const formattedLimit = limit ? `Limit: ₹${limit.toLocaleString("en-IN")}` : "";
-   const remainingColor = remaining <= 0 ? {
-      color: theme.colors.expense
-   } : {
-      color: theme.colors.income
-   };
+
+   const today = dayjs().format('DD MMM YYYY');
+   const progress = limit > 0 ? spent / limit : 0;
+   const isOverspent = progress > 1;
+
    return (
-      <Card title="Daily Limit" subtitle={formattedLimit} style={{
-         marginTop: 5, marginBottom: 5
-      }} onPress={onPress}>
+      <Card title="Daily Limit" subtitle={today} onPress={onPress}>
          {loading ? (
-            <Skeleton height={25} borderRadius={4} />
+            <View style={{ gap: 8 }}>
+               <Skeleton height={24} borderRadius={4} />
+               <Skeleton height={12} borderRadius={6} />
+            </View>
          ) : (
             <>
-               <View style={styles.row}>
-                  {/* Remaining Column */}
-                  <View style={styles.column}>
-                     <Text style={styles.label}>Remaining</Text>
-                     <Text style={[styles.amount, remainingColor]}>
-                        ₹{remaining.toLocaleString("en-IN")}
-                     </Text>
-                  </View>
+                  {/* 💰 Remaining */}
+                  <Text
+                     color={isOverspent ? theme.colors.expense : theme.colors.onSurface}
+                     style={{
+                        fontSize: 28,
+                        fontWeight: '700',
+                        marginBottom: 4,
+                     }}
+                  >
+                     ₹{remaining.toLocaleString('en-IN')}
+                  </Text>
 
-                  {/* Vertical Divider */}
-                  <Divider orientation="vertical" />
+                  {/* 🧾 Spent / Limit summary */}
+                  <Text
+                     style={{
+                        fontSize: 15,
+                        color: theme.colors.onSurfaceVariant,
+                        marginBottom: 12,
+                     }}
+                  >
+                     ₹{spent.toLocaleString('en-IN')} spent of ₹{limit.toLocaleString('en-IN')}
+                  </Text>
 
-                  {/* Spent Column */}
-                  <View style={styles.column}>
-                     <Text style={styles.label}>Spent</Text>
-                     <Text style={[styles.amount, {
-                        color: theme.colors.expense
-                     }]}>₹{spent.toLocaleString("en-IN")}</Text>
-                  </View>
-               </View>
+                  {/* 📊 Progress bar */}
+                  <ProgressBar
+                     progress={Math.min(progress, 1)}
+                     height={12}
+                     duration={600}
+                     style={{
+                        backgroundColor: theme.colors.surfaceVariant,
+                        borderRadius: 6,
+                     }}
+                  />
+
+               {/* 📈 Caption */}
+               <Text
+                  style={{
+                     fontSize: 13,
+                     color: theme.colors.onSurfaceVariant,
+                     marginTop: 8,
+                  }}
+               >
+                  {isOverspent
+                     ? `You've overspent by ${Math.round((progress - 1) * 100)}% today`
+                     : `${Math.round(progress * 100)}% of your daily limit used`}
+               </Text>
             </>
          )}
       </Card>
    );
 };
 
-const styles = StyleSheet.create({
-   row: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-   },
-   column: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-   },
-   label: {
-      fontSize: 20,
-      color: "#666",
-      marginBottom: 2,
-      marginTop: 8,
-   },
-   amount: {
-      fontSize: 22,
-      fontWeight: 700,
-      marginTop: 2,
-   },
-   divider: {
-      width: 1,
-      height: "60%",
-      marginHorizontal: 12,
-   },
-});
 export default DailyLimitCard;

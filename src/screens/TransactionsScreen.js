@@ -3,17 +3,27 @@
 import { TouchableHighlight, View } from 'react-native';
 
 import AppBar from '../components/app/AppBar';
-import { MAINSTYLE } from '../styles/style';
-import MainTabs from '../navigation/MainTabs';
+import PageTitle from '../components/app/PageTitle';
 import React from 'react';
 import RowText from '../components/core/RowText';
+import SearchBar from '../components/app/SearchBar';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 
 const TransactionsScreen = () => {
+   const [searchQuery, setSearchQuery] = React.useState('');
+
    return (
       <>
-         <AppBar title='Transactions' />
-         <View style={MAINSTYLE}>
+         <AppBar>
+            <SearchBar
+               placeholder="Search transactions"
+               value={searchQuery}
+               onChangeText={setSearchQuery}
+               onClear={() => setSearchQuery("")}
+            />
+         </AppBar>
+         <PageTitle title='Transactions' />
+         <View>
             <TouchableHighlight>
                <SwipeableListItem
                   rightActions={[

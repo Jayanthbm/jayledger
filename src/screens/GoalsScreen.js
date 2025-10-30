@@ -1,7 +1,5 @@
 import AppBar from '../components/app/AppBar';
 import Card from '../components/core/Card';
-import { MAINSTYLE } from '../styles/style';
-import MainTabs from '../navigation/MainTabs';
 import React from 'react';
 import RowText from '../components/core/RowText';
 import SwipeableListItem from '../components/core/SwipeableListItem';
@@ -11,7 +9,7 @@ const GoalsScreen = () => {
    return (
       <>
          <AppBar title='Goals' />
-         <View style={MAINSTYLE}>
+         <View >
             <SwipeableListItem
                rightActions={[
                   { label: 'Delete', color: '#F44336', onPress: () => console.log('Delete pressed') },

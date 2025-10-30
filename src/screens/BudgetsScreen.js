@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import AppBar from '../components/app/AppBar';
 import Button from '../components/core/Button';
 import Card from '../components/core/Card';
-import { MAINSTYLE } from '../styles/style';
-import MainTabs from '../navigation/MainTabs';
 import RowText from '../components/core/RowText';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import { useNavigation } from '@react-navigation/native';
@@ -28,7 +26,7 @@ const BudgetsScreen = ({ route }) => {
    return (
       <>
          <AppBar title={title} />
-         <View style={MAINSTYLE}>
+         <View>
             {view === 'list' ? (
                <>
                   <Pressable onPress={onBudgetClick}>
