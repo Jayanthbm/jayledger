@@ -2,6 +2,7 @@
 
 import AppBar from '../components/app/AppBar';
 import Card from '../components/core/Card';
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 import Text from '../components/core/Text';
 import { View } from 'react-native';
@@ -11,7 +12,8 @@ const SubscriptionAndBills = () => {
    const navigation = useNavigation();
    return (
       <>
-         <AppBar title="SubscriptionAndBills" />
+         <AppBar />
+         <PageHeader title='Subscription And Bills' />
          <View>
             <Card title="Subscrptions" subtitle="Total spent on subscriptions in Oct, 2025" onPress={() => {
                navigation.navigate("Transactions", {

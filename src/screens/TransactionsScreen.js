@@ -1,28 +1,44 @@
 // src/screens/Transactions/TransactionsScreen.js
 
-import { TouchableHighlight, View } from 'react-native';
+import { Pressable, TouchableHighlight, View } from 'react-native';
 
 import AppBar from '../components/app/AppBar';
-import PageTitle from '../components/app/PageTitle';
+import { MaterialDesignIcons } from "@react-native-vector-icons/material-design-icons";
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 import RowText from '../components/core/RowText';
 import SearchBar from '../components/app/SearchBar';
 import SwipeableListItem from '../components/core/SwipeableListItem';
+import { useTheme } from '../context/ThemeContext';
 
 const TransactionsScreen = () => {
+   const { theme, toggleTheme } = useTheme();
    const [searchQuery, setSearchQuery] = React.useState('');
 
    return (
       <>
-         <AppBar>
+         <AppBar
+            centerContent={
             <SearchBar
                placeholder="Search transactions"
                value={searchQuery}
                onChangeText={setSearchQuery}
                onClear={() => setSearchQuery("")}
             />
+         }
+            rightContent={
+               <Pressable onPress={toggleTheme}>
+                  <MaterialDesignIcons
+                     name="theme-light-dark"
+                     size={22}
+                     color={theme.colors.onSurface}
+                  />
+               </Pressable>
+            }
+         >
+
          </AppBar>
-         <PageTitle title='Transactions' />
+         <PageHeader title='Transactions' />
          <View>
             <TouchableHighlight>
                <SwipeableListItem

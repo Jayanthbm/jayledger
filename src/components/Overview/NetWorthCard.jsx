@@ -5,6 +5,7 @@ import Skeleton from "../core/Skeleton";
 import Text from "../core/Text";
 import { View } from "react-native";
 import dayjs from "dayjs";
+import { formatIndianNumber } from "../../utils";
 import { useTheme } from "../../context/ThemeContext";
 
 const NetWorthCard = ({ amount = 0, loading = false }) => {
@@ -31,7 +32,7 @@ const NetWorthCard = ({ amount = 0, loading = false }) => {
                   numberOfLines={1}
                   ellipsizeMode="tail"
                >
-                  ₹{Math.abs(amount).toLocaleString("en-IN")}
+                     {formatIndianNumber(Math.abs(amount))}
                </Text>
                <Text
                   style={{

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import AppBar from '../components/app/AppBar';
 import Button from '../components/core/Button';
 import Card from '../components/core/Card';
+import PageHeader from '../components/app/PageHeader';
 import RowText from '../components/core/RowText';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import { useNavigation } from '@react-navigation/native';
@@ -26,6 +27,7 @@ const BudgetsScreen = ({ route }) => {
    return (
       <>
          <AppBar title={title} />
+         <PageHeader title={title} />
          <View>
             {view === 'list' ? (
                <>

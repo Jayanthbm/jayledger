@@ -1,12 +1,12 @@
 import AppBar from '../components/app/AppBar';
-import MainTabs from '../navigation/MainTabs';
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const TransactionsByPayee = () => {
    return (
       <>
-         <AppBar title='TransactionsByPayee' />
-
+         <AppBar />
+         <PageHeader title='Transactions By Payee' />
       </>
    );
 };

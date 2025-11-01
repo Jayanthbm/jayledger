@@ -1,18 +1,17 @@
 import { Animated, Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useRef } from "react";
-import { useNavigation, useNavigationState, useRoute } from "@react-navigation/native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
 
-import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useTheme } from "../context/ThemeContext";
 
 const TABS = [
-  { name: "Overview", label: "Overview", icon: "grid-outline", activeIcon: "grid" },
-  { name: "Transactions", label: "Transactions", icon: "reader-outline", activeIcon: "reader" },
+  { name: "Overview", label: "Overview", icon: "badge-account-horizontal-outline", activeIcon: "badge-account-horizontal" },
+  { name: "Transactions", label: "Transactions", icon: "file-document-outline", activeIcon: "file-document" },
   { name: "Budgets", label: "Budgets", icon: "wallet-outline", activeIcon: "wallet" },
-  { name: "Goals", label: "Goals", icon: "disc-outline", activeIcon: "disc" },
-  { name: "Reports", label: "Reports", icon: "layers-outline", activeIcon: "layers" },
+  { name: "Reports", label: "Reports", icon: "chart-box-multiple-outline", activeIcon: "chart-box-multiple" },
+  { name: "Settings", label: "Settings", icon: "cog-outline", activeIcon: "cog" },
 ];
-
 
 function MainTabs() {
   const navigation = useNavigation();
@@ -92,7 +91,7 @@ function MainTabs() {
           >
             <Animated.View style={{ alignItems: "center", transform: [{ scale }] }}>
               <Animated.Text>
-                <Ionicons
+                <MaterialDesignIcons
                   name={isFocused ? tab.activeIcon : tab.icon}
                   size={24}
                   color={isFocused ? theme.colors.onActiveIndicator : theme.colors.onSurfaceVariant}

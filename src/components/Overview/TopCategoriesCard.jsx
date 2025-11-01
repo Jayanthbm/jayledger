@@ -4,6 +4,7 @@ import React from "react";
 import Skeleton from "../core/Skeleton";
 import Text from "../core/Text";
 import { View } from "react-native";
+import { formatIndianNumber } from "../../utils";
 import { useTheme } from "../../context/ThemeContext";
 
 const TopCategoriesCard = ({ data = [], loading = false, onPress }) => {
@@ -83,7 +84,7 @@ const TopCategoriesCard = ({ data = [], loading = false, onPress }) => {
                                  }}
                                  numberOfLines={1}
                               >
-                                 ₹{item.amount.toLocaleString("en-IN")}
+                                 {formatIndianNumber(item.amount)}
                               </Text>
 
                               <Text

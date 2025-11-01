@@ -1,6 +1,7 @@
 import { TouchableOpacity, View } from 'react-native';
 
 import AppBar from '../components/app/AppBar';
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 import RowText from '../components/core/RowText';
 import SwipeableListItem from '../components/core/SwipeableListItem';
@@ -41,7 +42,8 @@ const IncomeVsExpense = () => {
    ]
    return (
       <>
-         <AppBar title='IncomeVsExpense' />
+         <AppBar />
+         <PageHeader title="Income vs Expense" />
          <View >
             <Text variant='subtitle'>Expense</Text>
             {EXPENSES.map((expense) => {

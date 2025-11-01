@@ -7,6 +7,7 @@ import Skeleton from '../core/Skeleton';
 import Text from '../core/Text'
 import { View } from 'react-native';
 import dayjs from 'dayjs';
+import { formatIndianNumber } from '../../utils';
 import { useTheme } from '../../context/ThemeContext';
 
 const RemainingForPeriodCard = ({
@@ -46,7 +47,7 @@ const RemainingForPeriodCard = ({
                      marginBottom: 8,
                   }}
                >
-                  ₹{remaining?.toLocaleString("en-IN")}
+                     {formatIndianNumber(remaining)}
                </Text>
                   {/* Progress bar */}
                   <ProgressBar

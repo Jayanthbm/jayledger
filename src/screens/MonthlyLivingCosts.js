@@ -1,12 +1,12 @@
 import AppBar from '../components/app/AppBar';
-import MainTabs from '../navigation/MainTabs';
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const MonthlyLivingCosts = () => {
    return (
       <>
-         <AppBar title='MonthlyLivingCosts' />
-
+         <AppBar />
+         <PageHeader title="Monthly Living Costs" />
       </>
    );
 };

@@ -1,14 +1,13 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Ionicons } from '@react-native-vector-icons/ionicons';
-// src/components/app/NoDataCard.js
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import React from "react";
 import Text from "../core/Text";
 import { useTheme } from "../../context/ThemeContext";
 
 const NoDataCard = ({
    title = "No data available",
-   icon = "alert-circle-outline",
+   icon = "text-search",
    actionLabel = "Clear",
    onActionPress,
 }) => {
@@ -25,7 +24,7 @@ const NoDataCard = ({
             },
          ]}
       >
-         <Ionicons
+         <MaterialDesignIcons
             name={icon}
             size={48}
             color={theme.colors.onSurfaceVariant}

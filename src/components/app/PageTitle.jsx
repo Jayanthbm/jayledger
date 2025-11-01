@@ -13,9 +13,9 @@ const PageTitle = ({ title }) => {
             color: theme.colors.onSurfaceVariant,
             fontWeight: "600",
             fontSize: 18,
-            marginBottom: 5
          }}
          numberOfLines={1}
+         ellipsizeMode='tail'
       >
          {title}
       </Text>

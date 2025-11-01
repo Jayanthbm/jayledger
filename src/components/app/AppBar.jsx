@@ -2,76 +2,61 @@
 
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { Ionicons } from '@react-native-vector-icons/ionicons';
 import Loader from '../core/Loader';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 
-const ICON_SIZE = 22;
+const ICON_SIZE = 30;
 const ICON_TOUCH = 40;
 
-const AppBar = ({
-   showBack = true,
-   hideRightIcon = false,
+const AppBar = ({ showBack = true,
    loading = false,
-   children, }) => {
+   centerContent = null,
+   rightContent = null, }) => {
    const navigation = useNavigation();
-   const { theme, toggleTheme } = useTheme();
-
-   const backgroundColor = theme.colors.background;
-   const iconColor = theme.colors.onBackground;
+   const { theme } = useTheme();
 
    const onBackPress = () => {
       if (navigation.canGoBack()) navigation.goBack();
    };
 
-   const IconButton = ({ name, onPress }) => {
-      return (
-         <Pressable
-            onPress={onPress}
-            style={({ pressed }) => [
-               styles.iconButton,
-               {
-                  backgroundColor: pressed
-                     ? theme.colors.surfaceVariant
-                     : theme.colors.surfaceVariant,
-                  shadowColor: theme.colors.shadow,
-                  elevation: pressed ? 2 : 1,
-               },
-            ]}
-      >
-            <Ionicons name={name} size={ICON_SIZE} color={theme.colors.onBackground} />
-         </Pressable>
-      );
-   };
+   const iconColor = theme.colors.onBackground;
+
 
    return (
       <>
-         <View style={[
-            styles.container,
-            {
-            backgroundColor,
-            },
-         ]}>
-            {/* Left */}
-            <View style={[styles.sideContainer, { alignItems: "flex-start" }]}>
-               {showBack && <IconButton name="chevron-back" onPress={onBackPress} />}
-            </View>
-
-            {/* Center (SearchBar or custom children) */}
-            <View style={styles.centerContainer}>{children}</View>
-
-            {/* Right */}
-            <View style={[styles.sideContainer, { alignItems: "flex-end" }]}>
-               {!hideRightIcon && (
-                  <IconButton
-                     name="settings-outline"
-                     // onPress={() => navigation.navigate("Settings")}
-                     onPress={toggleTheme}
+         <View
+            style={[
+               styles.container,
+               { backgroundColor: theme.colors.background },
+            ]}
+         >
+            {/* Left (Back icon if enabled) */}
+            {showBack ? (
+               <Pressable
+                  onPress={onBackPress}
+                  style={({ pressed }) => [
+                     styles.backButton,
+                     { opacity: pressed ? 0.6 : 1 },
+                  ]}
+               >
+                  <MaterialDesignIcons
+                     name="arrow-left"
+                     size={ICON_SIZE}
+                     color={iconColor}
                   />
-               )}
-            </View>
+               </Pressable>
+            ) : (
+               <View style={styles.sideSpace} />
+            )}
+
+            {/* Center (Custom content or children) */}
+            <View style={styles.centerContainer}>{centerContent}</View>
+
+            {/* Right (Custom content like theme toggle, menu, etc.) */}
+            <View style={styles.rightContainer}>{rightContent}</View>
          </View>
 
          {loading && (
@@ -85,24 +70,27 @@ const styles = StyleSheet.create({
    container: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
       height: 60,
+      paddingHorizontal: 8,
    },
-   sideContainer: {
+   backButton: {
       width: ICON_TOUCH,
-      justifyContent: "center",
+     height: ICON_TOUCH,
+     justifyContent: "center",
+      alignItems: "flex-start",
+   },
+   sideSpace: {
+      width: ICON_TOUCH,
    },
    centerContainer: {
       flex: 1,
       justifyContent: "center",
-      marginHorizontal: 6,
-   },
-   iconButton: {
-      width: ICON_TOUCH,
-      height: ICON_TOUCH,
-      borderRadius: 10,
-      justifyContent: "center",
       alignItems: "center",
+   },
+   rightContainer: {
+      width: ICON_TOUCH,
+     justifyContent: "center",
+      alignItems: "flex-end",
    },
 });
 export default AppBar;

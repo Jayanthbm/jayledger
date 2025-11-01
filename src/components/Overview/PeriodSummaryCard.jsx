@@ -6,6 +6,7 @@ import Skeleton from "../core/Skeleton";
 import Text from "../core/Text";
 import { View } from "react-native";
 import dayjs from "dayjs";
+import { formatIndianNumber } from "../../utils";
 import { useTheme } from "../../context/ThemeContext";
 
 const PeriodSummaryCard = ({
@@ -92,7 +93,7 @@ const PeriodSummaryCard = ({
                                  fontWeight: "600",
                               }}
                            >
-                              ₹{expense.toLocaleString("en-IN")}
+                                 {formatIndianNumber(expense)}
                            </Text>
                            {prevexpense > 0 && (
                               <View
@@ -154,7 +155,7 @@ const PeriodSummaryCard = ({
                                  fontWeight: "600",
                               }}
                            >
-                              ₹{income.toLocaleString("en-IN")}
+                                 {formatIndianNumber(income)}
                            </Text>
                            {previncome > 0 && (
                               <View

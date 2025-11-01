@@ -1,6 +1,6 @@
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 
-import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import React from "react";
 import Text from "../core/Text";
 import { useTheme } from "../../context/ThemeContext";
@@ -22,7 +22,7 @@ const ReportListCard = ({ icon, title, description, onPress, compact = false }) 
          ]}
       >
          <View style={styles.iconContainer}>
-            <Ionicons name={icon} size={24} color={theme.colors.primary} />
+            <MaterialDesignIcons name={icon} size={24} color={theme.colors.primary} />
          </View>
          <View style={styles.textContainer}>
             <Text

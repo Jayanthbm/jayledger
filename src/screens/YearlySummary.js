@@ -1,11 +1,12 @@
 import AppBar from '../components/app/AppBar';
-import MainTabs from '../navigation/MainTabs';
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const YearlySummary = () => {
    return (
       <>
-         <AppBar title='YearlySummary' />
+         <AppBar />
+         <PageHeader title='Yearly Summary' />
       </>
    );
 };

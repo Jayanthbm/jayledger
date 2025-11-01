@@ -1,15 +1,19 @@
 import AppBar from '../components/app/AppBar';
 import DailyLimitCard from '../components/Overview/DailyLimitCard';
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 import { View } from 'react-native';
 
-export default function TodaysView() {
-
+export default function TodaysView({ route }) {
+   const { data } = route.params;
    return (
       <>
-         <AppBar title='Daily Limit' />
+         <AppBar />
          <View>
-            <DailyLimitCard />
+            <DailyLimitCard limit={data?.limit}
+               remaining={data?.remaining}
+               spent={data?.spent} />
+            <PageHeader title='Transactions' />
          </View>
 
       </>

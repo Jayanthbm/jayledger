@@ -2,11 +2,9 @@ import AllCategories from '../screens/AllCategories'
 import AllPayees from '../screens/AllPayees';
 import BudgetsScreen from '../screens/BudgetsScreen';
 import CalendarView from '../screens/CalendarView';
-import GoalsScreen from '../screens/GoalsScreen';
 import IncomeVsExpense from '../screens/IncomeVsExpense';
 import MonthlyLivingCosts from '../screens/MonthlyLivingCosts';
 import MonthlySummary from '../screens/MonthlySummary';
-// Screens
 import OverviewScreen from '../screens/OverviewScreen';
 import React from 'react';
 import ReportsScreen from '../screens/ReportsScreen';
@@ -33,7 +31,6 @@ export default function MainStackNavigator() {
          <Stack.Screen name="Overview" component={OverviewScreen} />
          <Stack.Screen name="Transactions" component={TransactionsScreen} />
          <Stack.Screen name="Budgets" component={BudgetsScreen} />
-         <Stack.Screen name="Goals" component={GoalsScreen} />
          <Stack.Screen name="Reports" component={ReportsScreen} />
 
          {/* Other navigable screens */}

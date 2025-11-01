@@ -3,10 +3,9 @@
 import React, { useEffect, useState } from 'react';
 
 import AppBar from '../components/app/AppBar'
-import Card from '../components/core/Card';
 import DailyLimitCard from '../components/Overview/DailyLimitCard';
 import NetWorthCard from '../components/Overview/NetWorthCard';
-import PageTitle from '../components/app/PageTitle';
+import PageHeader from '../components/app/PageHeader';
 import PayDayCard from '../components/Overview/PayDayCard';
 import PeriodSummaryCard from '../components/Overview/PeriodSummaryCard';
 import RemainingForPeriodCard from '../components/Overview/RemainingForPeriodCard';
@@ -113,10 +112,10 @@ const OverviewScreen = () => {
                paddingBottom: 80,
             }}
             showsVerticalScrollIndicator={false}>
-            <PageTitle title="Overview" />
+            <PageHeader title="Overview" />
             {/* CARD 1: Remaining for Period */}
             <RemainingForPeriodCard
-               loading={dailyLimitLoading}
+               loading={remainingLoading}
                progress={progressRemaining}
                remaining={remaining}
             />
@@ -126,8 +125,14 @@ const OverviewScreen = () => {
                limit={dailyLimit}
                remaining={dailyLimit - spentToday}
                spent={spentToday}
-               loading={false}
-               onPress={() => navigation.navigate('TodaysView')}
+               loading={dailyLimitLoading}
+               onPress={() => navigation.navigate('TodaysView', {
+                  data: {
+                     limit: dailyLimit,
+                     remaining: dailyLimit - spentToday,
+                     spent: spentToday,
+                  }
+               })}
             />
 
             {/* CARD 3: Pay Day */}

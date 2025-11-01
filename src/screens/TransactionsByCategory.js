@@ -1,12 +1,12 @@
 import AppBar from '../components/app/AppBar';
-import MainTabs from '../navigation/MainTabs';
+import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const TransactionsByCategory = () => {
    return (
       <>
-         <AppBar title='TransactionsByCategory' />
-
+         <AppBar />
+         <PageHeader title='Transactions By Category' />
       </>
    );
 };
