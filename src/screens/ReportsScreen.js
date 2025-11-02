@@ -1,6 +1,7 @@
-import { FlatList, Pressable, ScrollView, View } from "react-native";
-
 // src/screens/ReportsScreen.js
+
+import { FlatList, ScrollView, View } from "react-native";
+
 import AppBar from "../components/app/AppBar";
 import NoDataCard from "../components/app/NoDataCard";
 import PageHeader from "../components/app/PageHeader";
@@ -9,7 +10,6 @@ import ReportListCard from "../components/app/ReportListCard";
 import SearchBar from "../components/app/SearchBar";
 import ViewModeToggle from "../components/app/ViewModeToggle";
 import { useNavigation } from "@react-navigation/native";
-import { useTheme } from "../context/ThemeContext";
 
 // 🧩 Reports configuration
 const reportsList = [

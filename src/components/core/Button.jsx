@@ -1,16 +1,17 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import Loader from './Loader';
 import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function Button({ title, onPress, variant = 'filled', icon, style }) {
+export default function Button({ title, onPress, variant = 'filled', icon, style, loading = false, keyname = "", disabled = false }) {
    const { theme } = useTheme();
 
    // Determine colors based on variant
    let backgroundColor, textColor, borderColor;
 
    if (variant === 'filled') {
-      backgroundColor = theme.colors.primaryContainer; // Button background
+      backgroundColor = theme.colors.primaryContainer;
       textColor = theme.colors.onPrimaryContainer;    // Text
       borderColor = 'transparent';
    } else if (variant === 'outlined') {
@@ -21,7 +22,10 @@ export default function Button({ title, onPress, variant = 'filled', icon, style
 
    return (
       <Pressable
+         key={`${theme.mode}-${keyname}`}
          onPress={onPress}
+         android_ripple={{ color: theme.colors.surfaceVariant }}
+         disabled={loading || disabled}
          style={({ pressed }) => [
             styles.button,
             {
@@ -33,8 +37,14 @@ export default function Button({ title, onPress, variant = 'filled', icon, style
             style,
          ]}
       >
-         {icon && <View style={styles.iconContainer}>{icon}</View>}
-         <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+         {loading ? (
+            <Loader inline position="center" size="small" variant="contained" />
+         ) : (
+            <>
+                  {icon && <View style={styles.iconContainer}>{icon}</View>}
+                  <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+            </>
+         )}
       </Pressable>
    );
 }

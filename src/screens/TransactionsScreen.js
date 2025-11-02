@@ -11,7 +11,7 @@ import SearchBar from '../components/app/SearchBar';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import { useTheme } from '../context/ThemeContext';
 
-const TransactionsScreen = () => {
+const TransactionsScreen = ({ route }) => {
    const { theme, toggleTheme } = useTheme();
    const [searchQuery, setSearchQuery] = React.useState('');
 
@@ -30,7 +30,7 @@ const TransactionsScreen = () => {
                <Pressable onPress={toggleTheme}>
                   <MaterialDesignIcons
                      name="theme-light-dark"
-                     size={22}
+                     size={30}
                      color={theme.colors.onSurface}
                   />
                </Pressable>

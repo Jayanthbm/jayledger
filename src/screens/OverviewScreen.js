@@ -1,22 +1,24 @@
 // src/screens/OverView/OverviewScreen.js
 
+import { Pressable, ScrollView, } from 'react-native';
 import React, { useEffect, useState } from 'react';
 
 import AppBar from '../components/app/AppBar'
 import DailyLimitCard from '../components/Overview/DailyLimitCard';
+import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
 import NetWorthCard from '../components/Overview/NetWorthCard';
 import PageHeader from '../components/app/PageHeader';
 import PayDayCard from '../components/Overview/PayDayCard';
 import PeriodSummaryCard from '../components/Overview/PeriodSummaryCard';
 import RemainingForPeriodCard from '../components/Overview/RemainingForPeriodCard';
-import { ScrollView, } from 'react-native';
 import Text from '../components/core/Text';
 import TopCategoriesCard from '../components/Overview/TopCategoriesCard';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 
 const OverviewScreen = () => {
    const navigation = useNavigation();
-
+   const { theme, toggleTheme } = useTheme()
    // State for Remaining for Period Card
    const [remainingLoading, setRemainingLoading] = useState(true);
    const [remaining, setRemaining] = useState(0);
@@ -102,11 +104,21 @@ const OverviewScreen = () => {
 
    return (
       <>
-         <AppBar showBack={false}>
-            <Text variant='headingMedium' style={{
+         <AppBar
+            showBack={false}
+            centerContent={<Text variant='headingMedium' style={{
                textAlign: 'center'
-            }}>JayLedger</Text>
-         </AppBar>
+            }}>JayLedger</Text>}
+            rightContent={
+               <Pressable onPress={toggleTheme}>
+                  <MaterialDesignIcons
+                     name="theme-light-dark"
+                     size={30}
+                     color={theme.colors.onSurface}
+                  />
+               </Pressable>
+            }
+         />
          <ScrollView
             contentContainerStyle={{
                paddingBottom: 80,
@@ -144,7 +156,9 @@ const OverviewScreen = () => {
             <TopCategoriesCard
                loading={topCategoriesLoading}
                data={topCategories}
-               onPress={() => navigation.navigate('MonthlySummary')}
+               onPress={() => navigation.navigate('MonthlySummary', {
+                  title: "Top Categories"
+               })}
             />
 
             {/* CARD 5: This Month */}
@@ -155,7 +169,9 @@ const OverviewScreen = () => {
                income={monthIncome}
                previncome={prevMonthIncome}
                prevexpense={prevMonthExpense}
-               onPress={() => navigation.navigate('MonthlySummary')}
+               onPress={() => navigation.navigate('MonthlySummary', {
+                  title: "Summary For Month"
+               })}
             />
 
             {/* CARD 6: Current Year */}
@@ -166,7 +182,9 @@ const OverviewScreen = () => {
                income={yearIncome}
                previncome={prevYearIncome}
                prevexpense={prevYearExpense}
-               onPress={() => navigation.navigate('YearlySummary')}
+               onPress={() => navigation.navigate('YearlySummary', {
+                  title: "Summary For Year"
+               })}
             />
 
             {/* CARD 7: Net Worth */}

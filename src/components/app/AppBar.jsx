@@ -24,7 +24,6 @@ const AppBar = ({ showBack = true,
 
    const iconColor = theme.colors.onBackground;
 
-
    return (
       <>
          <View

@@ -12,7 +12,7 @@ import dayjs from "dayjs";
 import { formatIndianNumber } from '../utils';
 import { useTheme } from "../context/ThemeContext";
 
-const CalendarView = () => {
+const CalendarView = ({ route }) => {
   const { theme, toggleTheme } = useTheme();
   const [selected, setSelected] = useState(dayjs().format("YYYY-MM-DD"));
   const [formattedDate, setFormattedDate] = useState(dayjs().format("DD MMM YYYY"));
@@ -67,34 +67,11 @@ const CalendarView = () => {
         <Pressable onPress={toggleTheme}>
           <MaterialDesignIcons
             name="theme-light-dark"
-            size={22}
+            size={30}
             color={theme.colors.onSurface}
           />
         </Pressable>
-      }>
-        <View style={{ flex: 1, alignItems: "flex-end", paddingRight: 4 }}>
-          <Pressable
-            onPress={toggleTheme}
-            style={({ pressed }) => ({
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: pressed
-                ? theme.colors.surfaceVariant
-                : theme.colors.surface,
-              elevation: 1,
-            })}
-          >
-            <MaterialDesignIcons
-              name="theme-light-dark"
-              color={theme.colors.onSurface}
-              size={22}
-            />
-          </Pressable>
-        </View>
-      </AppBar>
+      } />
 
       <PageHeader title="Calendar View">
         <Pressable
@@ -113,7 +90,7 @@ const CalendarView = () => {
           <MaterialDesignIcons
             name="calendar-today"
             color={theme.colors.onSurface}
-            size={22}
+            size={25}
           />
         </Pressable>
       </PageHeader>

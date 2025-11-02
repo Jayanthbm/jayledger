@@ -1,6 +1,8 @@
+// src/context/AuthContext.js
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../supabaseClient';
 
 const AuthContext = createContext();
 
@@ -9,40 +11,79 @@ export const AuthProvider = ({ children }) => {
    const [loading, setLoading] = useState(true);
 
    useEffect(() => {
-      const loadUser = async () => {
+      let isMounted = true;
+      let authSubscription;
+
+      const initSession = async () => {
          try {
-            const savedUser = await AsyncStorage.getItem('user');
-            if (savedUser) setUser(JSON.parse(savedUser));
-         } catch (e) {
-            console.warn('Failed to load user from AsyncStorage:', e);
+            // 🔹 Get existing Supabase session
+            const { data, error } = await supabase.auth.getSession();
+            if (error) console.warn('Error getting session:', error.message);
+
+            if (data?.session && isMounted) {
+               setUser(data.session.user);
+               await AsyncStorage.setItem("user", JSON.stringify(data.session.user));
+            } else {
+               await AsyncStorage.removeItem("user");
+            }
+
+            // 🔹 Listen for auth changes (login/logout)
+            const { data: sub } = supabase.auth.onAuthStateChange(
+               async (_event, session) => {
+                  if (!isMounted) return;
+
+                  const currentUser = session?.user ?? null;
+                  setUser(currentUser);
+
+                  if (currentUser) {
+                     await AsyncStorage.setItem("user", JSON.stringify(currentUser));
+                  } else {
+                     await AsyncStorage.removeItem("user");
+                  }
+               }
+            );
+            authSubscription = sub;
+
+         } catch (err) {
+            console.warn("Auth initialization error:", err);
          } finally {
-            setLoading(false);
+            if (isMounted) setLoading(false);
          }
       };
 
-      loadUser();
+      initSession();
+
+      return () => {
+         isMounted = false;
+         authSubscription?.unsubscribe();
+      };
    }, []);
 
-   const login = async (userData) => {
-      try {
-         setUser(userData);
-         await AsyncStorage.setItem('user', JSON.stringify(userData));
-      } catch (e) {
-         console.warn('Failed to save user:', e);
-      }
+   // 🔹 Login
+   const login = async (email, password) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      setUser(data.user);
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      return data.user;
    };
 
+   // 🔹 Register
+   const register = async (email, password) => {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      return data.user;
+   };
+
+   // 🔹 Logout
    const logout = async () => {
-      try {
-         setUser(null);
-         await AsyncStorage.removeItem('user');
-      } catch (e) {
-         console.warn('Failed to remove user:', e);
-      }
+      await supabase.auth.signOut();
+      setUser(null);
+      await AsyncStorage.removeItem("user");
    };
 
    return (
-      <AuthContext.Provider value={{ user, loading, login, logout }}>
+      <AuthContext.Provider value={{ user, loading, login, register, logout }}>
          {children}
       </AuthContext.Provider>
    );

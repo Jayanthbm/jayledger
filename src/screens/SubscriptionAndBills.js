@@ -8,7 +8,7 @@ import Text from '../components/core/Text';
 import { View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const SubscriptionAndBills = () => {
+const SubscriptionAndBills = ({ route }) => {
    const navigation = useNavigation();
    return (
       <>

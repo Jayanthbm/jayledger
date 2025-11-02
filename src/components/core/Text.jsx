@@ -9,7 +9,7 @@ export default function Text({ children, variant = 'bodyMedium', style, numberOf
    let defaultColor = theme.colors.onBackground;
 
    if (variant === 'caption' || variant === 'label') {
-      defaultColor = theme.colors.onSurfaceVariant;
+      defaultColor = theme.colors.onSurface;
    }
 
    if (color) {
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
       fontWeight: '400',
    },
    label: {
-      fontSize: 12,
+      fontSize: 16,
       fontWeight: '500',
    },
    caption: {

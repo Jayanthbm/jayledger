@@ -1,4 +1,4 @@
-// Light theme colors (Google Tasks inspired + Material 3)
+// Light theme colors
 export const lightColors = {
    // Primary System
    primary: "#0B57D0",
@@ -36,7 +36,7 @@ export const lightColors = {
    errorContainer: "#F9DEDC",
    onErrorContainer: "#410E0B",
 
-   // Skeleton (new 👇)
+   // Skeleton
    skeletonBackground: "#E0E0E0",
    skeletonShimmer: "#F5F5F5",
 
@@ -48,7 +48,7 @@ export const lightColors = {
    expense: '#e53935'
 };
 
-// Dark theme colors (Google Tasks inspired + Material 3)
+// Dark theme colors
 export const darkColors = {
    // Primary System
    primary: "#A8C7FA",

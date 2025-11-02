@@ -8,7 +8,7 @@ import SwipeableListItem from '../components/core/SwipeableListItem';
 import Text from '../components/core/Text';
 import { useNavigation } from '@react-navigation/native';
 
-const IncomeVsExpense = () => {
+const IncomeVsExpense = ({ route }) => {
    const navigation = useNavigation();
    const EXPENSES = [
       {

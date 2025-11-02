@@ -4,17 +4,19 @@ import React from 'react';
 import Text from './Text';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function Card({ title, subtitle, children, style, onPress, disabled = false }) {
+export default function Card({ title, subtitle, children, style, onPress, disabled = false, keyname = "", }) {
    const { theme } = useTheme();
    const isAndroid = Platform.OS === 'android';
    return (
       <Pressable
+         key={`${theme.mode}-${keyname}`}
          onPress={disabled ? undefined : onPress}
          disabled={disabled}
+         android_ripple={{ color: theme.colors.surfaceVariant }}
          style={({ pressed }) => [
             styles.card,
             {
-               backgroundColor: theme.colors.surface,
+               backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.surface,
                shadowColor: theme.colors.shadow,
                opacity: pressed && !isAndroid ? 0.9 : 1,
             },
