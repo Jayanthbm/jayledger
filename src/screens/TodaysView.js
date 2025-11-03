@@ -11,9 +11,12 @@ export default function TodaysView({ route }) {
       <>
          <AppBar />
          <View>
-            <DailyLimitCard limit={data?.limit}
+            <DailyLimitCard
+               limit={data?.limit}
                remaining={data?.remaining}
-               spent={data?.spent} />
+               spent={data?.spent}
+               disabled={true}
+            />
             <PageHeader title='Transactions' />
             <Divider />
          </View>

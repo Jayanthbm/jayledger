@@ -46,6 +46,13 @@ const ViewModeToggle = ({ viewMode, setViewMode }) => {
          <Pressable
             onPress={() => setViewMode("list")}
             style={styles.iconWrapper}
+            android_ripple={
+               {
+                  color: theme.colors.onSurfaceVariant + "22",
+                  borderless: false,
+                  foreground: true,
+               }
+            }
          >
             <MaterialDesignIcons
                name="format-list-bulleted"
@@ -58,6 +65,13 @@ const ViewModeToggle = ({ viewMode, setViewMode }) => {
          <Pressable
             onPress={() => setViewMode("grid")}
             style={styles.iconWrapper}
+            android_ripple={
+               {
+                  color: theme.colors.onSurfaceVariant + "22",
+                  borderless: false,
+                  foreground: true,
+               }
+            }
          >
             <MaterialDesignIcons
                name="view-grid"

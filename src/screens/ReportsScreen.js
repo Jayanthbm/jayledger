@@ -87,7 +87,8 @@ const ReportsScreen = () => {
                onChangeText={setSearchQuery}
                onClear={() => setSearchQuery("")}
             />
-         } />
+         }
+         />
 
          <PageHeader title="Reports">
             <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />

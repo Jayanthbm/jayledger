@@ -124,12 +124,13 @@ export default function SettingsScreen({ navigation }) {
 
             {/* 👤 Account */}
             <PageHeader title={"Account"} />
-            <Card>
+            <Card disabled={true}>
                <IconList
                   keyName={"loggedin"}
                   leftIcon="account-circle-outline"
                   title="Logged in as"
                   subtitle={user.email}
+                  disabled={true}
                />
                <Button
                   title="Resync Data"
@@ -151,12 +152,13 @@ export default function SettingsScreen({ navigation }) {
 
             {/* ℹ️ About */}
             <PageHeader title={"About"} />
-            <Card>
+            <Card disabled={true}>
                <IconList
                   keyName={"app-version"}
                   leftIcon="information-outline"
                   title="App Version"
                   subtitle="v1.0.0"
+                  disabled={true}
                />
                <Divider />
                <IconList
@@ -164,6 +166,7 @@ export default function SettingsScreen({ navigation }) {
                   leftIcon="email-outline"
                   title="Contact"
                   subtitle="support@jayledger.app"
+                  disabled={true}
                />
             </Card>
          </Animated.ScrollView>

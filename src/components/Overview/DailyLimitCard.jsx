@@ -14,6 +14,7 @@ const DailyLimitCard = ({
    spent = 0,
    loading = false,
    onPress,
+   disabled = false
 }) => {
    const { theme } = useTheme();
 
@@ -22,7 +23,7 @@ const DailyLimitCard = ({
    const isOverspent = progress > 1;
 
    return (
-      <Card title="Daily Limit" subtitle={today} onPress={onPress}>
+      <Card title="Daily Limit" subtitle={today} onPress={onPress} disabled={disabled}>
          {loading ? (
             <View style={{ gap: 8 }}>
                <Skeleton height={24} borderRadius={4} />

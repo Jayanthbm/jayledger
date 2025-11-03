@@ -1,6 +1,6 @@
-import { Animated, Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Animated, Dimensions, Platform, Pressable, StyleSheet, View } from "react-native";
 import React, { useEffect, useRef } from "react";
-import { useNavigation, useNavigationState, useRoute } from "@react-navigation/native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
 
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useTheme } from "../context/ThemeContext";
@@ -16,15 +16,16 @@ const TABS = [
 function MainTabs() {
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const state = useNavigationState((state) => state);
-  let activeTab = state?.routes[0]?.state?.routes[state?.routes[0]?.state?.routes?.length - 1].params?.activeTab;
+  const isAndroid = Platform.OS === "android";
 
-  // find nested route inside "Main"
+  const state = useNavigationState((state) => state);
   const mainRoute = state?.routes?.find(r => r.name === "Main");
   const nestedState = mainRoute?.state;
   const currentRoute =
     nestedState?.routes?.[nestedState.index ?? 0]?.name ?? "Overview";
   const currentIndex = TABS.findIndex(tab => tab.name === currentRoute);
+
+  let activeTab = state?.routes[0]?.state?.routes[state?.routes[0]?.state?.routes?.length - 1].params?.activeTab;
 
   let activeIndex = -1;
   if (activeTab) {
@@ -32,7 +33,6 @@ function MainTabs() {
   } else {
     activeIndex = currentIndex >= 0 ? currentIndex : -1;
   }
-
 
   const anim = useRef(new Animated.Value(activeIndex)).current;
 
@@ -46,7 +46,6 @@ function MainTabs() {
     }).start();
   }, [activeIndex]);
 
-  // Dynamic tab width (screen width ÷ tab count)
   const screenWidth = Dimensions.get("window").width;
   const tabWidth = screenWidth / TABS.length;
 
@@ -58,7 +57,12 @@ function MainTabs() {
 
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surfaceVariant }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.colors.surfaceVariant },
+      ]}
+    >
       {/* Animated pill background */}
       {activeIndex >= 0 && (
         <Animated.View style={[
@@ -85,24 +89,41 @@ function MainTabs() {
         } else {
           isFocused = currentRoute === tab.name
         }
-        // Scale animation for active tab
         const scale = anim.interpolate({
           inputRange: [i - 1, i, i + 1],
           outputRange: [1, 1.15, 1],
           extrapolate: "clamp",
         });
-
-
         return (
-          <TouchableOpacity
+          <Pressable
             key={tab.name}
-            style={styles.tab}
-            activeOpacity={0.8}
+            android_ripple={
+              isAndroid
+                ? {
+                  color: theme.colors.onSurfaceVariant + "22",
+                  borderless: true,
+                  radius: 36,
+                }
+                : undefined
+            }
+            style={({ pressed }) => [
+              styles.tab,
+              {
+                transform: [
+                  { scale: pressed && !isAndroid ? 0.95 : 1 },
+                ],
+              },
+            ]}
             onPress={() => navigation.navigate("Main", {
               screen: tab.name
             })}
           >
-            <Animated.View style={{ alignItems: "center", transform: [{ scale }] }}>
+            <Animated.View
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                transform: [{ scale }],
+              }}>
               <Animated.Text>
                 <MaterialDesignIcons
                   name={isFocused ? tab.activeIcon : tab.icon}
@@ -124,7 +145,7 @@ function MainTabs() {
                 {tab.label}
               </Animated.Text>
             </Animated.View>
-          </TouchableOpacity>
+          </Pressable>
 
         );
       })}

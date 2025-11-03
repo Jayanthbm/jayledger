@@ -5,12 +5,28 @@ import React from "react";
 import Text from "../core/Text";
 import { useTheme } from "../../context/ThemeContext";
 
-const ReportListCard = ({ icon, title, description, onPress, compact = false }) => {
+const ReportListCard = ({
+   icon,
+   title,
+   description,
+   onPress,
+   compact = false,
+   keyname = "", }) => {
    const { theme } = useTheme();
    const isAndroid = Platform.OS === 'android';
    return (
       <Pressable
+         key={`${theme.mode}-${keyname}`}
          onPress={onPress}
+         android_ripple={
+            isAndroid
+               ? {
+                  color: theme.colors.onSurfaceVariant + "22",
+                  borderless: false,
+                  foreground: true,
+               }
+               : undefined
+         }
          style={({ pressed }) => [
             styles.container,
             {
@@ -18,6 +34,7 @@ const ReportListCard = ({ icon, title, description, onPress, compact = false }) 
                shadowColor: theme.colors.shadow,
                opacity: pressed && !isAndroid ? 0.9 : 1,
                padding: compact ? 12 : 16,
+               transform: [{ scale: pressed && !isAndroid ? 0.98 : 1 }],
             },
          ]}
       >
@@ -58,6 +75,13 @@ const styles = StyleSheet.create({
       borderRadius: 16,
       padding: 16,
       marginVertical: 8,
+      overflow: "hidden",
+      elevation: 1,
+
+      // iOS shadow
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
    },
    iconContainer: {
       width: 36,

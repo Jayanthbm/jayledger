@@ -2,7 +2,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import Loader from "./Loader";
 import MaterialDesignIcons from "@react-native-vector-icons/material-design-icons";
-import { MotiView } from "moti";
 import React from "react";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -73,21 +72,6 @@ export default function Button({
    const iconDisplayColor = iconColor || textColor;
 
    return (
-      <MotiView
-         from={{ scale: 1 }}
-         animate={{ scale: 1 }}
-         transition={{ type: "timing", duration: 100 }}
-         style={[
-            styles.shadow,
-            elevation > 0 && {
-               shadowColor: colors.shadow,
-               shadowOpacity: 0.2,
-               shadowRadius: elevation * 2,
-               shadowOffset: { width: 0, height: elevation },
-               elevation,
-            },
-         ]}
-      >
       <Pressable
             key={`${theme.mode}-${keyName}`}
             onPress={onPress}
@@ -122,14 +106,11 @@ export default function Button({
                </>
             )}
       </Pressable>
-      </MotiView>
    );
 }
 
 const styles = StyleSheet.create({
-   shadow: {
-      marginVertical: 4,
-   },
+
    button: {
       paddingVertical: 12,
       paddingHorizontal: 24,

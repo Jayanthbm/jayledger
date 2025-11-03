@@ -1,27 +1,41 @@
 // src/components/app/IconList.jsx
 
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
 
 import MaterialDesignIcons from '@react-native-vector-icons/material-design-icons';
 import React from 'react';
 import Text from '../core/Text';
 import { useTheme } from '../../context/ThemeContext';
 
-const IconList = ({ leftIcon, keyName = "", title, subtitle = "", onPress, rightContent }) => {
+const IconList = ({ leftIcon, keyName = "", title, subtitle = "", onPress, rightContent, disabled = false }) => {
    const { theme } = useTheme();
+   const isAndroid = Platform.OS === 'android';
    return (
       <Pressable
          key={`${theme.mode}-${keyName}`}
-         style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingVertical: 14,
-            paddingHorizontal: 12,
-            borderRadius: 16,
-            marginVertical: 4, backgroundColor: theme.colors.surface
-         }}
-         android_ripple={{ color: theme.colors.surfaceVariant }}
+         style={({ pressed }) => [
+            {
+               overflow: "hidden",
+               flexDirection: "row",
+               alignItems: "center",
+               paddingVertical: 14,
+               paddingHorizontal: 12,
+               borderRadius: 16,
+               marginVertical: 4, backgroundColor: theme.colors.surface,
+               opacity: pressed && !isAndroid ? 0.9 : 1,
+               transform: [{ scale: pressed && !isAndroid ? 0.98 : 1 }],
+            }
+         ]}
          onPress={onPress}
+         android_ripple={
+            isAndroid && !disabled
+               ? {
+                  color: theme.colors.onSurfaceVariant + "22",
+                  borderless: false,
+                  foreground: true,
+               }
+               : undefined
+         }
       >
          <MaterialDesignIcons
             name={leftIcon}

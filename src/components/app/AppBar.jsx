@@ -40,6 +40,13 @@ const AppBar = ({ showBack = true,
                      styles.backButton,
                      { opacity: pressed ? 0.6 : 1 },
                   ]}
+                  android_ripple={
+                     {
+                        color: theme.colors.onSurfaceVariant + "22",
+                        borderless: false,
+                        foreground: true,
+                     }
+                  }
                >
                   <MaterialDesignIcons
                      name="arrow-left"
@@ -77,6 +84,7 @@ const styles = StyleSheet.create({
      height: ICON_TOUCH,
      justifyContent: "center",
       alignItems: "flex-start",
+      overflow: "hidden",
    },
    sideSpace: {
       width: ICON_TOUCH,
