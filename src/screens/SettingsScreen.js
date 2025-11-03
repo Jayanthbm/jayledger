@@ -1,9 +1,6 @@
 import {
    Alert,
    Modal,
-   Pressable,
-   StyleSheet,
-   Switch,
    TouchableWithoutFeedback,
    View,
 } from "react-native";
@@ -15,9 +12,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Button from "../components/core/Button";
 import Card from "../components/core/Card";
 import Divider from "../components/core/Divider";
+import IconList from "../components/app/IconList";
 import MaterialDesignIcons from "@react-native-vector-icons/material-design-icons";
+import MaterialSwitch from "../components/core/MaterialSwitch";
 import PageHeader from "../components/app/PageHeader";
-import Text from "../components/core/Text";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
@@ -41,7 +39,6 @@ export default function SettingsScreen({ navigation }) {
    const handleThemeSelect = async (mode) => {
       setThemeMode(mode);
       toggleTheme(mode);
-      await AsyncStorage.setItem("themeMode", mode);
       setShowThemeModal(false);
    };
 
@@ -57,40 +54,6 @@ export default function SettingsScreen({ navigation }) {
          { text: "Logout", onPress: logout, style: "destructive" },
       ]);
 
-   const SettingsList = ({ title, subtitle, leftIcon, rightContent, keyName, onPress }) => {
-      return (
-         <Pressable
-            key={keyName}
-            style={[styles.row, { backgroundColor: theme.colors.surface }]}
-            android_ripple={{ color: theme.colors.surfaceVariant }}
-            onPress={onPress}
-         >
-            <MaterialDesignIcons
-               name={leftIcon}
-               size={22}
-               color={theme.colors.primary}
-               style={styles.icon}
-            />
-            <View style={{ flex: 1 }}>
-               <Text variant="subtitle" style={{
-                  fontSize: 18
-               }}>
-                  {title}
-               </Text>
-               {subtitle && (
-                  <Text variant="caption"
-                     style={{
-                        fontSize: 15,
-                     }}
-                  >
-                     {subtitle}
-                  </Text>
-               )}
-            </View>
-            {rightContent}
-         </Pressable>
-      )
-   }
    return (
       <>
          <AppBar />
@@ -102,8 +65,8 @@ export default function SettingsScreen({ navigation }) {
          >
             {/* 🎨 Appearance */}
             <PageHeader title={"Appearance"} />
-            <SettingsList
-               keyName={`mode-${theme.mode}`}
+            <IconList
+               keyName={`mode`}
                onPress={() => setShowThemeModal(true)}
                leftIcon={'palette-outline'}
                title="Theme"
@@ -121,74 +84,56 @@ export default function SettingsScreen({ navigation }) {
 
             {/* 🗂️ App Shortcuts */}
             <PageHeader title={"Shortcuts"} />
-            <SettingsList
-               keyName={"categories"}
-               onPress={() => navigation.navigate("Categories")}
-               leftIcon="shape-outline"
-               title="Categories"
-               subtitle="Naviagate to Categories"
-               rightContent={<MaterialDesignIcons
-                  name="chevron-right"
-                  size={22}
-                  color={theme.colors.onSurfaceVariant}
-               />}
-            />
-            <SettingsList
-               keyName={"payees"}
-               onPress={() => navigation.navigate("Payees")}
-               leftIcon="account-multiple-outline"
-               title="Payees"
-               subtitle="Naviagate to Payees"
-               rightContent={<MaterialDesignIcons
-                  name="chevron-right"
-                  size={22}
-                  color={theme.colors.onSurfaceVariant}
-               />}
-            />
+            {['Categories', 'Payees'].map((item, i) => {
+               let icon = i === 0 ? 'shape-outline' : 'account-multiple-outline'
+               return (
+                  <IconList
+                     key={i}
+                     keyName={item}
+                     onPress={() => navigation.navigate(item, {
+                        activeTab: 'Settings'
+                     })}
+                     leftIcon={icon}
+                     title={item}
+                     subtitle={`Naviagate to ${item}`}
+                     rightContent={<MaterialDesignIcons
+                        name="chevron-right"
+                        size={22}
+                        color={theme.colors.onSurfaceVariant}
+                     />}
+                  />
+               )
+            })}
 
             {/* 🔒 Screen Lock */}
             <PageHeader title={"Security"} />
-            <SettingsList
+            <IconList
                keyName={"fingerprint"}
-               onPress={() => null}
+               onPress={handleScreenLockToggle}
                leftIcon="fingerprint"
                title="Screen Lock"
                subtitle="Enable Disable biometric"
-               rightContent={<Switch
-                  value={screenLock}
-                  onValueChange={handleScreenLockToggle}
-                  trackColor={{
-                     false: theme.colors.surfaceVariant,
-                     true: theme.colors.primaryContainer,
-                  }}
-                  thumbColor={theme.colors.primary}
-               />}
+               rightContent={
+                  <MaterialSwitch
+                     value={screenLock}
+                     onValueChange={handleScreenLockToggle}
+                     theme={theme}
+                  />
+               }
             />
 
             {/* 👤 Account */}
             <PageHeader title={"Account"} />
             <Card>
-               <View style={styles.row}>
-                  <MaterialDesignIcons
-                     name="account-circle-outline"
-                     size={22}
-                     color={theme.colors.primary}
-                     style={styles.icon}
-                  />
-                  <View>
-                     <Text variant="label">
-                        Logged in as
-                     </Text>
-
-                     {user?.email && (
-                        <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                           {user.email}
-                        </Text>
-                     )}
-                  </View>
-               </View>
+               <IconList
+                  keyName={"loggedin"}
+                  leftIcon="account-circle-outline"
+                  title="Logged in as"
+                  subtitle={user.email}
+               />
                <Button
                   title="Resync Data"
+                  iconName="cached"
                   onPress={() => Alert.alert("Coming soon")}
                   style={{ marginTop: 10 }}
 
@@ -198,134 +143,72 @@ export default function SettingsScreen({ navigation }) {
                   onPress={handleLogout}
                   style={{
                      marginTop: 8,
-                     backgroundColor: theme.colors.expense,
                   }}
+                  iconName="logout-variant"
+                  type="danger"
                />
             </Card>
-
 
             {/* ℹ️ About */}
             <PageHeader title={"About"} />
             <Card>
-               <View style={styles.row}>
-                  <MaterialDesignIcons
-                     name="information-outline"
-                     size={22}
-                     color={theme.colors.primary}
-                     style={styles.icon}
-                  />
-                  <View>
-                     <Text variant="label">
-                        App Version
-                     </Text>
-
-                     <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                        v1.0.0
-                     </Text>
-                  </View>
-               </View>
+               <IconList
+                  keyName={"app-version"}
+                  leftIcon="information-outline"
+                  title="App Version"
+                  subtitle="v1.0.0"
+               />
                <Divider />
-               <View style={[styles.row, { marginTop: 6 }]}>
-                  <MaterialDesignIcons
-                     name="email-outline"
-                     size={22}
-                     color={theme.colors.primary}
-                     style={styles.icon}
-                  />
-                  <View>
-                     <Text variant="label">
-                        Contact
-                     </Text>
-
-                     <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                        support@jayledger.app
-                     </Text>
-                  </View>
-               </View>
+               <IconList
+                  keyName={"app-contact"}
+                  leftIcon="email-outline"
+                  title="Contact"
+                  subtitle="support@jayledger.app"
+               />
             </Card>
          </Animated.ScrollView>
 
          {/* 🎨 Theme Selector Modal */}
          <Modal visible={showThemeModal} transparent animationType="fade">
             <TouchableWithoutFeedback onPress={() => setShowThemeModal(false)}>
-               <View style={styles.modalOverlay} />
+               <View style={{
+                  flex: 1,
+                  backgroundColor: "rgba(0,0,0,0.4)",
+               }} />
             </TouchableWithoutFeedback>
             <View
-               style={[
-                  styles.modalContainer,
-                  { backgroundColor: theme.colors.surface },
-               ]}
+               style={
+                  {
+                     position: "absolute",
+                     bottom: 0,
+                     width: "100%",
+                     borderTopLeftRadius: 20,
+                     borderTopRightRadius: 20,
+                     padding: 20,
+                     backgroundColor: theme.colors.surface
+                  }
+               }
             >
+               <PageHeader title={"Choose Theme"} />
                {["system", "light", "dark"].map((mode) => (
-                  <Pressable
+                  <IconList
                      key={mode}
+                     keyName={mode}
                      onPress={() => handleThemeSelect(mode)}
-                     style={styles.modalItem}
-                  >
-                     <MaterialDesignIcons
-                        name={
+                     leftIcon={
                            mode === "system"
                               ? "theme-light-dark"
                               : mode === "light"
                                  ? "white-balance-sunny"
                                  : "weather-night"
                         }
-                        color={
-                           themeMode === mode
-                              ? theme.colors.primary
-                              : theme.colors.onSurfaceVariant
-                        }
-                        size={22}
-                        style={styles.icon}
-                     />
-                     <Text
-                        style={{
-                           color:
-                              themeMode === mode
-                                 ? theme.colors.primary
-                                 : theme.colors.onSurface,
-                           fontWeight: themeMode === mode ? "600" : "400",
-                        }}
-                     >
-                        {mode === "system"
+                     title={mode === "system"
                            ? "System default"
                            : mode.charAt(0).toUpperCase() + mode.slice(1)}
-                     </Text>
-                  </Pressable>
+                  />
                ))}
             </View>
          </Modal>
       </>
    );
 }
-
-const styles = StyleSheet.create({
-   row: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 14,
-      paddingHorizontal: 12,
-      borderRadius: 16,
-      marginVertical: 4,
-   },
-   icon: {
-      marginRight: 14,
-   },
-   modalOverlay: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.4)",
-   },
-   modalContainer: {
-      position: "absolute",
-      bottom: 0,
-      width: "100%",
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 20,
-   },
-   modalItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 14,
-   },
-});

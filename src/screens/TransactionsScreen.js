@@ -1,18 +1,16 @@
 // src/screens/Transactions/TransactionsScreen.js
 
-import { Pressable, TouchableHighlight, View } from 'react-native';
+import { TouchableHighlight, View } from 'react-native';
 
 import AppBar from '../components/app/AppBar';
-import { MaterialDesignIcons } from "@react-native-vector-icons/material-design-icons";
 import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 import RowText from '../components/core/RowText';
 import SearchBar from '../components/app/SearchBar';
 import SwipeableListItem from '../components/core/SwipeableListItem';
-import { useTheme } from '../context/ThemeContext';
 
 const TransactionsScreen = ({ route }) => {
-   const { theme, toggleTheme } = useTheme();
+
    const [searchQuery, setSearchQuery] = React.useState('');
 
    return (
@@ -26,15 +24,6 @@ const TransactionsScreen = ({ route }) => {
                onClear={() => setSearchQuery("")}
             />
          }
-            rightContent={
-               <Pressable onPress={toggleTheme}>
-                  <MaterialDesignIcons
-                     name="theme-light-dark"
-                     size={30}
-                     color={theme.colors.onSurface}
-                  />
-               </Pressable>
-            }
          >
 
          </AppBar>

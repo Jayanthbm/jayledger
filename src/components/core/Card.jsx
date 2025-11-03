@@ -1,38 +1,84 @@
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import {
+   Platform,
+   Pressable,
+   StyleSheet,
+   View,
+} from "react-native";
 
-import React from 'react';
-import Text from './Text';
-import { useTheme } from '../../context/ThemeContext';
+import React from "react";
+import Text from "./Text";
+import { useTheme } from "../../context/ThemeContext";
 
-export default function Card({ title, subtitle, children, style, onPress, disabled = false, keyname = "", }) {
+export default function Card({
+   title,
+   subtitle,
+   children,
+   style,
+   onPress,
+   disabled = false,
+   keyname = "",
+}) {
    const { theme } = useTheme();
-   const isAndroid = Platform.OS === 'android';
+   const isAndroid = Platform.OS === "android";
+
+   // Material 3 state layer animation
+   const pressed = useSharedValue(0);
+
+   const animatedStyle = useAnimatedStyle(() => ({
+      backgroundColor: `rgba(0, 0, 0, ${pressed.value * 0.08})`, // light overlay
+   }));
+
+
    return (
       <Pressable
          key={`${theme.mode}-${keyname}`}
          onPress={disabled ? undefined : onPress}
          disabled={disabled}
-         android_ripple={{ color: theme.colors.surfaceVariant }}
-         style={({ pressed }) => [
+         onPressIn={() => (pressed.value = withTiming(1, { duration: 100 }))}
+         onPressOut={() => (pressed.value = withTiming(0, { duration: 200 }))}
+         android_ripple={
+            isAndroid
+               ? { color: theme.colors.surfaceVariant, borderless: false }
+               : undefined
+         }
+         style={({ pressed: isPressed }) => [
             styles.card,
             {
-               backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.surface,
+               backgroundColor: theme.colors.surface,
                shadowColor: theme.colors.shadow,
-               opacity: pressed && !isAndroid ? 0.9 : 1,
+               transform: [{ scale: isPressed && !isAndroid ? 0.99 : 1 }],
             },
             style,
          ]}
       >
-         {title && (
-            <Text style={[styles.title, { color: theme.colors.onSurface }]} numberOfLines={1} ellipsizeMode='tail'>{title}</Text>
-         )}
-         {subtitle && (
-            <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1} ellipsizeMode='tail'>
-               {subtitle}
-            </Text>
-         )}
-
-         <View style={styles.body}>{children}</View>
+         {/* State layer overlay */}
+         {!isAndroid && <Animated.View pointerEvents="none" style={[styles.stateLayer, animatedStyle]} />}
+         {/* Content */}
+         <View style={styles.content}>
+            {title && (
+               <Text
+                  style={[styles.title, { color: theme.colors.onSurface }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+               >
+                  {title}
+               </Text>
+            )}
+            {subtitle && (
+               <Text
+                  style={[
+                     styles.subtitle,
+                     { color: theme.colors.onSurfaceVariant },
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+               >
+                  {subtitle}
+               </Text>
+            )}
+            <View style={styles.body}>{children}</View>
+         </View>
       </Pressable >
    );
 }
@@ -42,13 +88,19 @@ const styles = StyleSheet.create({
       borderRadius: 16,
       padding: 16,
       marginVertical: 8,
-
+      overflow: "hidden",
+      elevation: 2,
       // iOS shadow
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.18,
-      shadowRadius: 1.0,
-
-      elevation: 3,
+      shadowOpacity: 0.15,
+      shadowRadius: 3,
+   },
+   stateLayer: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 16,
+   },
+   content: {
+      padding: 16,
    },
    title: {
       fontSize: 18,

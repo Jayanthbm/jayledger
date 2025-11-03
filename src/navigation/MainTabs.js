@@ -1,6 +1,6 @@
 import { Animated, Dimensions, StyleSheet, TouchableOpacity, View } from "react-native";
 import React, { useEffect, useRef } from "react";
-import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { useNavigation, useNavigationState, useRoute } from "@react-navigation/native";
 
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useTheme } from "../context/ThemeContext";
@@ -17,6 +17,7 @@ function MainTabs() {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const state = useNavigationState((state) => state);
+  let activeTab = state?.routes[0]?.state?.routes[state?.routes[0]?.state?.routes?.length - 1].params?.activeTab;
 
   // find nested route inside "Main"
   const mainRoute = state?.routes?.find(r => r.name === "Main");
@@ -24,7 +25,14 @@ function MainTabs() {
   const currentRoute =
     nestedState?.routes?.[nestedState.index ?? 0]?.name ?? "Overview";
   const currentIndex = TABS.findIndex(tab => tab.name === currentRoute);
-  const activeIndex = currentIndex >= 0 ? currentIndex : -1;
+
+  let activeIndex = -1;
+  if (activeTab) {
+    activeIndex = TABS.findIndex(tab => tab.name === activeTab);
+  } else {
+    activeIndex = currentIndex >= 0 ? currentIndex : -1;
+  }
+
 
   const anim = useRef(new Animated.Value(activeIndex)).current;
 
@@ -71,7 +79,12 @@ function MainTabs() {
 
 
       {TABS.map((tab, i) => {
-        const isFocused = currentRoute === tab.name;
+        let isFocused = false;
+        if (activeTab) {
+          isFocused = activeTab === tab.name
+        } else {
+          isFocused = currentRoute === tab.name
+        }
         // Scale animation for active tab
         const scale = anim.interpolate({
           inputRange: [i - 1, i, i + 1],

@@ -112,7 +112,9 @@ const ReportsScreen = () => {
                      title={report.title}
                      description={report.description}
                      icon={report.icon}
-                     onPress={() => navigation.navigate(report.onPress)}
+                     onPress={() => navigation.navigate(report.onPress, {
+                        activeTab: 'Reports'
+                     })}
                   />
                ))}
             </ScrollView>

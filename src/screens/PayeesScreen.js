@@ -1,7 +1,5 @@
 // src/screens/PayeesScreen.js
 
-import { Text, View } from 'react-native';
-
 import AppBar from '../components/app/AppBar';
 import Divider from '../components/core/Divider';
 import PageHeader from '../components/app/PageHeader';

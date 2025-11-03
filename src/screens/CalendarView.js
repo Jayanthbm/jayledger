@@ -13,7 +13,7 @@ import { formatIndianNumber } from '../utils';
 import { useTheme } from "../context/ThemeContext";
 
 const CalendarView = ({ route }) => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [selected, setSelected] = useState(dayjs().format("YYYY-MM-DD"));
   const [formattedDate, setFormattedDate] = useState(dayjs().format("DD MMM YYYY"));
   const [totalAmount, setTotalAmount] = useState(0);
@@ -63,15 +63,7 @@ const CalendarView = ({ route }) => {
 
   return (
     <>
-      <AppBar rightContent={
-        <Pressable onPress={toggleTheme}>
-          <MaterialDesignIcons
-            name="theme-light-dark"
-            size={30}
-            color={theme.colors.onSurface}
-          />
-        </Pressable>
-      } />
+      <AppBar />
 
       <PageHeader title="Calendar View">
         <Pressable
