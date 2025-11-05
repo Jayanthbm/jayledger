@@ -1,7 +1,7 @@
 // src/screens/CategoriesScreen.js
 
-import { Alert } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { Alert, View, LayoutAnimation } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
 import { deleteCategoryFromSupabase, pushUnsyncedCategories, syncCategories } from "../database/categories/categorySync";
 
 import AppBar from '../components/app/AppBar';
@@ -19,10 +19,14 @@ import Text from '../components/core/Text';
 import ViewModeToggle from '../components/app/ViewModeToggle';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import CategoryFormModal from '../components/app/CategoryFormModal';
+import BottomSheetModal from '../components/app/BottomSheetModal';
+import CategoryForm from '../components/forms/CategoryForm';
+import { useNavigation } from '@react-navigation/native';
+import Button from '../components/core/Button';
 
 const CategoriesScreen = () => {
    const { user } = useAuth();
+   const navigation = useNavigation();
    const { theme } = useTheme();
    const [loading, setLoading] = useState(true);
    const [categories, setCategories] = useState([]);
@@ -32,8 +36,11 @@ const CategoriesScreen = () => {
    const [modalVisible, setModalVisible] = useState(false);
    const [editCategory, setEditCategory] = useState(null);
 
+   const [deleteModal, setDeleteModal] = useState(false);
+   const [deleteItem, setDeleteItem] = useState(null);
    const [loaded, setLoaded] = useState(false);
-
+   const listRef = useRef(null);
+   const swipeRefs = useRef({});
    const reSyncCategories = async () => {
       setLoading(true);
       await pushUnsyncedCategories(user.id);
@@ -57,35 +64,34 @@ const CategoriesScreen = () => {
 
 
    const handleDelete = async (id) => {
-      Alert.alert("Confirm Delete", "Are you sure you want to delete this category?", [
-         { text: "Cancel", style: "cancel" },
-         {
-            text: "Yes",
-            onPress: async () => {
-               try {
-                  const isOnline = (await NetInfo.fetch()).isConnected;
+      try {
+         const isOnline = (await NetInfo.fetch()).isConnected;
 
-                  // Delete remotely if online
-                  if (isOnline) {
-                     const success = await deleteCategoryFromSupabase(id, user.id);
-                     if (!success) {
-                        console.warn("⚠️ Category deleted locally but not from Supabase");
-                     }
-                  } else {
-                     console.log("📴 Offline — skipped Supabase delete");
-                  }
+         // Delete remotely if online
+         if (isOnline) {
+            const success = await deleteCategoryFromSupabase(id, user.id);
+            if (!success) {
+               console.warn("⚠️ Category deleted locally but not from Supabase");
+            }
+         } else {
+            console.log("📴 Offline — skipped Supabase delete");
+         }
 
-                  // Always delete locally first
-                  CategoryModel.delete(id);
-                  await loadCategories();
-               } catch (error) {
-                  console.error("❌ Delete error:", error);
-               }
-            },
-         },
-      ]);
+         // Always delete locally first
+         CategoryModel.delete(id);
+         delete swipeRefs.current[id];
+         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+         await loadCategories();
+         listRef.current?.scrollToOffset({ offset: 0, animated: true });
+      } catch (error) {
+         console.error("❌ Delete error:", error);
+      }
    };
 
+   const closeDeleteModal = () => {
+      setDeleteItem(null);
+      setDeleteModal(false);
+   }
    const handleAddEdit = async ({ name, type }) => {
       setModalVisible(false);
       const isOnline = (await NetInfo.fetch()).isConnected;
@@ -119,8 +125,12 @@ const CategoriesScreen = () => {
       return matchesSearch;
    });
 
-   const renderItem = ({ item, index }) => (
-      <SwipeableListItem
+   const renderItem = ({ item, index }) => {
+      return (
+         <SwipeableListItem
+            ref={(ref) => {
+               swipeRefs.current[item.id] = ref;
+            }}
          key={index}
          rightActions={[
             {
@@ -130,6 +140,11 @@ const CategoriesScreen = () => {
                type: "primary",
                color: theme.colors.income,
                onPress: () => {
+                  if (swipeRefs.current[item.id]) {
+                     requestAnimationFrame(() => {
+                        swipeRefs.current[item.id]?.close?.();
+                     });
+                  }
                   setEditCategory(item);
                   setModalVisible(true);
                },
@@ -140,7 +155,15 @@ const CategoriesScreen = () => {
                iconName: "delete",
                type: "danger",
                color: theme.colors.error,
-               onPress: () => handleDelete(item.id),
+               onPress: () => {
+                  if (swipeRefs.current[item.id]) {
+                     requestAnimationFrame(() => {
+                        swipeRefs.current[item.id]?.close?.();
+                     });
+                  }
+                  setDeleteItem(item);
+                  setDeleteModal(true)
+               },
             },
          ]}
       >
@@ -149,11 +172,18 @@ const CategoriesScreen = () => {
             title={item.name}
             description={item.type}
             icon={item.app_icon}
-            disabled
+               onPress={() => {
+                  navigation.navigate('Transactions', {
+                     filter: {
+                        categoryId: item.id
+                     }
+                  })
+               }}
             compact={viewMode === "grid"}
          />
       </SwipeableListItem>
-   );
+      )
+   }
 
    const renderFooter = () => {
       return (
@@ -204,6 +234,7 @@ const CategoriesScreen = () => {
          )}
 
          <BigList
+            ref={listRef}
             data={filteredCategories}
             keyExtractor={(item, index) => index.toString()}
             renderItem={(item, index) => renderItem(item, index, viewMode)}
@@ -218,17 +249,54 @@ const CategoriesScreen = () => {
             renderFooter={renderFooter}
             footerHeight={100}
          />
-         <FABButton onPress={() => setModalVisible(true)} hidden={loading} />
+         <FABButton
+            onPress={() => setModalVisible(true)}
+            hidden={loading}
+         />
 
-         <CategoryFormModal
+         <BottomSheetModal
+            key={"edit-add-sheet"}
             visible={modalVisible}
-            onClose={() => {
+            closeModal={() => {
                setModalVisible(false);
                setEditCategory(null);
             }}
-            onSubmit={handleAddEdit}
-            initialData={editCategory}
-         />
+            title={editCategory === null ? 'New Category' : 'Edit Category'}
+         >
+            <CategoryForm onSubmit={handleAddEdit} initialData={editCategory} onClose={() => {
+               setModalVisible(false);
+               setEditCategory(null);
+            }} />
+         </BottomSheetModal>
+         <BottomSheetModal
+            key={'delete-sheet'}
+            visible={!!(deleteItem && deleteModal)}
+            closeModal={closeDeleteModal}
+         >
+            <Text style={{
+               marginTop: 5,
+               marginBottom: 25,
+               textAlign: 'center'
+            }}
+               variant='headingMedium'>
+               {`Delete Category ${deleteItem?.name} ?`}
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
+               <Button
+                  title="Cancel"
+                  onPress={closeDeleteModal}
+                  type="warning"
+               />
+               <Button
+                  title="Delete"
+                  type="danger"
+                  onPress={async () => {
+                     await handleDelete(deleteItem.id);
+                     setDeleteItem(null);
+                     setDeleteModal(false)
+                  }} />
+            </View>
+         </BottomSheetModal >
       </>
 
    );

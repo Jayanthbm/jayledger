@@ -1,8 +1,5 @@
 import {
    Alert,
-   Modal,
-   TouchableWithoutFeedback,
-   View,
 } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import React, { useEffect, useState } from "react";
@@ -18,6 +15,7 @@ import MaterialSwitch from "../components/core/MaterialSwitch";
 import PageHeader from "../components/app/PageHeader";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import BottomSheetModal from "../components/app/BottomSheetModal";
 
 export default function SettingsScreen({ navigation }) {
    const { logout, user } = useAuth();
@@ -172,46 +170,29 @@ export default function SettingsScreen({ navigation }) {
          </Animated.ScrollView>
 
          {/* 🎨 Theme Selector Modal */}
-         <Modal visible={showThemeModal} transparent animationType="fade">
-            <TouchableWithoutFeedback onPress={() => setShowThemeModal(false)}>
-               <View style={{
-                  flex: 1,
-                  backgroundColor: "rgba(0,0,0,0.4)",
-               }} />
-            </TouchableWithoutFeedback>
-            <View
-               style={
-                  {
-                     position: "absolute",
-                     bottom: 0,
-                     width: "100%",
-                     borderTopLeftRadius: 20,
-                     borderTopRightRadius: 20,
-                     padding: 20,
-                     backgroundColor: theme.colors.surface
+         <BottomSheetModal
+            visible={showThemeModal}
+            closeModal={() => setShowThemeModal(false)}
+            title={"Choose Theme"}
+         >
+            {["system", "light", "dark"].map((mode) => (
+               <IconList
+                  key={mode}
+                  keyName={mode}
+                  onPress={() => handleThemeSelect(mode)}
+                  leftIcon={
+                     mode === "system"
+                        ? "theme-light-dark"
+                        : mode === "light"
+                           ? "white-balance-sunny"
+                           : "weather-night"
                   }
-               }
-            >
-               <PageHeader title={"Choose Theme"} />
-               {["system", "light", "dark"].map((mode) => (
-                  <IconList
-                     key={mode}
-                     keyName={mode}
-                     onPress={() => handleThemeSelect(mode)}
-                     leftIcon={
-                           mode === "system"
-                              ? "theme-light-dark"
-                              : mode === "light"
-                                 ? "white-balance-sunny"
-                                 : "weather-night"
-                        }
-                     title={mode === "system"
-                           ? "System default"
-                           : mode.charAt(0).toUpperCase() + mode.slice(1)}
-                  />
-               ))}
-            </View>
-         </Modal>
+                  title={mode === "system"
+                     ? "System default"
+                     : mode.charAt(0).toUpperCase() + mode.slice(1)}
+               />
+            ))}
+         </BottomSheetModal>
       </>
    );
 }

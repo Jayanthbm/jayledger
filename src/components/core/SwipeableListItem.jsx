@@ -4,11 +4,12 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Button from './Button';
 import IconButton from './IconButton';
-import React from 'react';
+import React, { forwardRef } from 'react';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useTheme } from '../../context/ThemeContext';
 
-const SwipeableListItem = ({ leftActions = [], rightActions = [], children, style }) => {
+const SwipeableListItem = forwardRef(({ leftActions = [], rightActions = [], children, style }, ref) => {
+
    const { theme } = useTheme();
 
    const renderActions = (actions, isLeft = true) => {
@@ -70,10 +71,10 @@ const SwipeableListItem = ({ leftActions = [], rightActions = [], children, styl
         })}
         </View>
      );
-  };
-
+   };
    return (
       <Swipeable
+        ref={ref}
         renderLeftActions={() =>
            leftActions.length > 0 ? renderActions(leftActions, true) : null
         }
@@ -84,7 +85,7 @@ const SwipeableListItem = ({ leftActions = [], rightActions = [], children, styl
         {children}
      </Swipeable>
   );
-};
+});
 
 const styles = StyleSheet.create({
    actionsContainer: {
