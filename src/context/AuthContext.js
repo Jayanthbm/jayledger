@@ -13,52 +13,51 @@ export const AuthProvider = ({ children }) => {
 
    useEffect(() => {
       let isMounted = true;
-      let authSubscription;
+     let subscription;
 
-      const initSession = async () => {
-         try {
-            // 🔹 Get existing Supabase session
-            const { data, error } = await supabase.auth.getSession();
-            if (error) console.warn('Error getting session:', error.message);
+     const initSession = async () => {
+        try {
+       // 🟦 Get existing session
+       const { data, error } = await supabase.auth.getSession();
+       if (error) console.warn('Error getting session:', error.message);
 
-            if (data?.session && isMounted) {
-               setUser(data.session.user);
-               await AsyncStorage.setItem("user", JSON.stringify(data.session.user));
+       if (data?.session && isMounted) {
+          setUser(data.session.user);
+          await AsyncStorage.setItem("user", JSON.stringify(data.session.user));
+       } else {
+          await AsyncStorage.removeItem("user");
+       }
+
+       // 🟦 Listen for auth changes
+       const { data: listener } = supabase.auth.onAuthStateChange(
+          async (_event, session) => {
+             if (!isMounted) return;
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
+            if (currentUser) {
+               await AsyncStorage.setItem("user", JSON.stringify(currentUser));
             } else {
                await AsyncStorage.removeItem("user");
             }
-
-            // 🔹 Listen for auth changes (login/logout)
-            const { data: sub } = supabase.auth.onAuthStateChange(
-               async (_event, session) => {
-                  if (!isMounted) return;
-
-                  const currentUser = session?.user ?? null;
-                  setUser(currentUser);
-
-                  if (currentUser) {
-                     await AsyncStorage.setItem("user", JSON.stringify(currentUser));
-                  } else {
-                     await AsyncStorage.removeItem("user");
-                  }
-               }
-            );
-            authSubscription = sub;
-
-         } catch (err) {
-            console.warn("Auth initialization error:", err);
-         } finally {
-            if (isMounted) setLoading(false);
          }
-      };
+      );
 
-      initSession();
+       // ✅ assign the correct subscription object
+       subscription = listener.subscription;
+     } catch (err) {
+        console.warn("Auth initialization error:", err);
+     } finally {
+        if (isMounted) setLoading(false);
+     }
+  };
 
-      return () => {
-         isMounted = false;
-         authSubscription?.unsubscribe();
-      };
-   }, []);
+     initSession();
+
+     return () => {
+        isMounted = false;
+        subscription?.unsubscribe(); // ✅ Correct
+     };
+  }, []);
 
    // 🔹 Login
    const login = async (email, password) => {

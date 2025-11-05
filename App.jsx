@@ -1,18 +1,20 @@
+// App.jsx
+import React, { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { ThemeProvider, useTheme } from './src/context/ThemeContext';
-
-import { AuthProvider } from './src/context/AuthContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
-import React from 'react';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { AuthProvider } from './src/context/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
-import { StyleSheet } from 'react-native';
+import { initDatabase } from './src/database/db';
 import { navigationRef } from './src/navigation/NavigationRef';
 
 function AppContent() {
    const { theme } = useTheme();
    return (
-      <NavigationContainer ref={navigationRef}
+      <NavigationContainer
+         ref={navigationRef}
          theme={{
             dark: false,
             colors: {
@@ -31,30 +33,38 @@ function AppContent() {
             },
          }}
       >
-         <SafeAreaView style={[styles.container, {
-            backgroundColor: theme.colors.background,
-         }]} edges={['top', 'bottom']}>
+         <SafeAreaView
+            style={[styles.container, { backgroundColor: theme.colors.background }]}
+            edges={['top', 'bottom']}
+         >
             <RootNavigator />
          </SafeAreaView>
       </NavigationContainer>
    );
 }
+
 export default function App() {
+   useEffect(() => {
+      (async () => {
+         console.log('🧩 Initializing database...');
+         await initDatabase();
+         console.log('✅ Database ready');
+      })();
+   }, []);
+
    return (
-      <ThemeProvider>
-         <AuthProvider>
-            <SafeAreaProvider>
-               <GestureHandlerRootView style={styles.container}>
-               <AppContent />
-            </GestureHandlerRootView>
-            </SafeAreaProvider>
-         </AuthProvider>
-      </ThemeProvider>
+      <GestureHandlerRootView style={styles.container}>
+         <SafeAreaProvider>
+            <ThemeProvider>
+               <AuthProvider>
+                  <AppContent />
+               </AuthProvider>
+            </ThemeProvider>
+         </SafeAreaProvider>
+      </GestureHandlerRootView>
    );
 }
 
 const styles = StyleSheet.create({
-   container: {
-      flex: 1,
-   }
+   container: { flex: 1 },
 });

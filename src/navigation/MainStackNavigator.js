@@ -1,3 +1,5 @@
+// src/navigation/MainStackNavigator.js
+
 import AllCategories from '../screens/AllCategories'
 import AllPayees from '../screens/AllPayees';
 import BudgetsScreen from '../screens/BudgetsScreen';

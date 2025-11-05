@@ -1,3 +1,5 @@
+// src/navigation/MainTabs.js
+
 import { Animated, Dimensions, Platform, Pressable, StyleSheet, View } from "react-native";
 import React, { useEffect, useRef } from "react";
 import { useNavigation, useNavigationState } from "@react-navigation/native";

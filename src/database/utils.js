@@ -1,3 +1,5 @@
+// src/database/utils.js
+
 import { NITRO_SQLITE_NULL } from 'react-native-nitro-sqlite';
 
 export function toSqliteValue(val) {

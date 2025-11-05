@@ -1,3 +1,5 @@
+// src/navigation/RootNavigator.js
+
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { BackHandler, ToastAndroid, View } from 'react-native';
 import React, { useEffect, useState } from 'react';

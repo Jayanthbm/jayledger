@@ -1,11 +1,11 @@
 // src/screens/CategoriesScreen.js
 
-import { Alert, FlatList, ScrollView, View } from 'react-native';
+import { Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { deleteCategoryFromSupabase, pushUnsyncedCategories, syncCategories } from "../database/categories/categorySync";
 
 import AppBar from '../components/app/AppBar';
-import CategoryFormModal from "../components/app/CategoryFormModal";
+import BigList from "react-native-big-list";
 import { CategoryModel } from "../database/categories/categoryModel";
 import FABButton from "../components/app/FABButton";
 import IconButton from "../components/core/IconButton";
@@ -15,13 +15,15 @@ import PageHeader from '../components/app/PageHeader';
 import ReportListCard from '../components/app/ReportListCard';
 import SearchBar from '../components/app/SearchBar';
 import SwipeableListItem from '../components/core/SwipeableListItem';
+import Text from '../components/core/Text';
 import ViewModeToggle from '../components/app/ViewModeToggle';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import CategoryFormModal from '../components/app/CategoryFormModal';
 
 const CategoriesScreen = () => {
    const { user } = useAuth();
-   const { theme } = useTheme()
+   const { theme } = useTheme();
    const [loading, setLoading] = useState(true);
    const [categories, setCategories] = useState([]);
    const [searchQuery, setSearchQuery] = useState("");
@@ -117,6 +119,54 @@ const CategoriesScreen = () => {
       return matchesSearch;
    });
 
+   const renderItem = ({ item, index }) => (
+      <SwipeableListItem
+         key={index}
+         rightActions={[
+            {
+               label: "Edit",
+               buttonType: "iconButton",
+               iconName: "database-edit",
+               type: "primary",
+               color: theme.colors.income,
+               onPress: () => {
+                  setEditCategory(item);
+                  setModalVisible(true);
+               },
+            },
+            {
+               label: "Delete",
+               buttonType: "iconButton",
+               iconName: "delete",
+               type: "danger",
+               color: theme.colors.error,
+               onPress: () => handleDelete(item.id),
+            },
+         ]}
+      >
+         <ReportListCard
+            key={index}
+            title={item.name}
+            description={item.type}
+            icon={item.app_icon}
+            disabled
+            compact={viewMode === "grid"}
+         />
+      </SwipeableListItem>
+   );
+
+   const renderFooter = () => {
+      return (
+         <>
+            {loaded ? (<Text variant='caption' style={{
+               textAlign: 'center',
+               marginTop: 10
+            }}>
+               Total Categories: &nbsp;{filteredCategories?.length}
+            </Text>) : null}
+         </>
+      )
+   };
 
    return (
       <>
@@ -144,76 +194,30 @@ const CategoriesScreen = () => {
          <PageHeader title="Categories">
             <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
          </PageHeader>
-         {loaded && filteredCategories.length === 0 ? (
+         {loaded && filteredCategories.length === 0 && (
             <NoDataCard
                title="No category found"
                icon="text-search"
                actionLabel="Clear Search"
                onActionPress={() => setSearchQuery("")}
             />
-         ) : viewMode === "list" ? (<ScrollView
-            contentContainerStyle={{ paddingBottom: 80 }}
+         )}
+
+         <BigList
+            data={filteredCategories}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={(item, index) => renderItem(item, index, viewMode)}
+            itemHeight={80}
+            numColumns={viewMode === 'grid' ? 2 : 1}
+            contentContainerStyle={{ paddingTop: 2 }}
+            columnWrapperStyle={{
+               justifyContent: "space-between",
+               paddingHorizontal: 8,
+            }}
             showsVerticalScrollIndicator={false}
-         >
-            {filteredCategories.map((item, index) => (
-               <SwipeableListItem
-                  key={index}
-                  rightActions={[
-                     {
-                        label: "Edit",
-                        color: theme.colors.income,
-                        onPress: () => {
-                           setEditCategory(item);
-                           setModalVisible(true);
-                        },
-                     },
-                     {
-                        label: "Delete",
-                        color: theme.colors.error,
-                        onPress: () => handleDelete(item.id),
-                     },
-                  ]}
-                  style={{
-                     width: 80,
-                     height: 70
-                  }}
-               >
-                  <ReportListCard
-                     key={index}
-                     title={item.name}
-                     description={item.type}
-                     icon={item.app_icon}
-                     disabled={true}
-                  />
-               </SwipeableListItem>
-
-            ))}
-         </ScrollView>) : (
-            <FlatList
-               data={filteredCategories}
-               keyExtractor={(item, index) => index.toString()}
-               numColumns={2}
-               showsVerticalScrollIndicator={false}
-               columnWrapperStyle={{
-                  justifyContent: "space-between",
-                  paddingHorizontal: 8,
-               }}
-               contentContainerStyle={{ paddingBottom: 80, paddingTop: 4 }}
-               renderItem={({ item }) => (
-                  <View style={{ flex: 0.5, padding: 4 }}>
-                     <ReportListCard
-                        title={item.name}
-                        description={item.type}
-                        icon={item.app_icon}
-                        disabled={true}
-                        compact
-                     />
-                  </View>
-               )}
-            />
-         )
-
-         }
+            renderFooter={renderFooter}
+            footerHeight={100}
+         />
          <FABButton onPress={() => setModalVisible(true)} hidden={loading} />
 
          <CategoryFormModal
@@ -225,9 +229,8 @@ const CategoriesScreen = () => {
             onSubmit={handleAddEdit}
             initialData={editCategory}
          />
-
-
       </>
+
    );
 };
 
