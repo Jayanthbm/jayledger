@@ -38,6 +38,12 @@ export const lightColors = {
    errorContainer: "#F9DEDC",
    onErrorContainer: "#410E0B",
 
+   // ⚠️ Warning
+   warning: "#FFB300",
+   onWarning: "#FFFFFF",
+   warningContainer: "#FFF4E5",
+   onWarningContainer: "#8A6100",
+
    // Skeleton
    skeletonBackground: "#E0E0E0",
    skeletonShimmer: "#F5F5F5",
@@ -46,8 +52,8 @@ export const lightColors = {
    shadow: "#000000",
    inverseSurface: "#313033",
    inverseOnSurface: "#F4EFF4",
-   income: '#43a047',
-   expense: '#e53935'
+   income: "#43a047",
+   expense: "#e53935",
 };
 
 // Dark theme colors
@@ -89,7 +95,13 @@ export const darkColors = {
    errorContainer: "#8C1D18",
    onErrorContainer: "#F9DEDC",
 
-   // Skeleton (new 👇)
+   // ⚠️ Warning (darker tone)
+   warning: "#FFB74D",
+   onWarning: "#2C1900",
+   warningContainer: "#5C3A00",
+   onWarningContainer: "#FFDFA6",
+
+   // Skeleton
    skeletonBackground: "#2A2C30",
    skeletonShimmer: "#3A3C40",
 
@@ -98,6 +110,6 @@ export const darkColors = {
    shadow: "#000000",
    inverseSurface: "#E3E3E3",
    inverseOnSurface: "#121212",
-   income: '#66bb6a',
-   expense: '#ef5350'
+   income: "#66bb6a",
+   expense: "#ef5350",
 };

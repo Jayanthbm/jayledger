@@ -31,9 +31,9 @@ export default function Button({
          border: colors.primary,
       },
       warning: {
-         bg: "#FFF4E5",
-         onBg: "#8A6100",
-         border: "#FFB300",
+         bg: colors.warningContainer,
+         onBg: colors.onWarningContainer,
+         border: colors.warning,
       },
       danger: {
          bg: colors.errorContainer,
