@@ -1,3 +1,5 @@
+// src/components/core/SwipeableListItem.jsx
+
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import React from 'react';
@@ -23,6 +25,7 @@ const SwipeableListItem = ({
                   justifyContent: 'center',
                   alignItems: 'center',
                },
+               style
             ]}
             onPress={action.onPress}
          >
@@ -36,20 +39,12 @@ const SwipeableListItem = ({
          renderLeftActions={() => (leftActions.length > 0 ? <View style={styles.actionsContainer}>{renderActions(leftActions)}</View> : null)}
          renderRightActions={() => (rightActions.length > 0 ? <View style={styles.actionsContainer}>{renderActions(rightActions)}</View> : null)}
       >
-         <View style={[styles.itemContainer, {
-            backgroundColor: theme.colors.surface
-         }, style]}>
-            {children}
-         </View>
+         {children}
       </Swipeable>
    );
 };
 
 const styles = StyleSheet.create({
-   itemContainer: {
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-   },
    actionsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -59,6 +54,7 @@ const styles = StyleSheet.create({
       height: '100%',
       justifyContent: 'center',
       alignItems: 'center',
+      borderRadius: 16,
    },
 });
 

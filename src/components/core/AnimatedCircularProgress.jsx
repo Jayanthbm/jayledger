@@ -1,3 +1,5 @@
+// src/components/core/AnimatedCircularProgress.jsx
+
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import Svg, { Circle } from 'react-native-svg';

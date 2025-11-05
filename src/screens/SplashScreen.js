@@ -1,3 +1,5 @@
+// src/screens/SplashScreen.js
+
 import Animated, {
    FadeIn,
    FadeOut,

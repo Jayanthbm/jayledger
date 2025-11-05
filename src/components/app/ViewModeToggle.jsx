@@ -1,3 +1,5 @@
+// src/components/app/ViewModeToggle.jsx
+
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 import React, { useEffect, useRef } from "react";
 

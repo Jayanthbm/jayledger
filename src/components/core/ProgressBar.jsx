@@ -1,3 +1,5 @@
+// src/components/core/ProgressBar.jsx
+
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import React, { useEffect, useRef } from 'react';
 

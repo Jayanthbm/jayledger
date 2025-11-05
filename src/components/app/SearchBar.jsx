@@ -1,3 +1,5 @@
+// src/components/app/SearchBar.jsx
+
 import { Animated, TextInput, TouchableOpacity, View } from "react-native";
 import React, { useState } from "react";
 
@@ -10,6 +12,7 @@ const SearchBar = ({
    onChangeText,
    onClear,
    style,
+   disabled = false,
    ...props
 }) => {
    const { theme } = useTheme();
@@ -75,6 +78,7 @@ const SearchBar = ({
             onChangeText={onChangeText}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            readOnly={disabled}
             style={{
                flex: 1,
                color: textColor,

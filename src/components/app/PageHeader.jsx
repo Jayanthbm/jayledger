@@ -1,3 +1,5 @@
+// src/components/app/PageHeader.jsx
+
 import { StyleSheet, View } from "react-native";
 
 import PageTitle from "./PageTitle";

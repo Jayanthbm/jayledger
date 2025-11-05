@@ -1,3 +1,5 @@
+// src/screens/LoginScreen.js
+
 import {
    KeyboardAvoidingView,
    Platform,

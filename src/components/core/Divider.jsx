@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
+// src/components/core/Divider.jsx
 
 import React from 'react';
+import { View } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
 export default function Divider({

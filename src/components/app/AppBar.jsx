@@ -11,10 +11,12 @@ import { useTheme } from '../../context/ThemeContext';
 const ICON_SIZE = 30;
 const ICON_TOUCH = 40;
 
-const AppBar = ({ showBack = true,
+const AppBar = ({
+   showBack = true,
    loading = false,
    centerContent = null,
-   rightContent = null, }) => {
+   rightContent = null,
+}) => {
    const navigation = useNavigation();
    const { theme } = useTheme();
 
@@ -93,11 +95,12 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
+       marginRight: 8, // ✅ adds space before right icon
    },
    rightContainer: {
-      width: ICON_TOUCH,
-     justifyContent: "center",
-      alignItems: "flex-end",
+       justifyContent: "center",
+       alignItems: "flex-end",
+       minWidth: ICON_TOUCH, // ✅ flexible width, not fixed
    },
 });
 export default AppBar;

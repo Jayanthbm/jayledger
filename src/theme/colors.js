@@ -1,3 +1,5 @@
+//src/theme/colors.js
+
 // Light theme colors
 export const lightColors = {
    // Primary System

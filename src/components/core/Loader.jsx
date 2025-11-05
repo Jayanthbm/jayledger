@@ -1,3 +1,5 @@
+// src/components/core/Loader.jsx
+
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 
 import { M3eLoader } from "material-loader-react-native";

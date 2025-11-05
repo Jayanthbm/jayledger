@@ -1,3 +1,5 @@
+// src/components/core/Text.jsx
+
 import { Text as RNText, StyleSheet } from 'react-native';
 
 import React from 'react';

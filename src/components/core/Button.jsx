@@ -1,3 +1,5 @@
+// src/components/core/Button.jsx
+
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import Loader from "./Loader";

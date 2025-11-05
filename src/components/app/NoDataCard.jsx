@@ -1,3 +1,5 @@
+// src/components/app/NoDataCard.jsx
+
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';

@@ -1,3 +1,5 @@
+// src/components/core/MaterialSwitch.jsx
+
 import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 import React from "react";

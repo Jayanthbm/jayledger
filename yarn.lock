@@ -2146,6 +2146,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-community/netinfo@npm:^11.4.1":
+  version: 11.4.1
+  resolution: "@react-native-community/netinfo@npm:11.4.1"
+  peerDependencies:
+    react-native: ">=0.59"
+  checksum: d347ae522da6b8c045d6378754d4928bdf23cc85b74571b91fa8a03fa168bdac5e3c65eb97eac0dd0c7cbd20e782f99d41b090fb79ce7d815cbaf6fb5d1abe37
+  languageName: node
+  linkType: hard
+
 "@react-native-vector-icons/common@npm:^12.3.0, @react-native-vector-icons/common@npm:^12.3.1":
   version: 12.3.1
   resolution: "@react-native-vector-icons/common@npm:12.3.1"
@@ -6069,6 +6078,7 @@ __metadata:
     "@react-native-community/cli": 20.0.0
     "@react-native-community/cli-platform-android": 20.0.0
     "@react-native-community/cli-platform-ios": 20.0.0
+    "@react-native-community/netinfo": ^11.4.1
     "@react-native-vector-icons/common": ^12.3.1
     "@react-native-vector-icons/ionicons": ^12.3.0
     "@react-native-vector-icons/material-design-icons": ^12.4.0
@@ -6101,6 +6111,7 @@ __metadata:
     react-native-screens: ^4.18.0
     react-native-svg: ^15.14.0
     react-native-url-polyfill: ^3.0.0
+    react-native-uuid: ^2.0.3
     react-native-worklets: ^0.6.1
     react-test-renderer: 19.1.1
     typescript: ^5.8.3
@@ -8229,6 +8240,13 @@ __metadata:
   peerDependencies:
     react-native: "*"
   checksum: 3d6e02b8c32933bca588b70e86c1b2981cd2d9f4055f7ce5ba5f321596ffae5ce89fea41af8d13eca7b4f29daf685406354c761696e5a4bdfb5698468e54a527
+  languageName: node
+  linkType: hard
+
+"react-native-uuid@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "react-native-uuid@npm:2.0.3"
+  checksum: e47774481feaed5d38f75fb4b03f5189c03e7452038f1b0fa56677add8a8bdef64ec7ad5e83f9fa761d8788cac5c8e554ade07e82a2818145337df7c883e2124
   languageName: node
   linkType: hard
 

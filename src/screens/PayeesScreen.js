@@ -9,7 +9,7 @@ const PayeesScreen = ({ route }) => {
    return (
       <>
          <AppBar />
-         <PageHeader title='All Categories' />
+         <PageHeader title='All Payees' />
          <Divider />
       </>
    );
