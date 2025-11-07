@@ -6,13 +6,13 @@ import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const PayeesScreen = ({ route }) => {
-   return (
-      <>
-         <AppBar />
-         <PageHeader title='All Payees' />
-         <Divider />
-      </>
-   );
+  return (
+    <>
+      <AppBar />
+      <PageHeader title="All Payees" />
+      <Divider />
+    </>
+  );
 };
 
 export default PayeesScreen;

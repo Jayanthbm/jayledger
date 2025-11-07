@@ -4,13 +4,13 @@ import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const AllPayees = ({ route }) => {
-   return (
-      <>
-         <AppBar />
-         <PageHeader title="All Payees" />
-         <Divider />
-      </>
-   );
+  return (
+    <>
+      <AppBar />
+      <PageHeader title="All Payees" />
+      <Divider />
+    </>
+  );
 };
 
 export default AllPayees;

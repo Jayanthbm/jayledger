@@ -8,31 +8,29 @@ import PageHeader from '../components/app/PageHeader';
 import dayjs from 'dayjs';
 
 const MonthlySummary = ({ route }) => {
-   let pageTitle = route?.params?.title ? route.params.title : 'Monthly Summary';
-   const [incomeData, setIncomeData] = useState([]);
-   const [expenseData, setExpenseData] = useState([]);
+  let pageTitle = route?.params?.title ? route.params.title : 'Monthly Summary';
+  const [incomeData, setIncomeData] = useState([]);
+  const [expenseData, setExpenseData] = useState([]);
 
-   const [type, setType] = useState('expense');
+  const [type, setType] = useState('expense');
 
-   const [selectedYear, setSelectedYear] = useState(); // set current year as selected
-   const [selectedMonth, setSelectedMonth] = useState(); // set current month as selected
+  const [selectedYear, setSelectedYear] = useState(); // set current year as selected
+  const [selectedMonth, setSelectedMonth] = useState(); // set current month as selected
 
-   useEffect(() => {
-      async function calcualte() {
+  useEffect(() => {
+    async function calcualte() {}
 
-      }
-
-      if (selectedYear && selectedMonth) {
-         calcualte()
-      }
-   }, [selectedYear, selectedMonth])
-   return (
-      <>
-         <AppBar />
-         <PageHeader title={pageTitle} />
-         <Divider />
-      </>
-   );
+    if (selectedYear && selectedMonth) {
+      calcualte();
+    }
+  }, [selectedYear, selectedMonth]);
+  return (
+    <>
+      <AppBar />
+      <PageHeader title={pageTitle} />
+      <Divider />
+    </>
+  );
 };
 
 export default MonthlySummary;

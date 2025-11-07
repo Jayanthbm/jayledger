@@ -76,12 +76,12 @@ export default function RootNavigator() {
       style={{ flex: 1 }}
     >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!user ? (
-        <Stack.Screen name="Login" component={LoginScreen} />
-      ) : (
-        <Stack.Screen name="Main" component={MainLayout} />
-      )}
-    </Stack.Navigator>
+        {!user ? (
+          <Stack.Screen name="Login" component={LoginScreen} />
+        ) : (
+          <Stack.Screen name="Main" component={MainLayout} />
+        )}
+      </Stack.Navigator>
     </Animated.View>
   );
 }

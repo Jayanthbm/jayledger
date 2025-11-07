@@ -4,13 +4,13 @@ import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const TransactionsByCategory = ({ route }) => {
-   return (
-      <>
-         <AppBar />
-         <PageHeader title='Transactions By Category' />
-         <Divider />
-      </>
-   );
+  return (
+    <>
+      <AppBar />
+      <PageHeader title="Transactions By Category" />
+      <Divider />
+    </>
+  );
 };
 
 export default TransactionsByCategory;

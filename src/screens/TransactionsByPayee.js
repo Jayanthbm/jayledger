@@ -4,13 +4,13 @@ import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const TransactionsByPayee = ({ route }) => {
-   return (
-      <>
-         <AppBar />
-         <PageHeader title='Transactions By Payee' />
-         <Divider />
-      </>
-   );
+  return (
+    <>
+      <AppBar />
+      <PageHeader title="Transactions By Payee" />
+      <Divider />
+    </>
+  );
 };
 
 export default TransactionsByPayee;

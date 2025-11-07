@@ -1,41 +1,41 @@
-import { FlatList, Pressable, View } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
+import { FlatList, Pressable, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
 
-import AppBar from "../components/app/AppBar";
-import { CalendarList } from "react-native-calendars";
-import Divider from "../components/core/Divider";
-import Loader from "../components/core/Loader";
-import { MaterialDesignIcons } from "@react-native-vector-icons/material-design-icons";
-import PageHeader from "../components/app/PageHeader";
-import RowText from "../components/core/RowText";
-import dayjs from "dayjs";
+import AppBar from '../components/app/AppBar';
+import { CalendarList } from 'react-native-calendars';
+import Divider from '../components/core/Divider';
+import Loader from '../components/core/Loader';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import PageHeader from '../components/app/PageHeader';
+import RowText from '../components/core/RowText';
+import dayjs from 'dayjs';
 import { formatIndianNumber } from '../utils';
-import { useTheme } from "../context/ThemeContext";
+import { useTheme } from '../context/ThemeContext';
 
 const CalendarView = ({ route }) => {
   const { theme } = useTheme();
-  const [selected, setSelected] = useState(dayjs().format("YYYY-MM-DD"));
-  const [formattedDate, setFormattedDate] = useState(dayjs().format("DD MMM YYYY"));
+  const [selected, setSelected] = useState(dayjs().format('YYYY-MM-DD'));
+  const [formattedDate, setFormattedDate] = useState(dayjs().format('DD MMM YYYY'));
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const calendarRef = useRef(null);
 
-  const minDate = "2020-01-01";
-  const maxDate = dayjs().add(30, "day").format("YYYY-MM-DD");
+  const minDate = '2020-01-01';
+  const maxDate = dayjs().add(30, 'day').format('YYYY-MM-DD');
 
   // 🔹 Mock fetch data for selected date
   const fetchTransactions = (date) => {
     setLoading(true);
-    setFormattedDate(dayjs(date).format("DD MMM YYYY"));
+    setFormattedDate(dayjs(date).format('DD MMM YYYY'));
     let transactions = [
-      { id: 1, title: "Groceries", amount: 1200, type: 'expense' },
-      { id: 2, title: "Coffee", amount: 180, type: 'expense' },
-      { id: 3, title: "Transport", amount: 4000, type: 'expense' },
-      { id: 4, title: "Salary", amount: 2000, type: 'income' },
-    ]
+      { id: 1, title: 'Groceries', amount: 1200, type: 'expense' },
+      { id: 2, title: 'Coffee', amount: 180, type: 'expense' },
+      { id: 3, title: 'Transport', amount: 4000, type: 'expense' },
+      { id: 4, title: 'Salary', amount: 2000, type: 'income' },
+    ];
     let total = transactions.reduce((sum, t) => {
-      if (t.type === "income") {
+      if (t.type === 'income') {
         return sum + t.amount;
       } else {
         return sum - t.amount;
@@ -54,7 +54,7 @@ const CalendarView = ({ route }) => {
 
   // 🔹 Jump back to today’s date
   const handleTodayPress = () => {
-    const today = dayjs().format("YYYY-MM-DD");
+    const today = dayjs().format('YYYY-MM-DD');
     setSelected(today);
 
     // Scroll calendar back to today's month
@@ -72,18 +72,12 @@ const CalendarView = ({ route }) => {
             {
               padding: 8,
               borderRadius: 10,
-              backgroundColor: pressed
-                ? theme.colors.surfaceVariant
-                : theme.colors.surface,
+              backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.surface,
               elevation: 1,
             },
           ]}
         >
-          <MaterialDesignIcons
-            name="calendar-today"
-            color={theme.colors.onSurface}
-            size={25}
-          />
+          <MaterialDesignIcons name="calendar-today" color={theme.colors.onSurface} size={25} />
         </Pressable>
       </PageHeader>
 
@@ -91,9 +85,10 @@ const CalendarView = ({ route }) => {
         style={{
           marginTop: 10,
           marginBottom: 15,
-        }}>
+        }}
+      >
         <CalendarList
-          key={`calendar-${theme.mode === 'dark' ? "dark" : "light"}`}
+          key={`calendar-${theme.mode === 'dark' ? 'dark' : 'light'}`}
           ref={calendarRef}
           pastScrollRange={60}
           futureScrollRange={5}
@@ -127,12 +122,12 @@ const CalendarView = ({ route }) => {
             textDisabledColor: theme.colors.skeletonBackground,
             arrowColor: theme.colors.onSurfaceVariant,
             monthTextColor: theme.colors.onSurface,
-            textDayFontFamily: "System",
-            textMonthFontFamily: "System",
-            textDayHeaderFontFamily: "System",
+            textDayFontFamily: 'System',
+            textMonthFontFamily: 'System',
+            textDayHeaderFontFamily: 'System',
           }}
           style={{
-            marginHorizontal: "-5%",
+            marginHorizontal: '-5%',
             backgroundColor: theme.colors.surface,
           }}
         />
@@ -142,14 +137,14 @@ const CalendarView = ({ route }) => {
         left={formattedDate}
         leftStyle={{
           fontSize: 20,
-          fontWeight: "500",
+          fontWeight: '500',
           color: theme.colors.onSurfaceVariant,
         }}
         right={formatIndianNumber(totalAmount)}
         rightStyle={{
           fontSize: 20,
-          fontWeight: "900",
-          color: totalAmount > 0 ? theme.colors.income : theme.colors.expense
+          fontWeight: '900',
+          color: totalAmount > 0 ? theme.colors.income : theme.colors.expense,
         }}
       />
       <Divider />
@@ -165,7 +160,7 @@ const CalendarView = ({ route }) => {
               left={item.title}
               leftStyle={{ fontSize: 16 }}
               right={formatIndianNumber(item.amount)}
-              rightStyle={{ fontSize: 16, fontWeight: "500" }}
+              rightStyle={{ fontSize: 16, fontWeight: '500' }}
             />
           )}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}

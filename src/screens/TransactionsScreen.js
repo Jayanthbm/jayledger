@@ -10,46 +10,40 @@ import SearchBar from '../components/app/SearchBar';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 
 const TransactionsScreen = ({ route }) => {
+  const [searchQuery, setSearchQuery] = React.useState('');
 
-   const [searchQuery, setSearchQuery] = React.useState('');
-
-   return (
-      <>
-         <AppBar
-            centerContent={
-            <SearchBar
-               placeholder="Search transactions"
-               value={searchQuery}
-               onChangeText={setSearchQuery}
-               onClear={() => setSearchQuery("")}
+  return (
+    <>
+      <AppBar
+        centerContent={
+          <SearchBar
+            placeholder="Search transactions"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onClear={() => setSearchQuery('')}
+          />
+        }
+      ></AppBar>
+      <PageHeader title="Transactions" />
+      <View>
+        <TouchableHighlight>
+          <SwipeableListItem
+            rightActions={[
+              { label: 'Delete', color: '#F44336', onPress: () => console.log('Delete pressed') },
+              { label: 'Edit', color: '#FFC107', onPress: () => console.log('Edit pressed') },
+            ]}
+          >
+            <RowText
+              left="Bills"
+              leftSecondary="Tata Play"
+              right="200"
+              rightSecondary="26 oct 2025 10:18 PM"
             />
-         }
-         >
-
-         </AppBar>
-         <PageHeader title='Transactions' />
-         <View>
-            <TouchableHighlight>
-               <SwipeableListItem
-                  rightActions={[
-                     { label: 'Delete', color: '#F44336', onPress: () => console.log('Delete pressed') },
-                     { label: 'Edit', color: '#FFC107', onPress: () => console.log('Edit pressed') },
-                  ]}
-               >
-                  <RowText
-                     left="Bills"
-                     leftSecondary="Tata Play"
-                     right="200"
-                     rightSecondary="26 oct 2025 10:18 PM"
-
-                  />
-               </SwipeableListItem>
-            </TouchableHighlight>
-
-         </View>
-
-      </>
-   );
+          </SwipeableListItem>
+        </TouchableHighlight>
+      </View>
+    </>
+  );
 };
 
 export default TransactionsScreen;

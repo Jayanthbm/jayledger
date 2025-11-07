@@ -4,14 +4,14 @@ import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const YearlySummary = ({ route }) => {
-   let pageTitle = route?.params?.title ? route.params.title : 'Yearly Summary'
-   return (
-      <>
-         <AppBar />
-         <PageHeader title={pageTitle} />
-         <Divider />
-      </>
-   );
+  let pageTitle = route?.params?.title ? route.params.title : 'Yearly Summary';
+  return (
+    <>
+      <AppBar />
+      <PageHeader title={pageTitle} />
+      <Divider />
+    </>
+  );
 };
 
 export default YearlySummary;

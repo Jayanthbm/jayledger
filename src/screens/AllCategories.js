@@ -4,13 +4,13 @@ import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const AllCategories = ({ route }) => {
-   return (
-      <>
-         <AppBar />
-         <PageHeader title="All Categories" />
-         <Divider />
-      </>
-   );
+  return (
+    <>
+      <AppBar />
+      <PageHeader title="All Categories" />
+      <Divider />
+    </>
+  );
 };
 
 export default AllCategories;

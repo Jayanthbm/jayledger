@@ -4,13 +4,13 @@ import PageHeader from '../components/app/PageHeader';
 import React from 'react';
 
 const MonthlyLivingCosts = ({ route }) => {
-   return (
-      <>
-         <AppBar />
-         <PageHeader title="Monthly Living Costs" />
-         <Divider />
-      </>
-   );
+  return (
+    <>
+      <AppBar />
+      <PageHeader title="Monthly Living Costs" />
+      <Divider />
+    </>
+  );
 };
 
 export default MonthlyLivingCosts;
