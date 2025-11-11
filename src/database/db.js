@@ -48,6 +48,21 @@ export async function initDatabase() {
       ON categories (user_id, type);
     `);
 
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS payees (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        name TEXT NOT NULL,
+        logo text null,
+        synced BOOLEAN DEFAULT true,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await db.execute(`
+          CREATE INDEX IF NOT EXISTS idx_payees_user_name
+          ON payees (user_id, name);
+        `);
     console.log('✅ Database initialized successfully');
   } catch (e) {
     console.error('❌ Error initializing DB:', e);
@@ -59,8 +74,10 @@ export async function initDatabase() {
  */
 export const resetInitDb = async () => {
   try {
-    console.log('🗑️ Deleting existing database...');
-    await deleteDatabase({ name: 'jayledger.db' });
+    const db = getDB();
+    if (!db) return;
+    await db.delete();
+    console.log('Database deleted successfully!');
     dbInstance = null;
 
     console.log('♻️ Reinitializing fresh DB...');

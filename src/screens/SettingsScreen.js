@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import React, { useEffect, useState } from 'react';
 
@@ -14,6 +14,8 @@ import PageHeader from '../components/app/PageHeader';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import BottomSheetModal from '../components/app/BottomSheetModal';
+import Text from '../components/core/Text';
+import { resetInitDb } from '../database/db';
 
 export default function SettingsScreen({ navigation }) {
   const { logout, user } = useAuth();
@@ -22,6 +24,9 @@ export default function SettingsScreen({ navigation }) {
   const [themeMode, setThemeMode] = useState('system');
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [screenLock, setScreenLock] = useState(false);
+
+  const [showResyncModal, setShowResyncModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -44,12 +49,14 @@ export default function SettingsScreen({ navigation }) {
     await AsyncStorage.setItem('screenLock', JSON.stringify(newValue));
   };
 
-  const handleLogout = () =>
-    Alert.alert('Logout', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', onPress: logout, style: 'destructive' },
-    ]);
+  const closeLogoutModal = () => setShowLogoutModal(false);
 
+  const handleResync = async () => {
+    await resetInitDb();
+    setShowResyncModal(false);
+  };
+
+  const closeResyncModal = () => setShowResyncModal(false);
   return (
     <>
       <AppBar />
@@ -135,12 +142,12 @@ export default function SettingsScreen({ navigation }) {
           <Button
             title="Resync Data"
             iconName="cached"
-            onPress={() => Alert.alert('Coming soon')}
+            onPress={() => setShowResyncModal(true)}
             style={{ marginTop: 10 }}
           />
           <Button
             title="Logout"
-            onPress={handleLogout}
+            onPress={() => setShowLogoutModal(true)}
             style={{
               marginTop: 8,
             }}
@@ -193,6 +200,43 @@ export default function SettingsScreen({ navigation }) {
             }
           />
         ))}
+      </BottomSheetModal>
+
+      {/* 🔄 Resync Data Modal */}
+      <BottomSheetModal
+        visible={showResyncModal}
+        closeModal={closeResyncModal}
+        title={'Are you sure on resync data ?'}
+      >
+        <View style={{ marginTop: 5, marginBottom: 15 }}>
+          <Text variant="body" numberOfLines={4}>
+            Resyncing data will delete all the local data stored. Are you sure you want to continue?
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+          <Button title="Cancel" onPress={closeResyncModal} type="primary" />
+          <Button title="Resync" onPress={handleResync} type="danger" />
+        </View>
+      </BottomSheetModal>
+
+      {/* 🚪 Logout Modal */}
+      <BottomSheetModal
+        visible={showLogoutModal}
+        title={'Are you sure, you want to log out?'}
+        closeModal={closeLogoutModal}
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            gap: 12,
+            marginTop: 30,
+            marginBottom: 30,
+          }}
+        >
+          <Button title="Cancel" onPress={closeLogoutModal} type="primary" />
+          <Button title="Logout" onPress={logout} type="danger" />
+        </View>
       </BottomSheetModal>
     </>
   );

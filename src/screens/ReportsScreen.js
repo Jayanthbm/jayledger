@@ -6,7 +6,7 @@ import AppBar from '../components/app/AppBar';
 import NoDataCard from '../components/app/NoDataCard';
 import PageHeader from '../components/app/PageHeader';
 import React from 'react';
-import ReportListCard from '../components/app/ReportListCard';
+import ListCard from '../components/app/ListCard';
 import SearchBar from '../components/app/SearchBar';
 import ViewModeToggle from '../components/app/ViewModeToggle';
 import { useNavigation } from '@react-navigation/native';
@@ -108,7 +108,7 @@ const ReportsScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           {filteredReports.map((report, index) => (
-            <ReportListCard
+            <ListCard
               key={index}
               title={report.title}
               description={report.description}
@@ -134,7 +134,7 @@ const ReportsScreen = () => {
           contentContainerStyle={{ paddingBottom: 80, paddingTop: 4 }}
           renderItem={({ item }) => (
             <View style={{ flex: 0.5, padding: 4 }}>
-              <ReportListCard
+              <ListCard
                 title={item.title}
                 description={item.description}
                 icon={item.icon}

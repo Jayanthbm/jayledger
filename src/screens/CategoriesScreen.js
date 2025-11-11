@@ -1,6 +1,6 @@
 // src/screens/CategoriesScreen.js
 
-import { Alert, View, LayoutAnimation } from 'react-native';
+import { View, LayoutAnimation } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   deleteCategoryFromSupabase,
@@ -16,7 +16,7 @@ import IconButton from '../components/core/IconButton';
 import NetInfo from '@react-native-community/netinfo';
 import NoDataCard from '../components/app/NoDataCard';
 import PageHeader from '../components/app/PageHeader';
-import ReportListCard from '../components/app/ReportListCard';
+import ListCard from '../components/app/ListCard';
 import SearchBar from '../components/app/SearchBar';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import Text from '../components/core/Text';
@@ -33,7 +33,7 @@ const CategoriesScreen = () => {
   const navigation = useNavigation();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState([]);
+  const [data, setData] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('list');
 
@@ -45,17 +45,18 @@ const CategoriesScreen = () => {
   const [loaded, setLoaded] = useState(false);
   const listRef = useRef(null);
   const swipeRefs = useRef({});
+
+  const loadCategories = async () => {
+    const data = await CategoryModel.getAll(user.id);
+    setData(data);
+    setLoading(false);
+  };
+
   const reSyncCategories = async () => {
     setLoading(true);
     await pushUnsyncedCategories(user.id);
     await syncCategories(user.id);
     await loadCategories();
-    setLoading(false);
-  };
-
-  const loadCategories = async () => {
-    const data = await CategoryModel.getAll(user.id);
-    setCategories(data);
     setLoading(false);
   };
 
@@ -70,6 +71,9 @@ const CategoriesScreen = () => {
     try {
       const isOnline = (await NetInfo.fetch()).isConnected;
 
+      // Always delete locally first
+      CategoryModel.delete(id);
+
       // Delete remotely if online
       if (isOnline) {
         const success = await deleteCategoryFromSupabase(id, user.id);
@@ -80,8 +84,6 @@ const CategoriesScreen = () => {
         console.log('📴 Offline — skipped Supabase delete');
       }
 
-      // Always delete locally first
-      CategoryModel.delete(id);
       delete swipeRefs.current[id];
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       await loadCategories();
@@ -122,7 +124,7 @@ const CategoriesScreen = () => {
     setEditCategory(null);
   };
 
-  const filteredCategories = categories.filter((item) => {
+  const filteredCategories = data.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
@@ -169,7 +171,7 @@ const CategoriesScreen = () => {
           },
         ]}
       >
-        <ReportListCard
+        <ListCard
           key={index}
           title={item.name}
           description={item.type}
@@ -210,7 +212,7 @@ const CategoriesScreen = () => {
       <AppBar
         centerContent={
           <SearchBar
-            placeholder="Search categories"
+            placeholder="Search Categories"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onClear={() => setSearchQuery('')}

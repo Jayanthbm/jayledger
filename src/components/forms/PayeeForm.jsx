@@ -1,23 +1,23 @@
-// src/components/forms/CategoryForm.jsx
+// src/components/forms/PayeeForm.jsx
 
 import { KeyboardAvoidingView, StyleSheet, TextInput, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
 
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../core/Button';
-
-const CategoryForm = ({ onClose, onSubmit, initialData }) => {
+import TurboImage from 'react-native-turbo-image';
+const PayeeForm = ({ onClose, onSubmit, initialData }) => {
   const { theme } = useTheme();
   const [name, setName] = useState('');
-  const [type, setType] = useState('');
+  const [logo, setLogo] = useState('');
 
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
-      setType(initialData.type);
+      setLogo(initialData.logo);
     } else {
       setName('');
-      setType('');
+      setLogo('');
     }
   }, [initialData]);
 
@@ -26,23 +26,25 @@ const CategoryForm = ({ onClose, onSubmit, initialData }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.colors.surface }]}
     >
+      <View style={styles.logoContainer}>
+        <TurboImage source={{ uri: logo }} style={{ width: 60, height: 60, borderRadius: 50 }} />
+      </View>
       <View style={[styles.inputContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
         <TextInput
-          placeholder="Category Name"
+          placeholder="Payee Name"
           placeholderTextColor={theme.colors.onSurfaceVariant}
           style={[styles.input, { color: theme.colors.onSurface }]}
           value={name}
           onChangeText={setName}
         />
       </View>
-
       <View style={[styles.inputContainer, { backgroundColor: theme.colors.surfaceVariant }]}>
         <TextInput
-          placeholder="Type (income / expense)"
+          placeholder="Payee Logo URL"
           placeholderTextColor={theme.colors.onSurfaceVariant}
           style={[styles.input, { color: theme.colors.onSurface }]}
-          value={type}
-          onChangeText={setType}
+          value={logo}
+          onChangeText={setLogo}
         />
       </View>
 
@@ -51,9 +53,9 @@ const CategoryForm = ({ onClose, onSubmit, initialData }) => {
         <Button
           title="Save"
           onPress={() => {
-            onSubmit({ name, type });
+            onSubmit({ name, logo });
             setName('');
-            setType('');
+            setLogo('');
           }}
         />
       </View>
@@ -84,6 +86,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   btnRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
+  logoContainer: {
+    alignItems: 'center',
+    margin: 20,
+  },
 });
 
-export default CategoryForm;
+export default PayeeForm;

@@ -1,4 +1,4 @@
-// src/components/app/ReportListCard.jsx
+// src/components/app/ListCard.jsx.jsx
 
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
@@ -6,8 +6,17 @@ import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-
 import React from 'react';
 import Text from '../core/Text';
 import { useTheme } from '../../context/ThemeContext';
+import TurboImage from 'react-native-turbo-image';
 
-const ReportListCard = ({ icon, title, description, onPress, compact = false, keyname = '' }) => {
+const ListCard = ({
+  icon = null,
+  image = null,
+  title,
+  description = '',
+  onPress,
+  compact = false,
+  keyname = '',
+}) => {
   const { theme } = useTheme();
   const isAndroid = Platform.OS === 'android';
   return (
@@ -35,8 +44,23 @@ const ReportListCard = ({ icon, title, description, onPress, compact = false, ke
       ]}
     >
       <View style={styles.iconContainer}>
-        <MaterialDesignIcons name={icon} size={24} color={theme.colors.primary} />
+        {icon ? (
+          <MaterialDesignIcons name={icon} size={24} color={theme.colors.primary} />
+        ) : image ? (
+          <TurboImage
+            source={{ uri: image }}
+            style={{ width: 36, height: 36 }}
+            cachePolicy="urlCache"
+          />
+        ) : (
+          <MaterialDesignIcons
+            name={'text-box-multiple-outline'}
+            size={24}
+            color={theme.colors.primary}
+          />
+        )}
       </View>
+
       <View style={styles.textContainer}>
         <Text
           style={[styles.title, { color: theme.colors.onSurface, fontSize: compact ? 14 : 16 }]}
@@ -45,7 +69,7 @@ const ReportListCard = ({ icon, title, description, onPress, compact = false, ke
         >
           {title}
         </Text>
-        {!compact && description ? (
+        {!compact && description && description !== '' ? (
           <Text
             style={[styles.description, { color: theme.colors.onSurfaceVariant }]}
             numberOfLines={2}
@@ -93,4 +117,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReportListCard;
+export default ListCard;
