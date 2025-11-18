@@ -9,7 +9,6 @@ import {
 } from '../database/categories/categorySync';
 
 import AppBar from '../components/app/AppBar';
-import BigList from 'react-native-big-list';
 import { CategoryModel } from '../database/categories/categoryModel';
 import FABButton from '../components/app/FABButton';
 import IconButton from '../components/core/IconButton';
@@ -18,6 +17,7 @@ import NoDataCard from '../components/app/NoDataCard';
 import PageHeader from '../components/app/PageHeader';
 import ListCard from '../components/app/ListCard';
 import SearchBar from '../components/app/SearchBar';
+import ScrollToTopWrapper from '../components/app/ScrollToTopWrapper';
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import Text from '../components/core/Text';
 import ViewModeToggle from '../components/app/ViewModeToggle';
@@ -27,11 +27,14 @@ import BottomSheetModal from '../components/app/BottomSheetModal';
 import CategoryForm from '../components/forms/CategoryForm';
 import { useNavigation } from '@react-navigation/native';
 import Button from '../components/core/Button';
+import { FlashList } from '@shopify/flash-list';
+import { useScrollToTopSection } from '../hooks/useScrollToTopSection';
 
 const CategoriesScreen = () => {
   const { user } = useAuth();
   const navigation = useNavigation();
   const { theme } = useTheme();
+  const { listRef, toTop, handleScroll, animatedStyle } = useScrollToTopSection();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,13 +46,13 @@ const CategoriesScreen = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const [loaded, setLoaded] = useState(false);
-  const listRef = useRef(null);
   const swipeRefs = useRef({});
 
   const loadCategories = async () => {
     const data = await CategoryModel.getAll(user.id);
     setData(data);
     setLoading(false);
+    return data;
   };
 
   const reSyncCategories = async () => {
@@ -62,7 +65,10 @@ const CategoriesScreen = () => {
 
   useEffect(() => {
     (async () => {
-      await loadCategories();
+      const data = await loadCategories();
+      if (!data.length) {
+        await reSyncCategories();
+      }
       setLoaded(true);
     })();
   }, [user]);
@@ -131,79 +137,78 @@ const CategoriesScreen = () => {
 
   const renderItem = ({ item, index }) => {
     return (
-      <SwipeableListItem
-        ref={(ref) => {
-          swipeRefs.current[item.id] = ref;
+      <View
+        style={{
+          marginHorizontal: viewMode === 'grid' ? 2 : 0,
         }}
-        key={index}
-        rightActions={[
-          {
-            label: 'Edit',
-            buttonType: 'iconButton',
-            iconName: 'database-edit',
-            type: 'primary',
-            color: theme.colors.income,
-            onPress: () => {
-              if (swipeRefs.current[item.id]) {
-                requestAnimationFrame(() => {
-                  swipeRefs.current[item.id]?.close?.();
-                });
-              }
-              setEditCategory(item);
-              setModalVisible(true);
-            },
-          },
-          {
-            label: 'Delete',
-            buttonType: 'iconButton',
-            iconName: 'delete',
-            type: 'danger',
-            color: theme.colors.error,
-            onPress: () => {
-              if (swipeRefs.current[item.id]) {
-                requestAnimationFrame(() => {
-                  swipeRefs.current[item.id]?.close?.();
-                });
-              }
-              setDeleteItem(item);
-              setDeleteModal(true);
-            },
-          },
-        ]}
       >
-        <ListCard
-          key={index}
-          title={item.name}
-          description={item.type}
-          icon={item.app_icon}
-          onPress={() => {
-            navigation.navigate('Transactions', {
-              filter: {
-                categoryId: item.id,
-              },
-            });
+        <SwipeableListItem
+          ref={(ref) => {
+            swipeRefs.current[item.id] = ref;
           }}
-          compact={viewMode === 'grid'}
-        />
-      </SwipeableListItem>
+          rightActions={[
+            {
+              label: 'Edit',
+              buttonType: 'iconButton',
+              iconName: 'database-edit',
+              type: 'primary',
+              color: theme.colors.income,
+              onPress: () => {
+                if (swipeRefs.current[item.id]) {
+                  requestAnimationFrame(() => {
+                    swipeRefs.current[item.id]?.close?.();
+                  });
+                }
+                setEditCategory(item);
+                setModalVisible(true);
+              },
+            },
+            {
+              label: 'Delete',
+              buttonType: 'iconButton',
+              iconName: 'delete',
+              type: 'danger',
+              color: theme.colors.error,
+              onPress: () => {
+                if (swipeRefs.current[item.id]) {
+                  requestAnimationFrame(() => {
+                    swipeRefs.current[item.id]?.close?.();
+                  });
+                }
+                setDeleteItem(item);
+                setDeleteModal(true);
+              },
+            },
+          ]}
+        >
+          <ListCard
+            key={index}
+            title={item.name}
+            description={item.type}
+            icon={item.app_icon}
+            onPress={() => {
+              navigation.navigate('Transactions', {
+                filter: {
+                  categoryId: item.id,
+                },
+              });
+            }}
+            compact={viewMode === 'grid'}
+          />
+        </SwipeableListItem>
+      </View>
     );
   };
 
   const renderFooter = () => {
+    if (!loaded) return null;
+
     return (
-      <>
-        {loaded ? (
-          <Text
-            variant="caption"
-            style={{
-              textAlign: 'center',
-              marginTop: 10,
-            }}
-          >
-            Total Categories: &nbsp;{filteredCategories?.length}
-          </Text>
-        ) : null}
-      </>
+      <View style={{ paddingVertical: 16 }}>
+        <Text variant="caption" style={{ textAlign: 'center', opacity: 0.6 }}>
+          Total Categories: {filteredCategories.length}
+        </Text>
+      </View>
     );
   };
 
@@ -243,22 +248,27 @@ const CategoriesScreen = () => {
         />
       )}
 
-      <BigList
-        ref={listRef}
+      <FlashList
         data={filteredCategories}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={(item, index) => renderItem(item, index, viewMode)}
-        itemHeight={80}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item, index }) => renderItem({ item, index })}
         numColumns={viewMode === 'grid' ? 2 : 1}
-        contentContainerStyle={{ paddingTop: 2 }}
-        columnWrapperStyle={{
-          justifyContent: 'space-between',
-          paddingHorizontal: 8,
-        }}
+        ListFooterComponent={renderFooter}
         showsVerticalScrollIndicator={false}
-        renderFooter={renderFooter}
-        footerHeight={100}
+        estimatedItemSize={80}
+        removeClippedSubviews
+        overrideItemLayout={(layout, item, index) => {
+          layout.size = viewMode === 'grid' ? 140 : 80;
+        }}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          paddingTop: 2,
+        }}
+        ref={listRef}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
+
       <FABButton onPress={() => setModalVisible(true)} hidden={loading} />
 
       <BottomSheetModal
@@ -307,6 +317,8 @@ const CategoriesScreen = () => {
           />
         </View>
       </BottomSheetModal>
+
+      <ScrollToTopWrapper animatedStyle={animatedStyle} onPress={toTop} />
     </>
   );
 };

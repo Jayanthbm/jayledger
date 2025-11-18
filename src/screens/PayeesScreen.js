@@ -21,16 +21,19 @@ import FABButton from '../components/app/FABButton';
 import BottomSheetModal from '../components/app/BottomSheetModal';
 import { View, LayoutAnimation } from 'react-native';
 import Button from '../components/core/Button';
-import BigList from 'react-native-big-list';
 import ViewModeToggle from '../components/app/ViewModeToggle';
 import NoDataCard from '../components/app/NoDataCard';
 import NetInfo from '@react-native-community/netinfo';
 import PayeeForm from '../components/forms/PayeeForm';
+import ScrollToTopWrapper from '../components/app/ScrollToTopWrapper';
+import { useScrollToTopSection } from '../hooks/useScrollToTopSection';
+import { FlashList } from '@shopify/flash-list';
 
 const PayeesScreen = () => {
   const { user } = useAuth();
   const navigation = useNavigation();
   const { theme } = useTheme();
+  const { listRef, toTop, handleScroll, animatedStyle } = useScrollToTopSection();
   const [loading, setLoading] = useState(true);
 
   const [data, setData] = useState([]);
@@ -43,13 +46,13 @@ const PayeesScreen = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const [loaded, setLoaded] = useState(false);
-  const listRef = useRef(null);
   const swipeRefs = useRef({});
 
   const loadPayees = async () => {
     const data = await PayeeModel.getAll(user.id);
     setData(data);
     setLoading(false);
+    return data;
   };
 
   const reSyncPayees = async () => {
@@ -62,7 +65,10 @@ const PayeesScreen = () => {
 
   useEffect(() => {
     (async () => {
-      await loadPayees();
+      const data = await loadPayees();
+      if (!data.length) {
+        await reSyncPayees();
+      }
       setLoaded(true);
     })();
   }, [user]);
@@ -125,60 +131,66 @@ const PayeesScreen = () => {
 
   const renderItem = ({ item, index }) => {
     return (
-      <SwipeableListItem
-        ref={(ref) => {
-          swipeRefs.current[item.id] = ref;
+      <View
+        style={{
+          marginHorizontal: viewMode === 'grid' ? 2 : 0,
         }}
-        key={index}
-        rightActions={[
-          {
-            label: 'Edit',
-            buttonType: 'iconButton',
-            iconName: 'database-edit',
-            type: 'primary',
-            color: theme.colors.income,
-            onPress: () => {
-              if (swipeRefs.current[item.id]) {
-                requestAnimationFrame(() => {
-                  swipeRefs.current[item.id]?.close?.();
-                });
-              }
-              setEditPayee(item);
-              setModalVisible(true);
-            },
-          },
-          {
-            label: 'Delete',
-            buttonType: 'iconButton',
-            iconName: 'delete',
-            type: 'danger',
-            color: theme.colors.error,
-            onPress: () => {
-              if (swipeRefs.current[item.id]) {
-                requestAnimationFrame(() => {
-                  swipeRefs.current[item.id]?.close?.();
-                });
-              }
-              setDeleteItem(item);
-              setDeleteModal(true);
-            },
-          },
-        ]}
       >
-        <ListCard
-          key={index}
-          title={item.name}
-          image={item.logo.isNitroSQLiteNull ? null : item.logo}
-          onPress={() => {
-            navigation.navigate('Transactions', {
-              filter: {
-                payeeId: item.id,
-              },
-            });
+        <SwipeableListItem
+          ref={(ref) => {
+            swipeRefs.current[item.id] = ref;
           }}
-          compact={viewMode === 'grid'}
-        />
-      </SwipeableListItem>
+          key={index}
+          rightActions={[
+            {
+              label: 'Edit',
+              buttonType: 'iconButton',
+              iconName: 'database-edit',
+              type: 'primary',
+              color: theme.colors.income,
+              onPress: () => {
+                if (swipeRefs.current[item.id]) {
+                  requestAnimationFrame(() => {
+                    swipeRefs.current[item.id]?.close?.();
+                  });
+                }
+                setEditPayee(item);
+                setModalVisible(true);
+              },
+            },
+            {
+              label: 'Delete',
+              buttonType: 'iconButton',
+              iconName: 'delete',
+              type: 'danger',
+              color: theme.colors.error,
+              onPress: () => {
+                if (swipeRefs.current[item.id]) {
+                  requestAnimationFrame(() => {
+                    swipeRefs.current[item.id]?.close?.();
+                  });
+                }
+                setDeleteItem(item);
+                setDeleteModal(true);
+              },
+            },
+          ]}
+        >
+          <ListCard
+            key={index}
+            title={item.name}
+            image={item.logo.isNitroSQLiteNull ? null : item.logo}
+            onPress={() => {
+              navigation.navigate('Transactions', {
+                filter: {
+                  payeeId: item.id,
+                },
+              });
+            }}
+            compact={viewMode === 'grid'}
+          />
+        </SwipeableListItem>
+      </View>
     );
   };
 
@@ -234,21 +246,25 @@ const PayeesScreen = () => {
           onActionPress={() => setSearchQuery('')}
         />
       )}
-      <BigList
-        ref={listRef}
+      <FlashList
         data={filteredData}
         keyExtractor={(item, index) => index.toString()}
         renderItem={(item, index) => renderItem(item, index, viewMode)}
-        itemHeight={80}
         numColumns={viewMode === 'grid' ? 2 : 1}
-        contentContainerStyle={{ paddingTop: 2 }}
-        columnWrapperStyle={{
-          justifyContent: 'space-between',
-          paddingHorizontal: 8,
-        }}
+        ListFooterComponent={renderFooter}
         showsVerticalScrollIndicator={false}
-        renderFooter={renderFooter}
-        footerHeight={100}
+        estimatedItemSize={80}
+        removeClippedSubviews
+        overrideItemLayout={(layout, item, index) => {
+          layout.size = viewMode === 'grid' ? 140 : 80;
+        }}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          paddingTop: 2,
+        }}
+        ref={listRef}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
       <FABButton onPress={() => setModalVisible(true)} hidden={loading} />
       <BottomSheetModal
@@ -299,6 +315,8 @@ const PayeesScreen = () => {
           />
         </View>
       </BottomSheetModal>
+
+      <ScrollToTopWrapper animatedStyle={animatedStyle} onPress={toTop} />
     </>
   );
 };

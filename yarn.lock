@@ -1944,6 +1944,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@marceloterreiro/flash-calendar@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "@marceloterreiro/flash-calendar@npm:1.5.0"
+  dependencies:
+    mitt: ^3.0.1
+  peerDependencies:
+    "@shopify/flash-list": "*"
+    react: "*"
+    react-native: "*"
+  checksum: b81677c26dfa0a6586877019af7b4d2fdb798cd3453fc651164504958be3dc61d7ca6f8e463086594354fe380b0f3733be51449e70c85c002f0464f54a83af7c
+  languageName: node
+  linkType: hard
+
 "@nicolo-ribaudo/eslint-scope-5-internals@npm:5.1.1-v1":
   version: 5.1.1-v1
   resolution: "@nicolo-ribaudo/eslint-scope-5-internals@npm:5.1.1-v1"
@@ -2599,6 +2612,17 @@ __metadata:
   dependencies:
     nanoid: ^3.3.11
   checksum: 49f04894f7e8b8e2c16abb96bbc1a9775a02341bb00fb9c0d9ce97f8d82613c27570921f2b854f8fd1639c29309df05345aa734124d48bdbcb5a934055b8af12
+  languageName: node
+  linkType: hard
+
+"@shopify/flash-list@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@shopify/flash-list@npm:2.2.0"
+  peerDependencies:
+    "@babel/runtime": "*"
+    react: "*"
+    react-native: "*"
+  checksum: b837dd511ce0dcee9429b3f7a1adfe8b2ca487018964a4942711ff20825705646f33bfcd5d0615a7631d5bd4ebdb6c001c024f1aea18ca2bae31e098c0c61734
   languageName: node
   linkType: hard
 
@@ -6102,6 +6126,7 @@ __metadata:
     "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.25.3
     "@babel/runtime": ^7.25.0
+    "@marceloterreiro/flash-calendar": ^1.5.0
     "@react-native-async-storage/async-storage": ^2.2.0
     "@react-native-community/cli": 20.0.0
     "@react-native-community/cli-platform-android": 20.0.0
@@ -6116,6 +6141,7 @@ __metadata:
     "@react-native/typescript-config": 0.82.1
     "@react-navigation/native": 7.1.19
     "@react-navigation/native-stack": 7.6.2
+    "@shopify/flash-list": ^2.2.0
     "@supabase/supabase-js": 2.79.0
     "@types/jest": ^29.5.13
     "@types/react": ^19.1.1
@@ -6127,7 +6153,6 @@ __metadata:
     prettier: ^3.6.2
     react: 19.1.1
     react-native: 0.82.1
-    react-native-big-list: ^1.6.4
     react-native-calendars: ^1.1313.0
     react-native-dotenv: ^3.4.11
     react-native-gesture-handler: 2.29.1
@@ -7356,6 +7381,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mitt@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "mitt@npm:3.0.1"
+  checksum: b55a489ac9c2949ab166b7f060601d3b6d893a852515ae9eca4e11df01c013876df777ea109317622b5c1c60e8aae252558e33c8c94e14124db38f64a39614b1
+  languageName: node
+  linkType: hard
+
 "mkdirp@npm:^1.0.4":
   version: 1.0.4
   resolution: "mkdirp@npm:1.0.4"
@@ -8082,20 +8114,6 @@ __metadata:
   version: 19.2.0
   resolution: "react-is@npm:19.2.0"
   checksum: 9a23e1c2d0bbc13b383bc59a05f54e6eb95dd87e01aec8aa92a88618364b7b0ee8a5b057ad813cf61e2f7ae7d24503b624706acb609d07c54754e5ad2c522568
-  languageName: node
-  linkType: hard
-
-"react-native-big-list@npm:^1.6.4":
-  version: 1.6.4
-  resolution: "react-native-big-list@npm:1.6.4"
-  dependencies:
-    prop-types: ^15.8.1
-  peerDependencies:
-    "@types/react": "*"
-    "@types/react-native": "*"
-    react: "*"
-    react-native: "*"
-  checksum: a2cd5d54afa79f698d6169230f7627c5f192119be9eb86130a493e6f9678c004a70a10e719433b9171e7ae2687ce63225d03f3bca70444e0c11a32dd426b762d
   languageName: node
   linkType: hard
 
