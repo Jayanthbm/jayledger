@@ -15,15 +15,12 @@ const TransactionsScreen = ({ route }) => {
   return (
     <>
       <AppBar
-        centerContent={
-          <SearchBar
-            placeholder="Search transactions"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onClear={() => setSearchQuery('')}
-          />
-        }
-      ></AppBar>
+        title={null}
+        showSearch={true}
+        onSearch={setSearchQuery}
+        searchValue={searchQuery}
+        onSearchClear={() => setSearchQuery('')}
+      />
       <PageHeader title="Transactions" />
       <View>
         <TouchableHighlight>

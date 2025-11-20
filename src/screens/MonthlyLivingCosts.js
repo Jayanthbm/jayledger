@@ -6,7 +6,7 @@ import React from 'react';
 const MonthlyLivingCosts = ({ route }) => {
   return (
     <>
-      <AppBar />
+      <AppBar title="" />
       <PageHeader title="Monthly Living Costs" />
       <Divider />
     </>

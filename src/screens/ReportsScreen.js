@@ -81,14 +81,11 @@ const ReportsScreen = () => {
   return (
     <>
       <AppBar
-        centerContent={
-          <SearchBar
-            placeholder="Search reports"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onClear={() => setSearchQuery('')}
-          />
-        }
+        title={null}
+        showSearch={true}
+        onSearch={setSearchQuery}
+        searchValue={searchQuery}
+        onSearchClear={() => setSearchQuery('')}
       />
 
       <PageHeader title="Reports">

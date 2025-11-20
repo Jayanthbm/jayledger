@@ -26,7 +26,7 @@ const MonthlySummary = ({ route }) => {
   }, [selectedYear, selectedMonth]);
   return (
     <>
-      <AppBar />
+      <AppBar title="" />
       <PageHeader title={pageTitle} />
       <Divider />
     </>

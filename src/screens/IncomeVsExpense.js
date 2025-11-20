@@ -41,7 +41,7 @@ const IncomeVsExpense = ({ route }) => {
   ];
   return (
     <>
-      <AppBar />
+      <AppBar title="" />
       <PageHeader title="Income vs Expense" />
       <View>
         <Text variant="subtitle">Expense</Text>

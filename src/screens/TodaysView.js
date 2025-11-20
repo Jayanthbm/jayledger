@@ -9,7 +9,7 @@ export default function TodaysView({ route }) {
   const { data } = route.params;
   return (
     <>
-      <AppBar />
+      <AppBar title="" />
       <View>
         <DailyLimitCard
           limit={data?.limit}

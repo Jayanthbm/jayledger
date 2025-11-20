@@ -215,26 +215,18 @@ const CategoriesScreen = () => {
   return (
     <>
       <AppBar
-        centerContent={
-          <SearchBar
-            placeholder="Search Categories"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onClear={() => setSearchQuery('')}
-            disabled={!loaded || loading}
-          />
-        }
-        rightContent={
-          <IconButton
-            iconName="sync"
-            mode="filled"
-            size={25}
-            type="primary"
-            onPress={reSyncCategories}
-            disabled={!loaded || loading}
-          />
-        }
+        title={null}
+        showSearch={true}
+        onSearch={setSearchQuery}
+        searchValue={searchQuery}
+        onSearchClear={() => setSearchQuery('')}
         loading={loading}
+        icons={[
+          {
+            name: 'sync',
+            onPress: reSyncCategories,
+        }
+        ]}
       />
       <PageHeader title="Categories">
         <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />

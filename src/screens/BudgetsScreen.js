@@ -13,6 +13,7 @@ const BudgetsScreen = ({ route }) => {
   const [view, setView] = useState('list');
   const navigation = useNavigation();
   const [title, setTitle] = useState('Budgets');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const onBudgetClick = () => {
     setTitle('Shopping');
@@ -26,7 +27,12 @@ const BudgetsScreen = ({ route }) => {
 
   return (
     <>
-      <AppBar title={title} />
+      <AppBar
+        title={null}
+        showSearch={true}
+        onSearch={setSearchQuery}
+        searchValue={searchQuery}
+        onSearchClear={() => setSearchQuery('')} />
       <PageHeader title={title} />
       <View>
         {view === 'list' ? (

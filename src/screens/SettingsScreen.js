@@ -59,7 +59,7 @@ export default function SettingsScreen({ navigation }) {
   const closeResyncModal = () => setShowResyncModal(false);
   return (
     <>
-      <AppBar />
+      <AppBar title="Settings"/>
       <Animated.ScrollView
         entering={FadeIn.duration(300)}
         contentContainerStyle={{ paddingBottom: 100 }}

@@ -214,26 +214,18 @@ const PayeesScreen = () => {
   return (
     <>
       <AppBar
-        centerContent={
-          <SearchBar
-            placeholder="Search Payees"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onClear={() => setSearchQuery('')}
-            disabled={!loaded || loading}
-          />
-        }
-        rightContent={
-          <IconButton
-            iconName="sync"
-            mode="filled"
-            size={25}
-            type="primary"
-            onPress={reSyncPayees}
-            disabled={!loaded || loading}
-          />
-        }
+        title={null}
+        showSearch={true}
+        onSearch={setSearchQuery}
+        searchValue={searchQuery}
+        onSearchClear={() => setSearchQuery('')}
         loading={loading}
+        icons={[
+          {
+            name: 'sync',
+            onPress: reSyncPayees,
+          },
+        ]}
       />
       <PageHeader title="Payees">
         <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />

@@ -98,19 +98,7 @@ const OverviewScreen = () => {
 
   return (
     <>
-      <AppBar
-        showBack={false}
-        centerContent={
-          <Text
-            variant="headingMedium"
-            style={{
-              textAlign: 'center',
-            }}
-          >
-            JayLedger
-          </Text>
-        }
-      />
+      <AppBar title="JayLedger" showBack={false} />
       <ScrollView
         contentContainerStyle={{
           paddingBottom: 80,

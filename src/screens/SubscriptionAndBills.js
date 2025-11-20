@@ -12,7 +12,7 @@ const SubscriptionAndBills = ({ route }) => {
   const navigation = useNavigation();
   return (
     <>
-      <AppBar />
+      <AppBar title="" />
       <PageHeader title="Subscription And Bills" />
       <View>
         <Card

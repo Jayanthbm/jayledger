@@ -63,7 +63,7 @@ const CalendarView = ({ route }) => {
 
   return (
     <>
-      <AppBar />
+      <AppBar title="" />
 
       <PageHeader title="Calendar View">
         <Pressable

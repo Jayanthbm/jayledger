@@ -7,7 +7,7 @@ const YearlySummary = ({ route }) => {
   let pageTitle = route?.params?.title ? route.params.title : 'Yearly Summary';
   return (
     <>
-      <AppBar />
+      <AppBar title="" />
       <PageHeader title={pageTitle} />
       <Divider />
     </>
