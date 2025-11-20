@@ -198,6 +198,13 @@ export default function SettingsScreen({ navigation }) {
             title={
               mode === 'system' ? 'System default' : mode.charAt(0).toUpperCase() + mode.slice(1)
             }
+            rightContent={
+              <MaterialDesignIcons
+                name={mode === themeMode ? 'check-decagram' : 'circle-outline'}
+                size={24}
+                color={theme.colors.primary}
+              />
+            }
           />
         ))}
       </BottomSheetModal>
@@ -231,7 +238,7 @@ export default function SettingsScreen({ navigation }) {
             justifyContent: 'flex-end',
             gap: 12,
             marginTop: 30,
-            marginBottom: 30,
+            marginBottom: 10,
           }}
         >
           <Button title="Cancel" onPress={closeLogoutModal} type="primary" />
