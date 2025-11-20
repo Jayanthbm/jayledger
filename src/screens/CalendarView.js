@@ -1,8 +1,10 @@
+// src/screens/CalendarView.js
+
+import { Calendar, toDateId } from '@marceloterreiro/flash-calendar';
 import { FlatList, Pressable, View } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 
 import AppBar from '../components/app/AppBar';
-import { CalendarList } from 'react-native-calendars';
 import Divider from '../components/core/Divider';
 import Loader from '../components/core/Loader';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
@@ -14,11 +16,13 @@ import { useTheme } from '../context/ThemeContext';
 
 const CalendarView = ({ route }) => {
   const { theme } = useTheme();
-  const [selected, setSelected] = useState(dayjs().format('YYYY-MM-DD'));
+  const [selected, setSelected] = useState(toDateId(new Date()));
   const [formattedDate, setFormattedDate] = useState(dayjs().format('DD MMM YYYY'));
   const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
+
+  // Ref for the calendar list if needed for programmatic scrolling
   const calendarRef = useRef(null);
 
   const minDate = '2020-01-01';
@@ -54,11 +58,44 @@ const CalendarView = ({ route }) => {
 
   // 🔹 Jump back to today’s date
   const handleTodayPress = () => {
-    const today = dayjs().format('YYYY-MM-DD');
+    const now = new Date();
+    const today = toDateId(now);
     setSelected(today);
+    if (calendarRef.current) {
+      calendarRef.current.scrollToDate(now, { animated: true });
+    }
+  };
 
-    // Scroll calendar back to today's month
-    calendarRef.current?.scrollToMonth(today);
+  const calendarTheme = {
+    rowMonthHeader: {
+      color: theme.colors.onSurface,
+      fontWeight: '600',
+      fontSize: 16,
+    },
+    itemDay: {
+      base: () => ({
+        container: {
+          borderRadius: 20, // Round selection
+        },
+        content: {
+          color: theme.colors.onSurface,
+        },
+      }),
+      today: () => ({
+        content: {
+          color: theme.colors.primary,
+          fontWeight: '700',
+        },
+      }),
+      active: () => ({
+        container: {
+          backgroundColor: theme.colors.primary,
+        },
+        content: {
+          color: theme.colors.onPrimary,
+        },
+      }),
+    },
   };
 
   return (
@@ -83,53 +120,29 @@ const CalendarView = ({ route }) => {
 
       <View
         style={{
-          marginTop: 10,
-          marginBottom: 15,
+          height: 250,
+          marginTop: 2,
+          marginBottom: 2
         }}
       >
-        <CalendarList
-          key={`calendar-${theme.mode === 'dark' ? 'dark' : 'light'}`}
+        <Calendar.List
           ref={calendarRef}
-          pastScrollRange={60}
-          futureScrollRange={5}
-          scrollEnabled
-          showScrollIndicator={false}
-          current={selected}
-          horizontal
-          pagingEnabled
-          minDate={minDate}
-          maxDate={maxDate}
-          hideExtraDays
-          enableSwipeMonths
-          onDayPress={(day) => setSelected(day.dateString)}
-          hideArrows={false}
-          firstDay={1}
-          markedDates={{
-            [selected]: {
-              selected: true,
-              selectedColor: theme.colors.primary,
-              selectedTextColor: theme.colors.onPrimary,
+          calendarActiveDateRanges={[
+            {
+              startId: selected,
+              endId: selected,
             },
-          }}
-          theme={{
-            backgroundColor: theme.colors.surface,
-            calendarBackground: theme.colors.surface,
-            textSectionTitleColor: theme.colors.onSurfaceVariant,
-            selectedDayBackgroundColor: theme.colors.primary,
-            selectedDayTextColor: theme.colors.onPrimary,
-            todayTextColor: theme.colors.focus,
-            dayTextColor: theme.colors.onSurface,
-            textDisabledColor: theme.colors.skeletonBackground,
-            arrowColor: theme.colors.onSurfaceVariant,
-            monthTextColor: theme.colors.onSurface,
-            textDayFontFamily: 'System',
-            textMonthFontFamily: 'System',
-            textDayHeaderFontFamily: 'System',
-          }}
-          style={{
-            marginHorizontal: '-5%',
-            backgroundColor: theme.colors.surface,
-          }}
+          ]}
+          calendarInitialMonthId={selected}
+          calendarMinDateId={minDate}
+          calendarMaxDateId={maxDate}
+          onCalendarDayPress={setSelected}
+          theme={calendarTheme}
+          calendarDayHeight={30}
+          calendarRowHorizontalSpacing={0}
+          calendarRowVerticalSpacing={4}
+          calendarSpacing={10}
+          horizontal={false}
         />
       </View>
 
