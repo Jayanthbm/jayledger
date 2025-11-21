@@ -9,7 +9,7 @@ import { useTheme } from '../../context/ThemeContext';
 const SIZE = 48;
 const ICON_SIZE = 30;
 
-const ScrolltoTopIcon = ({ visible = true, onPress, align = 'center', bottom = 65 }) => {
+const ScrolltoTopIcon = ({ visible = true, onPress, align = 'center', bottom = 85 }) => {
   const { theme } = useTheme();
   const { width } = Dimensions.get('window');
 
