@@ -1,6 +1,7 @@
 // src/database/db.js
 
-import { deleteDatabase, open } from 'react-native-nitro-sqlite';
+import { open } from 'react-native-nitro-sqlite';
+import { CATEGORY_TABLE, CATEGORY_INDEX, PAYEE_TABLE, PAYEE_INDEX } from './queries';
 
 let dbInstance = null;
 
@@ -30,39 +31,10 @@ export async function initDatabase() {
   if (!db) return;
 
   try {
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS categories (
-        id TEXT PRIMARY KEY,
-        user_id TEXT,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        icon TEXT,
-        app_icon TEXT,
-        synced BOOLEAN DEFAULT true,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    await db.execute(`
-      CREATE INDEX IF NOT EXISTS idx_categories_user_type
-      ON categories (user_id, type);
-    `);
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS payees (
-        id TEXT PRIMARY KEY,
-        user_id TEXT,
-        name TEXT NOT NULL,
-        logo text null,
-        synced BOOLEAN DEFAULT true,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    await db.execute(`
-          CREATE INDEX IF NOT EXISTS idx_payees_user_name
-          ON payees (user_id, name);
-        `);
+    await db.execute(CATEGORY_TABLE);
+    await db.execute(CATEGORY_INDEX);
+    await db.execute(PAYEE_TABLE);
+    await db.execute(PAYEE_INDEX);
     console.log('✅ Database initialized successfully');
   } catch (e) {
     console.error('❌ Error initializing DB:', e);
