@@ -2,39 +2,37 @@
 
 import AppBar from '../components/app/AppBar';
 import PageHeader from '../components/app/PageHeader';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { PayeeModel } from '../database/payees/payeeModal';
-import {
-  deletePayeeFromSupabase,
-  pushUnsyncedPayees,
-  syncPayees,
-} from '../database/payees/payeeSync';
+
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import ListCard from '../components/app/ListCard';
 import Text from '../components/core/Text';
 import FABButton from '../components/app/FABButton';
 import BottomSheetModal from '../components/app/BottomSheetModal';
-import { View, LayoutAnimation } from 'react-native';
+import { View } from 'react-native';
 import Button from '../components/core/Button';
 import ViewModeToggle from '../components/app/ViewModeToggle';
 import NoDataCard from '../components/app/NoDataCard';
-import NetInfo from '@react-native-community/netinfo';
 import PayeeForm from '../components/forms/PayeeForm';
+
 import ScrollToTopWrapper from '../components/app/ScrollToTopWrapper';
 import { useScrollToTopSection } from '../hooks/useScrollToTopSection';
 import { FlashList } from '@shopify/flash-list';
+
+import { usePayees } from '../hooks/usePayees';
 
 const PayeesScreen = () => {
   const { user } = useAuth();
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const { listRef, toTop, handleScroll, animatedStyle } = useScrollToTopSection();
-  const [loading, setLoading] = useState(true);
 
-  const [data, setData] = useState([]);
+  const { listRef, toTop, handleScroll, animatedStyle } = useScrollToTopSection();
+
+  const { payees, loading, reSync, insertPayee, updatePayee, deletePayee } = usePayees(user.id);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('list');
 
@@ -43,211 +41,140 @@ const PayeesScreen = () => {
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
-  const [loaded, setLoaded] = useState(false);
+
   const swipeRefs = useRef({});
 
-  const loadPayees = async () => {
-    const data = await PayeeModel.getAll(user.id);
-    setData(data);
-    setLoading(false);
-    return data;
-  };
+  /** FILTERED DATA */
+  const filteredPayees = useMemo(() => {
+    return payees.filter((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [payees, searchQuery]);
 
-  const reSyncPayees = async () => {
-    setLoading(true);
-    await pushUnsyncedPayees(user.id);
-    await syncPayees(user.id);
-    await loadPayees();
-    setLoading(false);
-  };
+  /** EMPTY STATE LOGIC */
+  const isSearchActive = searchQuery.trim().length > 0;
+  const isEmpty = filteredPayees.length === 0;
 
-  useEffect(() => {
-    (async () => {
-      const data = await loadPayees();
-      if (!data.length) {
-        await reSyncPayees();
-      }
-      setLoaded(true);
-    })();
-  }, [user]);
-
-  const handleDelete = async (id) => {
-    try {
-      const isOnline = (await NetInfo.fetch()).isConnected;
-
-      // Always delete locally first
-      PayeeModel.delete(id);
-
-      // Delete remotely if online
-      if (isOnline) {
-        const success = await deletePayeeFromSupabase(id, user.id);
-        if (!success) {
-          console.warn('⚠️ Category deleted locally but not from Supabase');
-        }
-      } else {
-        console.log('📴 Offline — skipped Supabase delete');
-      }
-
-      delete swipeRefs.current[id];
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      await loadPayees();
-      listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    } catch (error) {
-      console.error('❌ Delete error:', error);
-    }
-  };
-
-  const closeDeleteModal = () => {
-    setDeleteItem(null);
-    setDeleteModal(false);
-  };
-
+  /** ADD / EDIT */
   const handleAddEdit = async ({ name, logo }) => {
     setModalVisible(false);
-    const isOnline = (await NetInfo.fetch()).isConnected;
 
     if (editPayee) {
-      PayeeModel.update(editPayee.id, name, logo, false);
-      if (isOnline) {
-        await pushUnsyncedPayees(user.id);
-      }
+      await updatePayee(editPayee, name, logo);
     } else {
-      PayeeModel.insert(user.id, name, logo, false);
-      if (isOnline) {
-        await pushUnsyncedPayees(user.id);
-      }
+      await insertPayee(name, logo);
     }
 
-    await loadPayees();
     setEditPayee(null);
   };
 
-  const filteredData = data.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  /** DELETE */
+  const handleDelete = async (id) => {
+    await deletePayee(id);
+  };
 
-  const renderItem = ({ item, index }) => {
-    return (
-      <View
-        style={{
-          marginHorizontal: viewMode === 'grid' ? 2 : 0,
-        }}
-      >
-        <SwipeableListItem
-          ref={(ref) => {
-            swipeRefs.current[item.id] = ref;
-          }}
-          key={index}
-          rightActions={[
-            {
-              label: 'Edit',
-              buttonType: 'iconButton',
-              iconName: 'database-edit',
-              type: 'primary',
-              color: theme.colors.income,
-              onPress: () => {
-                if (swipeRefs.current[item.id]) {
-                  requestAnimationFrame(() => {
-                    swipeRefs.current[item.id]?.close?.();
-                  });
-                }
-                setEditPayee(item);
-                setModalVisible(true);
-              },
-            },
-            {
-              label: 'Delete',
-              buttonType: 'iconButton',
-              iconName: 'delete',
-              type: 'danger',
-              color: theme.colors.error,
-              onPress: () => {
-                if (swipeRefs.current[item.id]) {
-                  requestAnimationFrame(() => {
-                    swipeRefs.current[item.id]?.close?.();
-                  });
-                }
-                setDeleteItem(item);
-                setDeleteModal(true);
-              },
-            },
-          ]}
-        >
-          <ListCard
-            key={index}
-            title={item.name}
-            image={item.logo.isNitroSQLiteNull ? null : item.logo}
-            onPress={() => {
-              navigation.navigate('Transactions', {
-                filter: {
-                  payeeId: item.id,
-                },
+  /** RENDER ITEM */
+  const renderItem = ({ item, index }) => (
+    <View
+      style={{
+        marginHorizontal: viewMode === 'grid' ? 4 : 0,
+      }}
+    >
+      <SwipeableListItem
+        ref={(ref) => (swipeRefs.current[item.id] = ref)}
+        rightActions={[
+          {
+            label: 'Edit',
+            buttonType: 'iconButton',
+            iconName: 'database-edit',
+            type: 'primary',
+            color: theme.colors.income,
+            onPress: () => {
+              requestAnimationFrame(() => {
+                swipeRefs.current[item.id]?.close?.();
               });
-            }}
-            compact={viewMode === 'grid'}
-          />
-        </SwipeableListItem>
-      </View>
-    );
-  };
+              setEditPayee(item);
+              setModalVisible(true);
+            },
+          },
+          {
+            label: 'Delete',
+            buttonType: 'iconButton',
+            iconName: 'delete',
+            type: 'danger',
+            color: theme.colors.error,
+            onPress: () => {
+              requestAnimationFrame(() => {
+                swipeRefs.current[item.id]?.close?.();
+              });
+              setDeleteItem(item);
+              setDeleteModal(true);
+            },
+          },
+        ]}
+      >
+        <ListCard
+          key={index}
+          title={item.name}
+          image={item.logo?.isNitroSQLiteNull ? null : item.logo}
+          onPress={() =>
+            navigation.navigate('Transactions', {
+              filter: { payeeId: item.id },
+            })
+          }
+          compact={viewMode === 'grid'}
+        />
+      </SwipeableListItem>
+    </View>
+  );
 
-  const renderFooter = () => {
-    return (
-      <>
-        {loaded ? (
-          <Text
-            variant="caption"
-            style={{
-              textAlign: 'center',
-              marginTop: 10,
-            }}
-          >
-            Total Payees: &nbsp;{filteredData?.length}
-          </Text>
-        ) : null}
-      </>
-    );
-  };
   return (
     <>
       <AppBar
         title={null}
-        showSearch={true}
+        showSearch
+        loading={loading}
         onSearch={setSearchQuery}
         searchValue={searchQuery}
         onSearchClear={() => setSearchQuery('')}
-        loading={loading}
-        icons={[
-          {
-            name: 'sync',
-            onPress: reSyncPayees,
-          },
-        ]}
+        icons={[{ name: 'sync', onPress: reSync }]}
       />
+
       <PageHeader title="Payees">
         <ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />
       </PageHeader>
-      {loaded && filteredData.length === 0 && (
+
+      {/* ⭐ FIXED EMPTY-STATE (no flicker) */}
+      {!loading && isEmpty && (
         <NoDataCard
-          title="No payees found"
+          title={isSearchActive ? 'No matching payees' : 'No payees found'}
           icon="text-search"
-          actionLabel="Clear Search"
-          onActionPress={() => setSearchQuery('')}
+          actionLabel={isSearchActive ? 'Clear Search' : 'Add Payee'}
+          onActionPress={() => {
+            if (isSearchActive) setSearchQuery('');
+            else setModalVisible(true);
+          }}
         />
       )}
+
+      {/* LIST */}
       <FlashList
-        data={filteredData}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={(item, index) => renderItem(item, index, viewMode)}
+        data={filteredPayees}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
         numColumns={viewMode === 'grid' ? 2 : 1}
-        ListFooterComponent={renderFooter}
-        showsVerticalScrollIndicator={false}
         estimatedItemSize={80}
         removeClippedSubviews
-        overrideItemLayout={(layout, item, index) => {
+        overrideItemLayout={(layout) => {
           layout.size = viewMode === 'grid' ? 140 : 80;
         }}
+        ListFooterComponent={
+          !loading ? (
+            <View style={{ paddingVertical: 12 }}>
+              <Text variant="caption" style={{ textAlign: 'center', opacity: 0.6 }}>
+                Total Payees: {filteredPayees.length}
+              </Text>
+            </View>
+          ) : null
+        }
         contentContainerStyle={{
           paddingBottom: 120,
           paddingTop: 2,
@@ -256,44 +183,49 @@ const PayeesScreen = () => {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       />
+
       <FABButton onPress={() => setModalVisible(true)} hidden={loading} />
+
+      {/* ADD / EDIT MODAL */}
       <BottomSheetModal
-        key={'edit-add-payee-sheet'}
         visible={modalVisible}
         closeModal={() => {
           setModalVisible(false);
           setEditPayee(null);
         }}
-        title={editPayee === null ? 'New Payee' : 'Edit Payee'}
+        title={editPayee ? 'Edit Payee' : 'New Payee'}
       >
         <PayeeForm
-          visible={modalVisible}
+          onSubmit={handleAddEdit}
+          initialData={editPayee}
           onClose={() => {
             setModalVisible(false);
             setEditPayee(null);
           }}
-          onSubmit={handleAddEdit}
-          initialData={editPayee}
         />
       </BottomSheetModal>
 
+      {/* DELETE MODAL */}
       <BottomSheetModal
-        key={'delete-payee-sheet'}
-        visible={!!(deleteItem && deleteModal)}
-        closeModal={closeDeleteModal}
+        visible={!!deleteItem && deleteModal}
+        closeModal={() => {
+          setDeleteModal(false);
+          setDeleteItem(null);
+        }}
       >
         <Text
+          variant="headingMedium"
           style={{
             marginTop: 5,
             marginBottom: 25,
             textAlign: 'center',
           }}
-          variant="headingMedium"
         >
-          {`Delete Payee ${deleteItem?.name} ?`}
+          Delete Payee {deleteItem?.name}?
         </Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 20 }}>
-          <Button title="Cancel" onPress={closeDeleteModal} type="warning" />
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
+          <Button title="Cancel" type="warning" onPress={() => setDeleteModal(false)} />
           <Button
             title="Delete"
             type="danger"
