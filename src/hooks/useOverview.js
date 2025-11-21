@@ -180,12 +180,11 @@ export function useOverview(userId) {
         });
 
       // Convert to array with names
-      const categoryData = Object.entries(categoryTotals).map(([id, amount]) => {
+      const categoryData = Object.entries(categoryTotals).map(([id, amount], index) => {
         const cat = categories.find((c) => c.id === id);
         return {
           name: cat?.name || 'Unknown',
           amount,
-          color: cat?.color || '#4285F4',
         };
       });
 
@@ -195,6 +194,8 @@ export function useOverview(userId) {
       // Take top 2
       const topTwo = categoryData.slice(0, 2);
 
+      topTwo[0].color = '#3b82f6';
+      topTwo[1].color = '#10b981';
       // Sum rest as "Others"
       const othersAmount = categoryData.slice(2).reduce((sum, c) => sum + c.amount, 0);
 
@@ -202,7 +203,7 @@ export function useOverview(userId) {
         topTwo.push({
           name: 'Other',
           amount: othersAmount,
-          color: '#34A853',
+          color: '#9ca3af',
         });
       }
 
@@ -250,7 +251,7 @@ export function useOverview(userId) {
     } catch (e) {
       console.log('calculateOverview error', e);
     }
-  }, [getAllTransactions, performSync, hasSyncedOnce]);
+  }, [getAllTransactions, performSync, hasSyncedOnce, categories, userId]);
 
   /** Run on mount */
   useEffect(() => {
