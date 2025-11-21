@@ -181,7 +181,7 @@ export function useOverview(userId) {
 
       // Convert to array with names
       const categoryData = Object.entries(categoryTotals).map(([id, amount]) => {
-        const cat = categories.find((c) => c.category_id === id);
+        const cat = categories.find((c) => c.id === id);
         return {
           name: cat?.name || 'Unknown',
           amount,
