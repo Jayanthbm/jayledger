@@ -10,11 +10,13 @@ import PayDayCard from '../components/Overview/PayDayCard';
 import PeriodSummaryCard from '../components/Overview/PeriodSummaryCard';
 import RemainingForPeriodCard from '../components/Overview/RemainingForPeriodCard';
 import { ScrollView } from 'react-native';
-import Text from '../components/core/Text';
 import TopCategoriesCard from '../components/Overview/TopCategoriesCard';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
+import { syncTransactions } from '../database/transactions/transactionSync';
 
 const OverviewScreen = () => {
+  const { user } = useAuth();
   const navigation = useNavigation();
   // State for Remaining for Period Card
   const [remainingLoading, setRemainingLoading] = useState(true);
@@ -47,6 +49,7 @@ const OverviewScreen = () => {
   // State for Net Worth
   const [netWorthLoading, setNetWorthLoading] = useState(true);
   const [netWorth, setNetWorth] = useState(0);
+
 
   useEffect(() => {
     async function calcualte() {
@@ -87,6 +90,7 @@ const OverviewScreen = () => {
         // Net Worth calculations
         setNetWorthLoading(false);
         setNetWorth(636861);
+
       } catch (error) {
         console.log('Error in calculation');
       } finally {
@@ -96,6 +100,12 @@ const OverviewScreen = () => {
     calcualte();
   }, []);
 
+  const reSync = async () => {
+    await syncTransactions(user.id);
+  }
+  useEffect(() => {
+
+  }, []);
   return (
     <>
       <AppBar title="JayLedger" showBack={false} />

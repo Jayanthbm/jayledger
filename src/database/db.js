@@ -1,7 +1,14 @@
 // src/database/db.js
 
 import { open } from 'react-native-nitro-sqlite';
-import { CATEGORY_TABLE, CATEGORY_INDEX, PAYEE_TABLE, PAYEE_INDEX } from './queries';
+import {
+  CATEGORY_TABLE,
+  CATEGORY_INDEX,
+  PAYEE_TABLE,
+  PAYEE_INDEX,
+  TRANSACTION_TABLE,
+  TRANSACTION_INDEX,
+} from './queries';
 
 let dbInstance = null;
 
@@ -35,6 +42,8 @@ export async function initDatabase() {
     await db.execute(CATEGORY_INDEX);
     await db.execute(PAYEE_TABLE);
     await db.execute(PAYEE_INDEX);
+    await db.execute(TRANSACTION_TABLE);
+    await db.execute(TRANSACTION_INDEX);
     console.log('✅ Database initialized successfully');
   } catch (e) {
     console.error('❌ Error initializing DB:', e);
@@ -48,12 +57,19 @@ export const resetInitDb = async () => {
   try {
     const db = getDB();
     if (!db) return;
+
+    console.log('🛑 Closing DB connection...');
+    await db.close();
+
+    console.log('🗑️ Deleting DB...');
     await db.delete();
-    console.log('Database deleted successfully!');
+
+    // Wipe old reference
     dbInstance = null;
 
-    console.log('♻️ Reinitializing fresh DB...');
+    console.log('🧱 Reinitializing schema...');
     await initDatabase();
+
     console.log('✅ Database reset complete');
   } catch (error) {
     console.error('❌ Error resetting DB:', error);

@@ -15,8 +15,6 @@ import {
 import SwipeableListItem from '../components/core/SwipeableListItem';
 import ListCard from '../components/app/ListCard';
 import Text from '../components/core/Text';
-import SearchBar from '../components/app/SearchBar';
-import IconButton from '../components/core/IconButton';
 import FABButton from '../components/app/FABButton';
 import BottomSheetModal from '../components/app/BottomSheetModal';
 import { View, LayoutAnimation } from 'react-native';
