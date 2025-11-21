@@ -46,7 +46,7 @@ export async function syncTransactions(userId, force = false) {
       baseQuery = baseQuery.gte('created_at', lastCreatedAt);
     }
 
-    const BATCH_SIZE = 500;
+    const BATCH_SIZE = 1000;
     let cursor = lastCreatedAt;
 
     while (true) {
