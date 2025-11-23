@@ -1,7 +1,7 @@
 // src/navigation/MainTabs.js
 
-import { Dimensions,Pressable, StyleSheet, View } from 'react-native';
 import React, { useEffect } from 'react';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,7 +9,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
-
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -36,7 +35,7 @@ const TABS = [
   { name: 'Settings', label: 'Settings', icon: 'cog-outline', activeIcon: 'cog' },
 ];
 
-const TAB_HEIGHT = 80; // Material 3 standard
+const TAB_HEIGHT = 80;
 const PILL_HEIGHT = 32;
 const PILL_WIDTH = 64;
 
@@ -49,21 +48,14 @@ function MainTabs() {
   const nestedState = mainRoute?.state;
   const currentRoute = nestedState?.routes?.[nestedState.index ?? 0]?.name ?? 'Overview';
 
-  let activeTab =
-    state?.routes[0]?.state?.routes[state?.routes[0]?.state?.routes?.length - 1].params?.activeTab;
-
-  let activeIndex = -1;
-  if (activeTab) {
-    activeIndex = TABS.findIndex((tab) => tab.name === activeTab);
-  } else {
-    activeIndex = TABS.findIndex((tab) => tab.name === currentRoute);
-  }
+  // Determine active index
+  let activeIndex = TABS.findIndex((tab) => tab.name === currentRoute);
   if (activeIndex === -1) activeIndex = 0;
 
   const screenWidth = Dimensions.get('window').width;
   const tabWidth = screenWidth / TABS.length;
 
-  // Shared value for the active index (0 to 4)
+  // Shared value for the active index
   const activeIndexAnim = useSharedValue(activeIndex);
 
   useEffect(() => {
@@ -117,11 +109,7 @@ function MainTabs() {
         return (
           <Pressable
             key={tab.name}
-            onPress={() =>
-              navigation.navigate('Main', {
-                screen: tab.name,
-              })
-            }
+            onPress={() => navigation.navigate('Main', { screen: tab.name })}
             style={styles.tab}
             android_ripple={{
               color: theme.colors.onSurfaceVariant + '11',
@@ -160,9 +148,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    elevation: 0,
-    borderTopWidth: 0, 
+    elevation: 8, // Add elevation for shadow
+    borderTopWidth: 0,
     alignItems: 'center',
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   tab: {
     flex: 1,
