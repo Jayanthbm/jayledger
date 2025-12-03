@@ -8,6 +8,5 @@ module.exports = {
         path: '.env',
       },
     ],
-    'react-native-worklets/plugin',
   ],
 };

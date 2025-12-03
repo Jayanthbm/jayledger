@@ -57,3 +57,22 @@ export const TRANSACTION_INDEX = `
       CREATE INDEX IF NOT EXISTS idx_transactions_filters
       ON transactions (category_id, payee_id);
     `;
+
+export const BUDGET_TABLE = `
+      CREATE TABLE IF NOT EXISTS budgets (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        interval TEXT DEFAULT 'Month',
+        start_date TIMESTAMP NOT NULL,
+        categoires TEXT NOT NULL, -- Comma-separated list of category IDs
+        synced BOOLEAN DEFAULT true,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+export const BUDGET_INDEX = `
+      CREATE INDEX IF NOT EXISTS idx_budgets_user_interval
+      ON budgets (user_id, interval);
+    `;

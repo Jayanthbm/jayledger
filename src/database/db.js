@@ -8,6 +8,8 @@ import {
   PAYEE_INDEX,
   TRANSACTION_TABLE,
   TRANSACTION_INDEX,
+  BUDGET_TABLE,
+  BUDGET_INDEX,
 } from './queries';
 
 let dbInstance = null;
@@ -44,6 +46,8 @@ export async function initDatabase() {
     await db.execute(PAYEE_INDEX);
     await db.execute(TRANSACTION_TABLE);
     await db.execute(TRANSACTION_INDEX);
+    await db.execute(BUDGET_TABLE);
+    await db.execute(BUDGET_INDEX);
     console.log('✅ Database initialized successfully');
   } catch (e) {
     console.error('❌ Error initializing DB:', e);
