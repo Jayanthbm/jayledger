@@ -26,6 +26,7 @@ export function useOverview(userId) {
     yearExpense: 0,
     prevYearExpense: 0,
     netWorth: 0,
+    recentTransactions: [],
   });
 
   /** Loading flags */
@@ -55,6 +56,7 @@ export function useOverview(userId) {
       yearExpense: 0,
       prevYearExpense: 0,
       netWorth: 0,
+      recentTransactions: [],
     });
 
     setLoading({
@@ -194,8 +196,8 @@ export function useOverview(userId) {
       // Take top 2
       const topTwo = categoryData.slice(0, 2);
 
-      topTwo[0].color = '#3b82f6';
-      topTwo[1].color = '#10b981';
+      if (topTwo[0]) topTwo[0].color = '#3b82f6';
+      if (topTwo[1]) topTwo[1].color = '#10b981';
       // Sum rest as "Others"
       const othersAmount = categoryData.slice(2).reduce((sum, c) => sum + c.amount, 0);
 
@@ -225,6 +227,7 @@ export function useOverview(userId) {
       setOverview({
         remaining,
         progressRemaining,
+        daysRemaining,
         dailyLimit,
         spentToday,
         topCategories,
@@ -237,6 +240,7 @@ export function useOverview(userId) {
         yearExpense,
         prevYearExpense,
         netWorth,
+        recentTransactions: transactions.slice(0, 5),
       });
 
       // mark all loading false:

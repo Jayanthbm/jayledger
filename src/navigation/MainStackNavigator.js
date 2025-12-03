@@ -2,26 +2,25 @@
 
 import AllCategories from '../screens/AllCategories';
 import AllPayees from '../screens/AllPayees';
-import BudgetsScreen from '../screens/BudgetsScreen';
 import CalendarView from '../screens/CalendarView';
 import CategoriesScreen from '../screens/CategoriesScreen';
 import IncomeVsExpense from '../screens/IncomeVsExpense';
 import MonthlyLivingCosts from '../screens/MonthlyLivingCosts';
 import MonthlySummary from '../screens/MonthlySummary';
-import OverviewScreen from '../screens/OverviewScreen';
 import PayeesScreen from '../screens/PayeesScreen';
 import React from 'react';
-import ReportsScreen from '../screens/ReportsScreen';
-import SettingsScreen from '../screens/SettingsScreen';
 import SubscriptionAndBills from '../screens/SubscriptionAndBills';
 import TodaysView from '../screens/TodaysView';
 import TransactionsByCategory from '../screens/TransactionsByCategory';
 import TransactionsByPayee from '../screens/TransactionsByPayee';
-import TransactionsScreen from '../screens/TransactionsScreen';
 import YearlySummary from '../screens/YearlySummary';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const Stack = createNativeStackNavigator();
+
+import MainTabNavigator from './MainTabNavigator';
+
+// ... imports
 
 export default function MainStackNavigator() {
   return (
@@ -31,12 +30,8 @@ export default function MainStackNavigator() {
         animation: 'fade',
       }}
     >
-      {/* Tabs */}
-      <Stack.Screen name="Overview" component={OverviewScreen} />
-      <Stack.Screen name="Transactions" component={TransactionsScreen} />
-      <Stack.Screen name="Budgets" component={BudgetsScreen} />
-      <Stack.Screen name="Reports" component={ReportsScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
+      {/* Main Tabs */}
+      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
 
       {/* Other navigable screens */}
       <Stack.Screen name="TodaysView" component={TodaysView} />

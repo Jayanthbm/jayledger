@@ -1,16 +1,12 @@
 // src/navigation/MainTabs.js
 
-import React, { useEffect } from 'react';
-import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
-  interpolate,
   useAnimatedStyle,
   useDerivedValue,
-  useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -53,11 +49,6 @@ function TabItem({ tab, isFocused, theme, onPress }) {
     };
   });
 
-  const iconStyle = useAnimatedStyle(() => {
-    return {
-      color: isFocused ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant,
-    };
-  });
 
   const labelStyle = useAnimatedStyle(() => {
     return {
@@ -69,11 +60,14 @@ function TabItem({ tab, isFocused, theme, onPress }) {
   return (
     <Pressable
       onPress={onPress}
-      style={styles.tab}
+      style={({ pressed }) => [
+        styles.tab,
+        pressed && Platform.OS !== 'android' && { backgroundColor: theme.colors.onSurfaceVariant + '1F' },
+      ]}
       android_ripple={{
-        color: theme.colors.onSurfaceVariant + '11',
+        color: theme.colors.onSurfaceVariant + '1F',
         borderless: true,
-        radius: 40,
+        foreground: true,
       }}
     >
       <View style={styles.iconContainer}>
@@ -99,26 +93,37 @@ function TabItem({ tab, isFocused, theme, onPress }) {
   );
 }
 
-function MainTabs() {
-  const navigation = useNavigation();
+function MainTabs({ state, descriptors, navigation }) {
   const { theme } = useTheme();
-
-  const state = useNavigationState((state) => state);
-  const mainRoute = state?.routes?.find((r) => r.name === 'Main');
-  const nestedState = mainRoute?.state;
-  const currentRoute = nestedState?.routes?.[nestedState.index ?? 0]?.name ?? 'Overview';
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
-      {TABS.map((tab) => {
-        const isFocused = currentRoute === tab.name;
+      {state.routes.map((route, index) => {
+        const isFocused = state.index === index;
+
+        // Map route name to tab config
+        const tab = TABS.find(t => t.name === route.name);
+        if (!tab) return null;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name, route.params);
+          }
+        };
+
         return (
           <TabItem
-            key={tab.name}
+            key={route.key}
             tab={tab}
             isFocused={isFocused}
             theme={theme}
-            onPress={() => navigation.navigate('Main', { screen: tab.name })}
+            onPress={onPress}
           />
         );
       })}
@@ -159,10 +164,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
-    position: 'relative', // Ensure pill is positioned relative to this container
+    position: 'relative',
   },
   pill: {
-    ...StyleSheet.absoluteFillObject, // Fill the icon container
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 16,
   },
   label: {

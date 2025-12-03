@@ -7,7 +7,6 @@ import React, { useEffect, useState } from 'react';
 import LoginScreen from '../screens/LoginScreen';
 import { MAINSTYLE } from '../styles/style';
 import MainStackNavigator from './MainStackNavigator';
-import MainTabs from './MainTabs';
 import SplashScreen from '../screens/SplashScreen';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { navigationRef } from './NavigationRef';
@@ -19,7 +18,6 @@ function MainLayout() {
   return (
     <View style={{ ...MAINSTYLE, flex: 1 }}>
       <MainStackNavigator />
-      <MainTabs />
     </View>
   );
 }

@@ -1,92 +1,111 @@
-import React from 'react';
-import { ScrollView } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, View, StyleSheet, RefreshControl } from 'react-native';
+
 import AppBar from '../components/app/AppBar';
-import PageHeader from '../components/app/PageHeader';
-import RemainingForPeriodCard from '../components/Overview/RemainingForPeriodCard';
-import DailyLimitCard from '../components/Overview/DailyLimitCard';
-import PayDayCard from '../components/Overview/PayDayCard';
-import PeriodSummaryCard from '../components/Overview/PeriodSummaryCard';
-import NetWorthCard from '../components/Overview/NetWorthCard';
-import TopCategoriesCard from '../components/Overview/TopCategoriesCard';
-import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+
+// Components
+import BalanceCard from '../components/Overview/BalanceCard';
+import DailyStatsCard from '../components/Overview/DailyStatsCard';
+import PeriodSummaryCard from '../components/Overview/PeriodSummaryCard';
+import RecentTransactionsList from '../components/Overview/RecentTransactionsList';
+
+// Hooks
 import { useOverview } from '../hooks/useOverview';
+import { useCategories } from '../hooks/useCategories';
+import { usePayees } from '../hooks/usePayees';
 
 const OverviewScreen = () => {
+  const { toggleTheme, theme } = useTheme();
   const { user } = useAuth();
-  const navigation = useNavigation();
 
-  const { overview, loading } = useOverview(user.id);
+  // Use custom hooks
+  const { overview, loading: overviewLoading, refresh: refreshOverview } = useOverview(user?.id);
+  const { categories } = useCategories(user?.id);
+  const { payees } = usePayees(user?.id);
+
+  // Create lookup maps for O(1) access
+  const categoryMap = useMemo(() => {
+    return (categories || []).reduce((acc, c) => ({ ...acc, [c.id]: c }), {});
+  }, [categories]);
+
+  const payeeMap = useMemo(() => {
+    return (payees || []).reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
+  }, [payees]);
 
   return (
-    <>
-      <AppBar title="JayLedger" showBack={false} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
-        <PageHeader title="Overview" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <AppBar
+        title="Overview"
+        showBack={false}
+        icons={[
+          {
+            name: 'theme-light-dark',
+            onPress: toggleTheme,
+          },
+        ]}
+      />
 
-        <RemainingForPeriodCard
-          loading={loading.remaining}
-          progress={overview.progressRemaining}
-          remaining={overview.remaining}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={overviewLoading.remaining} onRefresh={refreshOverview} />
+        }
+      >
+        {/* 1. Remaining Balance & Days Left */}
+        <BalanceCard
+          balance={overview.remaining}
+          daysLeft={overview.daysRemaining}
         />
 
-        <DailyLimitCard
-          loading={loading.dailyLimit}
-          limit={overview.dailyLimit}
+        {/* 2. Spent Today & Daily Limit */}
+        <DailyStatsCard
           spent={overview.spentToday}
-          remaining={overview.dailyLimit - overview.spentToday}
-          onPress={() =>
-            navigation.navigate('TodaysView', {
-              data: {
-                limit: overview.dailyLimit,
-                spent: overview.spentToday,
-                remaining: overview.dailyLimit - overview.spentToday,
-              },
-              activeTab: 'Overview',
-            })
-          }
+          limit={overview.dailyLimit}
         />
 
-        <PayDayCard
-          onPress={() => navigation.navigate('CalendarView', { activeTab: 'Overview' })}
-        />
-
-        <TopCategoriesCard loading={loading.topCategories} data={overview.topCategories} />
-
+        {/* 3. Current Month Income & Expense */}
         <PeriodSummaryCard
           period="month"
-          loading={loading.month}
           income={overview.monthIncome}
           expense={overview.monthExpense}
           previncome={overview.prevMonthIncome}
           prevexpense={overview.prevMonthExpense}
-          onPress={() =>
-            navigation.navigate('MonthlySummary', {
-              title: 'Summary For Month',
-              activeTab: 'Overview',
-            })
-          }
         />
 
+        {/* 4. Current Year Income & Expense */}
         <PeriodSummaryCard
           period="year"
-          loading={loading.year}
           income={overview.yearIncome}
           expense={overview.yearExpense}
           previncome={overview.prevYearIncome}
           prevexpense={overview.prevYearExpense}
-          onPress={() =>
-            navigation.navigate('YearlySummary', {
-              title: 'Summary For Year',
-              activeTab: 'Overview',
-            })
-          }
         />
 
-        <NetWorthCard loading={loading.netWorth} amount={overview.netWorth} />
+        {/* 5. Recent Transactions */}
+        <RecentTransactionsList
+          transactions={overview.recentTransactions}
+          categoryMap={categoryMap}
+          payeeMap={payeeMap}
+        />
+
+        {/* Spacer for Bottom Tabs */}
+        <View style={{ height: 100 }} />
       </ScrollView>
-    </>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    gap: 16,
+  },
+});
 
 export default OverviewScreen;

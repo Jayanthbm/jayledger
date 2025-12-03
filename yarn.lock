@@ -2534,6 +2534,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-navigation/bottom-tabs@npm:^7.8.6":
+  version: 7.8.6
+  resolution: "@react-navigation/bottom-tabs@npm:7.8.6"
+  dependencies:
+    "@react-navigation/elements": ^2.8.3
+    color: ^4.2.3
+    sf-symbols-typescript: ^2.1.0
+  peerDependencies:
+    "@react-navigation/native": ^7.1.21
+    react: ">= 18.2.0"
+    react-native: "*"
+    react-native-safe-area-context: ">= 4.0.0"
+    react-native-screens: ">= 4.0.0"
+  checksum: c4866fa2cd6c229aaa6e384915db985020e648f54833f050c43332f3669596c330140891037a893b561c08918666e108f8868e6dd14970775de8e7c6a9d73b71
+  languageName: node
+  linkType: hard
+
 "@react-navigation/core@npm:^7.13.2":
   version: 7.13.2
   resolution: "@react-navigation/core@npm:7.13.2"
@@ -6189,6 +6206,7 @@ __metadata:
     "@react-native/eslint-config": 0.82.1
     "@react-native/metro-config": 0.82.1
     "@react-native/typescript-config": 0.82.1
+    "@react-navigation/bottom-tabs": ^7.8.6
     "@react-navigation/native": ^7.1.21
     "@react-navigation/native-stack": ^7.6.4
     "@shopify/flash-list": ^2.2.0

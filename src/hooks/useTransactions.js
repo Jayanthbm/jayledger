@@ -26,7 +26,7 @@ export function useTransactions(userId) {
   }, [userId]);
 
   /** Push unsynced transactions */
-  const pushUnsyncedTransactions = useCallback(async () => {
+  const pushUnsynced = useCallback(async () => {
     try {
       await pushUnsyncedTransactions(userId);
     } catch (e) {
@@ -37,6 +37,6 @@ export function useTransactions(userId) {
   return {
     getAllTransactions,
     performSync,
-    pushUnsyncedTransactions,
+    pushUnsynced,
   };
 }
