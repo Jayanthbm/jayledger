@@ -18,6 +18,13 @@ export const lightColors = {
   secondaryContainer: '#D7E3F0',
   onSecondaryContainer: '#101C2B',
 
+  // Tertiary
+  tertiary: '#7C5260',
+  onTertiary: '#FFFFFF',
+  tertiaryContainer: '#FFD8E4',
+  onTertiaryContainer: '#31111D',
+
+  // Background & Surface
   background: '#EEEDF3',
   onBackground: '#1B1B1B',
   surface: '#F9F8FE',
@@ -67,6 +74,12 @@ export const darkColors = {
   // Accent / Focus
   focus: '#8AB4F8',
   outline: '#5F6368',
+
+  // Tertiary
+  tertiary: '#EFB8C8',
+  onTertiary: '#492532',
+  tertiaryContainer: '#633B48',
+  onTertiaryContainer: '#FFD8E4',
 
   // Background & Surface
   background: '#1D1F24',
