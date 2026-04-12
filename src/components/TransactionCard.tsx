@@ -52,84 +52,92 @@ export const TransactionCard = React.memo(({ transaction, onEdit, onDelete, onFi
     </View>
   );
 
-  return (
-    <Swipeable
-      ref={swipeableRef}
-      renderRightActions={renderRightActions}
-      friction={2}
-      rightThreshold={40}
-    >
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <View style={styles.mainRow}>
-          <TouchableOpacity 
-            style={[styles.iconContainer, { backgroundColor: colors.background }]}
-            onPress={() => onFilterCategory?.(transaction.category_id!)}
-            activeOpacity={0.7}
-          >
-            <Icon 
-              name={(transaction.category_app_icon || 'receipt') as any} 
-              size={24} 
-              color={isIncome ? colors.success : colors.primary} 
-            />
-          </TouchableOpacity>
+  const cardContent = (
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <View style={styles.mainRow}>
+        <TouchableOpacity 
+          style={[styles.iconContainer, { backgroundColor: colors.background }]}
+          onPress={() => onFilterCategory?.(transaction.category_id!)}
+          activeOpacity={0.7}
+        >
+          <Icon 
+            name={(transaction.category_app_icon || 'receipt') as any} 
+            size={24} 
+            color={isIncome ? colors.success : colors.primary} 
+          />
+        </TouchableOpacity>
 
-          <View style={styles.middleSection}>
-            <Text style={[styles.categoryName, { color: colors.text }]}>
-              {transaction.category_name}
+        <View style={styles.middleSection}>
+          <Text style={[styles.categoryName, { color: colors.text }]}>
+            {transaction.category_name}
+          </Text>
+          
+          {transaction.description && (
+            <Text 
+              style={[styles.description, { color: colors.textSecondary }]} 
+              numberOfLines={2} 
+              ellipsizeMode="tail"
+            >
+              {transaction.description}
             </Text>
-            
-            {transaction.description && (
-              <Text 
-                style={[styles.description, { color: colors.textSecondary }]} 
-                numberOfLines={2} 
-                ellipsizeMode="tail"
-              >
-                {transaction.description}
+          )}
+
+          {transaction.payee_name && (
+            <TouchableOpacity 
+              style={styles.payeeRow}
+              onPress={() => onFilterPayee?.(transaction.payee_id)}
+              activeOpacity={0.6}
+            >
+              {transaction.payee_logo ? (
+                <Image source={{ uri: transaction.payee_logo }} style={styles.payeeLogo} />
+              ) : (
+                <View style={[styles.payeeLogoPlaceholder, { backgroundColor: colors.border }]}>
+                  <Icon name="person" size={10} color={colors.textSecondary} />
+                </View>
+              )}
+              <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
+                {transaction.payee_name}
               </Text>
-            )}
+            </TouchableOpacity>
+          )}
 
-            {transaction.payee_name && (
-              <TouchableOpacity 
-                style={styles.payeeRow}
-                onPress={() => onFilterPayee?.(transaction.payee_id)}
-                activeOpacity={0.6}
-              >
-                {transaction.payee_logo ? (
-                  <Image source={{ uri: transaction.payee_logo }} style={styles.payeeLogo} />
-                ) : (
-                  <View style={[styles.payeeLogoPlaceholder, { backgroundColor: colors.border }]}>
-                    <Icon name="person" size={10} color={colors.textSecondary} />
-                  </View>
-                )}
-                <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
-                  {transaction.payee_name}
-                </Text>
-              </TouchableOpacity>
-            )}
+          <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
+            {format(new Date(transaction.transaction_timestamp), 'PPp')}
+          </Text>
+        </View>
 
-            <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
-              {format(new Date(transaction.transaction_timestamp), 'PPp')}
-            </Text>
-          </View>
-
-          <View style={styles.rightSection}>
-            <Text style={[styles.amount, { color: isIncome ? colors.success : colors.danger }]}>
-              {isIncome ? '+' : '-'} ₹{transaction.amount.toLocaleString()}
-            </Text>
-            
-            {transaction.product_link && (
-              <TouchableOpacity onPress={handleLinkPress} style={styles.linkButton}>
-                <Icon name="link" size={14} color={colors.primary} />
-                <Text style={[styles.linkText, { color: colors.primary }]}>
-                  View
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        <View style={styles.rightSection}>
+          <Text style={[styles.amount, { color: isIncome ? colors.success : colors.danger }]}>
+            {isIncome ? '+' : '-'} ₹{transaction.amount.toLocaleString()}
+          </Text>
+          
+          {transaction.product_link && (
+            <TouchableOpacity onPress={handleLinkPress} style={styles.linkButton}>
+              <Icon name="link" size={14} color={colors.primary} />
+              <Text style={[styles.linkText, { color: colors.primary }]}>
+                View
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-    </Swipeable>
+    </View>
   );
+
+  if (onEdit || onDelete) {
+    return (
+      <Swipeable
+        ref={swipeableRef}
+        renderRightActions={renderRightActions}
+        friction={2}
+        rightThreshold={40}
+      >
+        {cardContent}
+      </Swipeable>
+    );
+  }
+
+  return cardContent;
 });
 
 const styles = StyleSheet.create({

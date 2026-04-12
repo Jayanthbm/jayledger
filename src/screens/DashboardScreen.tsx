@@ -237,7 +237,7 @@ export default function DashboardScreen() {
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeader}>
           <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
-          <View style={{ marginLeft: 8 }}>
+          <View>
             <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS MONTH</Text>
             <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'MMMM')}</Text>
           </View>
@@ -277,7 +277,7 @@ export default function DashboardScreen() {
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeader}>
           <MaterialIcons name="pie-chart" size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.textSecondary, marginLeft: 8 }]}>TOP CATEGORIES</Text>
+          <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>TOP CATEGORIES</Text>
         </View>
         {metrics.topCategories.length > 0 ? metrics.topCategories.map((cat, idx) => (
           <View key={cat.category_name} style={styles.catRow}>
@@ -301,7 +301,7 @@ export default function DashboardScreen() {
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeader}>
           <MaterialIcons name="event-note" size={20} color={colors.primary} />
-          <View style={{ marginLeft: 8 }}>
+          <View>
             <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS YEAR</Text>
             <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'yyyy')}</Text>
           </View>
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }
   },
   card: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 12 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
   cardTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   cardSub: { fontSize: 10, fontWeight: '600', marginTop: 2 },
   mainAmount: { fontSize: 36, fontWeight: '800', marginBottom: 16 },
