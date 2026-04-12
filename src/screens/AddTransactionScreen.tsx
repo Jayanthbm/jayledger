@@ -94,8 +94,18 @@ export default function AddTransactionScreen() {
     };
     loadData();
   }, [session?.user?.id, editTx]);
-
-
+  useEffect(() => {
+    // Apply default categories when type changes (only for new transactions)
+    if (!editTx && categories.length > 0) {
+      if (type === 'Income') {
+        const salCat = categories.find(c => c.name.toLowerCase() === 'salary');
+        if (salCat) setSelectedCategory(salCat);
+      } else {
+        const genCat = categories.find(c => c.name.toLowerCase() === 'general');
+        if (genCat) setSelectedCategory(genCat);
+      }
+    }
+  }, [type, editTx, categories]);
 
   const handleSave = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -147,31 +157,37 @@ export default function AddTransactionScreen() {
 
   const renderModal = (modalType: 'Category' | 'Payee') => {
     const rawData = modalType === 'Category' ? categories.filter(c => c.type === type) : payees;
-    const filteredData = rawData.filter(item => 
+    
+    // Add "None" option for Payees
+    const displayData = modalType === 'Payee' 
+        ? [{ id: 'none', name: 'None' }, ...rawData] as (Category | Payee)[]
+        : rawData;
+
+    const filteredData = displayData.filter(item => 
       item.name.toLowerCase().includes(modalSearch.toLowerCase())
     );
-    const iconColor = type === 'Income' ? '#10b981' : '#ef4444';
-    const iconBg = type === 'Income' ? '#10b98115' : '#ef444415';
+    const iconColor = type === 'Income' ? colors.success : colors.danger;
+    const iconBg = type === 'Income' ? colors.success + '15' : colors.danger + '15';
 
     return (
       <Modal visible={showModal === modalType} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: '#18181b' }]}>
-                <View style={styles.modalHeader}>
-                    <TouchableOpacity onPress={() => setShowModal(null)} style={[styles.pillIconBg, { backgroundColor: '#2a2a2a' }]}>
-                        <Icon name="close" size={20} color="white" />
+            <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                    <TouchableOpacity onPress={() => setShowModal(null)} style={[styles.pillIconBg, { backgroundColor: colors.background }]}>
+                        <Icon name="close" size={20} color={colors.text} />
                     </TouchableOpacity>
-                    <Text style={[styles.modalTitle, { color: 'white' }]}>Select {modalType}</Text>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>Select {modalType}</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
                 {/* Search Bar */}
-                <View style={styles.searchContainer}>
-                    <Icon name="search" size={20} color="#666" />
+                <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
+                    <Icon name="search" size={20} color={colors.textSecondary} />
                     <TextInput 
-                      style={styles.searchInput}
+                      style={[styles.searchInput, { color: colors.text }]}
                       placeholder={`Search ${modalType.toLowerCase()}...`}
-                      placeholderTextColor="#444"
+                      placeholderTextColor={colors.textSecondary + '70'}
                       value={modalSearch}
                       onChangeText={setModalSearch}
                     />
@@ -189,19 +205,25 @@ export default function AddTransactionScreen() {
                             <TouchableOpacity 
                                 style={styles.gridItem}
                                 onPress={() => {
-                                    if (modalType === 'Category') setSelectedCategory(item as Category);
-                                    else setSelectedPayee(item as Payee);
+                                    if (modalType === 'Category') {
+                                        setSelectedCategory(item as Category);
+                                    } else {
+                                        setSelectedPayee(item.id === 'none' ? null : item as Payee);
+                                    }
                                     setShowModal(null);
                                 }}
                             >
-                                <View style={[styles.gridIconBox, { backgroundColor: isSelected ? iconColor : iconBg, borderColor: isSelected ? iconColor : '#333' }]}>
+                                <View style={[styles.gridIconBox, { 
+                                    backgroundColor: isSelected ? iconColor : iconBg, 
+                                    borderColor: isSelected ? iconColor : colors.border 
+                                }]}>
                                     <Icon 
                                       name={formatIconName((item as any).app_icon || (modalType === 'Category' ? 'category' : 'person')) as any} 
                                       size={24} 
                                       color={isSelected ? 'white' : iconColor} 
                                     />
                                 </View>
-                                <Text style={[styles.gridLabel, { color: isSelected ? 'white' : '#888' }]} numberOfLines={1}>{item.name}</Text>
+                                <Text style={[styles.gridLabel, { color: isSelected ? colors.primary : colors.textSecondary }]} numberOfLines={1}>{item.name}</Text>
                             </TouchableOpacity>
                         );
                     }}
@@ -217,60 +239,61 @@ export default function AddTransactionScreen() {
     );
   };
 
-  const currentIconColor = type === 'Income' ? '#10b981' : '#ef4444';
-  const currentIconBg = type === 'Income' ? '#10b98120' : '#ef444420';
+  const currentIconColor = type === 'Income' ? colors.success : colors.danger;
+  const currentIconBg = type === 'Income' ? colors.success + '20' : colors.danger + '20';
 
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
 
           {/* ── Top Header ── */}
           <View style={styles.header}>
-            <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
-              <Icon name="arrow-back" size={22} color="white" />
+            <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
+              <Icon name="arrow-back" size={22} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{editTx ? 'Edit Transaction' : 'Add Transaction'}</Text>
-            <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()}>
-              <Icon name="close" size={22} color="white" />
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{editTx ? 'Edit Transaction' : 'Add Transaction'}</Text>
+            <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
+              <Icon name="close" size={22} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {/* ── Segment Tabs (Only for New Transactions) ── */}
           {!editTx && (
-            <View style={styles.segmentRow}>
+            <View style={[styles.segmentRow, { backgroundColor: colors.card }]}>
               <TouchableOpacity
-                style={[styles.segmentTab, type === 'Expense' && styles.segmentTabActiveExpense]}
+                style={[styles.segmentTab, type === 'Expense' && { backgroundColor: colors.danger }]}
                 onPress={() => setType('Expense')}
               >
-                <Text style={[styles.segmentText, { color: type === 'Expense' ? 'white' : '#666' }]}>Expense</Text>
+                <Text style={[styles.segmentText, { color: type === 'Expense' ? 'white' : colors.textSecondary }]}>Expense</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.segmentTab, type === 'Income' && styles.segmentTabActiveIncome]}
+                style={[styles.segmentTab, type === 'Income' && { backgroundColor: colors.success }]}
                 onPress={() => setType('Income')}
               >
-                <Text style={[styles.segmentText, { color: type === 'Income' ? 'white' : '#666' }]}>Income</Text>
+                <Text style={[styles.segmentText, { color: type === 'Income' ? 'white' : colors.textSecondary }]}>Income</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {/* ── Date / Time Row ── */}
           <View style={styles.dateTimeRow}>
-            <TouchableOpacity style={styles.dateTimeChip} onPress={() => setShowDatePicker(true)}>
-              <Icon name="calendar-today" size={14} color="#888" style={{ marginRight: 6 }} />
-              <Text style={styles.dateTimeText}>{format(date, 'dd MMM yyyy')}</Text>
+            <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
+              <Icon name="calendar-today" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+              <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'dd MMM yyyy')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.dateTimeChip} onPress={() => setShowTimePicker(true)}>
-              <Icon name="schedule" size={14} color="#888" style={{ marginRight: 6 }} />
-              <Text style={styles.dateTimeText}>{format(date, 'h:mm a')}</Text>
+            <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setShowTimePicker(true)}>
+              <Icon name="schedule" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+              <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'h:mm a')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* ── Main Card ── */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
 
             {/* Amount */}
             <View style={styles.amountRow}>
@@ -278,7 +301,7 @@ export default function AddTransactionScreen() {
               <TextInput
                 style={[styles.amountInput, { color: currentIconColor }]}
                 placeholder="0"
-                placeholderTextColor="#333"
+                placeholderTextColor={colors.border}
                 keyboardType="decimal-pad"
                 value={amount}
                 onChangeText={setAmount}
@@ -286,41 +309,41 @@ export default function AddTransactionScreen() {
               />
             </View>
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             {/* Description */}
             <TextInput
-              style={styles.descInput}
+              style={[styles.descInput, { color: colors.text }]}
               placeholder="Add a note or description..."
-              placeholderTextColor="#555"
+              placeholderTextColor={colors.textSecondary + '70'}
               value={description}
               onChangeText={setDescription}
               maxLength={255}
             />
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             {/* Payee | Category */}
             <View style={styles.selectorRow}>
               <TouchableOpacity style={styles.selectorHalf} onPress={() => setShowModal('Payee')}>
-                <View style={[styles.selectorIconBg, { backgroundColor: '#2a2a2a' }]}>
-                  <Icon name="person-outline" size={18} color="#888" />
+                <View style={[styles.selectorIconBg, { backgroundColor: colors.background }]}>
+                  <Icon name="person-outline" size={18} color={colors.textSecondary} />
                 </View>
                 <View>
-                  <Text style={styles.selectorLabel}>Payee</Text>
-                  <Text style={styles.selectorValue} numberOfLines={1}>{selectedPayee?.name || 'Select'}</Text>
+                  <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Payee</Text>
+                  <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedPayee?.name || 'Select'}</Text>
                 </View>
               </TouchableOpacity>
 
-              <View style={styles.verticalDivider} />
+              <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
 
               <TouchableOpacity style={styles.selectorHalf} onPress={() => setShowModal('Category')}>
                 <View style={[styles.selectorIconBg, { backgroundColor: currentIconBg }]}>
                   <Icon name={formatIconName(selectedCategory?.app_icon || selectedCategory?.icon || 'grid-view') as any} size={18} color={currentIconColor} />
                 </View>
                 <View>
-                  <Text style={styles.selectorLabel}>Category</Text>
-                  <Text style={styles.selectorValue} numberOfLines={1}>{selectedCategory?.name || 'Select'}</Text>
+                  <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Category</Text>
+                  <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedCategory?.name || 'Select'}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -408,12 +431,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
   },
-  segmentTabActiveExpense: {
-    backgroundColor: '#ef4444',
-  },
-  segmentTabActiveIncome: {
-    backgroundColor: '#10b981',
-  },
   segmentText: {
     fontSize: 15,
     fontWeight: '700',
@@ -471,7 +488,7 @@ const styles = StyleSheet.create({
   amountInput: {
     fontSize: 52,
     fontWeight: '700',
-    minWidth: 100,
+    textAlign: 'center',
     padding: 0,
   },
   divider: {

@@ -10,9 +10,11 @@ interface TransactionCardProps {
   transaction: Transaction;
   onEdit?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
+  onFilterCategory?: (catId: string) => void;
+  onFilterPayee?: (payeeId: string | null) => void;
 }
 
-export const TransactionCard = React.memo(({ transaction, onEdit, onDelete }: TransactionCardProps) => {
+export const TransactionCard = React.memo(({ transaction, onEdit, onDelete, onFilterCategory, onFilterPayee }: TransactionCardProps) => {
   const { colors } = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
   const isIncome = transaction.type === 'Income';
@@ -59,13 +61,17 @@ export const TransactionCard = React.memo(({ transaction, onEdit, onDelete }: Tr
     >
       <View style={[styles.card, { backgroundColor: colors.card }]}>
         <View style={styles.mainRow}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
+          <TouchableOpacity 
+            style={[styles.iconContainer, { backgroundColor: colors.background }]}
+            onPress={() => onFilterCategory?.(transaction.category_id!)}
+            activeOpacity={0.7}
+          >
             <Icon 
               name={(transaction.category_app_icon || 'receipt') as any} 
               size={24} 
               color={isIncome ? colors.success : colors.primary} 
             />
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.middleSection}>
             <Text style={[styles.categoryName, { color: colors.text }]}>
@@ -83,7 +89,11 @@ export const TransactionCard = React.memo(({ transaction, onEdit, onDelete }: Tr
             )}
 
             {transaction.payee_name && (
-              <View style={styles.payeeRow}>
+              <TouchableOpacity 
+                style={styles.payeeRow}
+                onPress={() => onFilterPayee?.(transaction.payee_id)}
+                activeOpacity={0.6}
+              >
                 {transaction.payee_logo ? (
                   <Image source={{ uri: transaction.payee_logo }} style={styles.payeeLogo} />
                 ) : (
@@ -94,7 +104,7 @@ export const TransactionCard = React.memo(({ transaction, onEdit, onDelete }: Tr
                 <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
                   {transaction.payee_name}
                 </Text>
-              </View>
+              </TouchableOpacity>
             )}
 
             <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
@@ -136,7 +146,7 @@ const styles = StyleSheet.create({
   },
   mainRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   iconContainer: {
     width: 44,

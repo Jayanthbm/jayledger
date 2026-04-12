@@ -12,6 +12,144 @@ import { useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/n
 import { TransactionCard } from '../components/TransactionCard';
 import { getCategories, getPayees, deleteTransactionAsync } from '../db/queries';
 
+interface FilterSelectorProps {
+  type: 'Category' | 'Payee';
+  visible: boolean;
+  onClose: () => void;
+  categories: Category[];
+  payees: Payee[];
+  selectedItems: string[];
+  tempSelectedItems: string[];
+  setTempSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
+  onApply: (selected: string[]) => void;
+  colors: any;
+  modalSearch: string;
+  setModalSearch: (text: string) => void;
+  formatIconName: (name: string) => string;
+}
+
+const FilterSelector = React.memo(({
+  type, visible, onClose, categories, payees, 
+  selectedItems, tempSelectedItems, setTempSelectedItems, 
+  onApply, colors, modalSearch, setModalSearch, formatIconName
+}: FilterSelectorProps) => {
+  const data = (type === 'Category' ? categories : payees).filter(item => 
+    item.name.toLowerCase().includes(modalSearch.toLowerCase())
+  );
+
+  const toggleTempSelection = (id: string) => {
+    setTempSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+              <Icon name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Select {type === 'Category' ? 'Categories' : 'Payees'}</Text>
+            <View style={{ width: 40 }} />
+          </View>
+
+          <View style={[styles.modalSearchContainer, { backgroundColor: colors.background }]}>
+            <Icon name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              placeholder={`Search ${type}...`}
+              placeholderTextColor={colors.textSecondary + '80'}
+              style={[styles.modalSearchInput, { color: colors.text }]}
+              value={modalSearch}
+              onChangeText={setModalSearch}
+            />
+          </View>
+
+          <FlatList
+            data={data as any[]}
+            keyExtractor={item => item.id}
+            numColumns={4}
+            renderItem={({ item }) => {
+              const isSelected = tempSelectedItems.includes(item.id);
+              return (
+                <TouchableOpacity 
+                  style={styles.gridItem} 
+                  onPress={() => toggleTempSelection(item.id)}
+                >
+                  <View style={[
+                    styles.gridIconBox, 
+                    { 
+                      backgroundColor: isSelected ? colors.primary : colors.background,
+                      borderColor: isSelected ? colors.primary : colors.border
+                    }
+                  ]}>
+                    <Icon 
+                      name={formatIconName((item as any).app_icon || (type === 'Category' ? 'category' : 'person')) as any} 
+                      size={24} 
+                      color={isSelected ? 'white' : colors.textSecondary} 
+                    />
+                  </View>
+                  <Text 
+                    style={[styles.gridLabel, { color: isSelected ? colors.primary : colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
+          
+          <TouchableOpacity 
+            style={[styles.modalDone, { backgroundColor: colors.primary }]} 
+            onPress={() => onApply(tempSelectedItems)}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Apply Filters</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+});
+
+interface DeleteConfirmModalProps {
+  transaction: Transaction | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+  colors: any;
+}
+
+const DeleteConfirmModal = React.memo(({ transaction, onCancel, onConfirm, colors }: DeleteConfirmModalProps) => (
+  <Modal visible={!!transaction} animationType="fade" transparent>
+    <View style={styles.deleteOverlay}>
+      <View style={[styles.deleteSheet, { backgroundColor: colors.card }]}>
+        <View style={styles.deleteHeader}>
+          <View style={[styles.deleteIconBg, { backgroundColor: colors.danger + '15' }]}>
+            <Icon name="delete-outline" size={28} color={colors.danger} />
+          </View>
+          <Text style={[styles.deleteTitle, { color: colors.text }]}>Delete Transaction?</Text>
+          <Text style={[styles.deleteSub, { color: colors.textSecondary }]}>This action cannot be undone.</Text>
+        </View>
+
+        <View style={styles.deleteActions}>
+          <TouchableOpacity 
+            style={[styles.deleteBtn, { backgroundColor: colors.danger }]} 
+            onPress={onConfirm}
+          >
+            <Text style={styles.deleteBtnText}>Confirm Delete</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.cancelDeleteBtn} 
+            onPress={onCancel}
+          >
+            <Text style={[styles.cancelDeleteText, { color: colors.textSecondary }]}>Keep Transaction</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  </Modal>
+));
+
 export default function TransactionsScreen() {
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
@@ -25,11 +163,15 @@ export default function TransactionsScreen() {
   const [search, setSearch] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedPayees, setSelectedPayees] = useState<string[]>([]);
+  const [tempSelectedCats, setTempSelectedCats] = useState<string[]>([]);
+  const [tempSelectedPayees, setTempSelectedPayees] = useState<string[]>([]);
   
   // Master data for filters
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
   const [showFilterModal, setShowFilterModal] = useState<'Category' | 'Payee' | null>(null);
+  const [deleteConfirmTx, setDeleteConfirmTx] = useState<Transaction | null>(null);
+  const [modalSearch, setModalSearch] = useState('');
 
   const loadFilterData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -97,22 +239,14 @@ export default function TransactionsScreen() {
   );
 
   const handleDeleteTransaction = async (tx: Transaction) => {
-    Alert.alert(
-      'Delete Transaction',
-      'Are you sure you want to delete this transaction?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            if (!session?.user?.id) return;
-            await deleteTransactionAsync(tx.id, session.user.id);
-            loadData();
-          }
-        }
-      ]
-    );
+    setDeleteConfirmTx(tx);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmTx || !session?.user?.id) return;
+    await deleteTransactionAsync(deleteConfirmTx.id, session.user.id);
+    setDeleteConfirmTx(null);
+    loadData();
   };
 
   const handleEditTransaction = (tx: Transaction) => {
@@ -128,6 +262,14 @@ export default function TransactionsScreen() {
     return () => clearTimeout(timeout);
   }, [loadData]);
 
+  useEffect(() => {
+    if (showFilterModal === 'Category') {
+      setTempSelectedCats([...selectedCats]);
+    } else if (showFilterModal === 'Payee') {
+      setTempSelectedPayees([...selectedPayees]);
+    }
+  }, [showFilterModal, selectedCats, selectedPayees]);
+
   const handleRefresh = async () => {
     if (!session?.user?.id) return;
     setRefreshing(true);
@@ -136,11 +278,15 @@ export default function TransactionsScreen() {
     setRefreshing(false);
   };
 
-  const toggleSelection = (id: string, type: 'Category' | 'Payee') => {
-    if (type === 'Category') {
-      setSelectedCats(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-    } else {
-      setSelectedPayees(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const handleFilterCategory = (catId: string) => {
+    setSelectedCats([catId]);
+    setSearch('');
+  };
+
+  const handleFilterPayee = (payeeId: string | null) => {
+    if (payeeId) {
+      setSelectedPayees([payeeId]);
+      setSearch('');
     }
   };
 
@@ -150,48 +296,22 @@ export default function TransactionsScreen() {
         transaction={item} 
         onEdit={handleEditTransaction}
         onDelete={handleDeleteTransaction}
+        onFilterCategory={handleFilterCategory}
+        onFilterPayee={handleFilterPayee}
       />
     );
   }, [session?.user?.id]);
 
-  const FilterSelector = ({ type }: { type: 'Category' | 'Payee' }) => {
-    const data = type === 'Category' ? categories : payees;
-    const selected = type === 'Category' ? selectedCats : selectedPayees;
-    
-    return (
-      <Modal visible={showFilterModal === type} animationType="slide" transparent>
-        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Select {type}s</Text>
-              <TouchableOpacity onPress={() => setShowFilterModal(null)}>
-                <Icon name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={data as any[]}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity 
-                  style={[styles.filterItem, { borderBottomColor: colors.border }]} 
-                  onPress={() => toggleSelection(item.id, type)}
-                >
-                  <Text style={[styles.filterItemText, { color: colors.text }]}>{item.name}</Text>
-                  {selected.includes(item.id) && <Icon name="check-circle" size={20} color={colors.primary} />}
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity 
-              style={[styles.modalDone, { backgroundColor: colors.primary }]} 
-              onPress={() => setShowFilterModal(null)}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
+  const formatIconName = useCallback((name: string) => {
+    if (!name) return 'category';
+    let formatted = name.trim();
+    if (formatted.startsWith('Md')) {
+      formatted = formatted.substring(2);
+      formatted = formatted.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+    }
+    return formatted;
+  }, []);
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -216,31 +336,49 @@ export default function TransactionsScreen() {
 
       {/* Filter Row */}
       <View style={styles.filterRow}>
-        <TouchableOpacity 
-          style={[styles.filterChip, { borderColor: selectedCats.length > 0 ? colors.primary : colors.border }]} 
-          onPress={() => setShowFilterModal('Category')}
-        >
-          <Text style={[styles.filterChipText, { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary }]}>
-            Categories {selectedCats.length > 0 ? `(${selectedCats.length})` : ''}
-          </Text>
-          <Icon name="arrow-drop-down" size={20} color={selectedCats.length > 0 ? colors.primary : colors.textSecondary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10, flex: 1 }}>
+          <View style={[styles.filterChip, { 
+            backgroundColor: selectedCats.length > 0 ? colors.primary + '15' : 'transparent',
+            borderColor: selectedCats.length > 0 ? colors.primary : colors.border 
+          }]}>
+            <TouchableOpacity 
+              onPress={() => setShowFilterModal('Category')}
+              style={{ flexDirection: 'row', alignItems: 'center' }}
+            >
+              <Icon name="category" size={16} color={selectedCats.length > 0 ? colors.primary : colors.textSecondary} style={{marginRight: 4}} />
+              <Text style={[styles.filterChipText, { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary }]}>
+                {selectedCats.length > 0 ? `${selectedCats.length} Mixed` : 'Categories'}
+              </Text>
+              <Icon name="arrow-drop-down" size={20} color={selectedCats.length > 0 ? colors.primary : colors.textSecondary} />
+            </TouchableOpacity>
+            {selectedCats.length > 0 && (
+              <TouchableOpacity onPress={() => setSelectedCats([])} style={styles.smallClose}>
+                <Icon name="close" size={14} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
 
-        <TouchableOpacity 
-          style={[styles.filterChip, { borderColor: selectedPayees.length > 0 ? colors.primary : colors.border }]} 
-          onPress={() => setShowFilterModal('Payee')}
-        >
-          <Text style={[styles.filterChipText, { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary }]}>
-            Payees {selectedPayees.length > 0 ? `(${selectedPayees.length})` : ''}
-          </Text>
-          <Icon name="arrow-drop-down" size={20} color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary} />
-        </TouchableOpacity>
-
-        {(selectedCats.length > 0 || selectedPayees.length > 0 || search) && (
-          <TouchableOpacity onPress={() => { setSelectedCats([]); setSelectedPayees([]); setSearch(''); }}>
-            <Text style={{ color: colors.danger, fontSize: 12, fontWeight: 'bold' }}>Clear</Text>
-          </TouchableOpacity>
-        )}
+          <View style={[styles.filterChip, { 
+            backgroundColor: selectedPayees.length > 0 ? colors.primary + '15' : 'transparent',
+            borderColor: selectedPayees.length > 0 ? colors.primary : colors.border 
+          }]}>
+            <TouchableOpacity 
+              onPress={() => setShowFilterModal('Payee')}
+              style={{ flexDirection: 'row', alignItems: 'center' }}
+            >
+              <Icon name="person" size={16} color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary} style={{marginRight: 4}} />
+              <Text style={[styles.filterChipText, { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary }]}>
+                {selectedPayees.length > 0 ? `${selectedPayees.length} Payees` : 'Payees'}
+              </Text>
+              <Icon name="arrow-drop-down" size={20} color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary} />
+            </TouchableOpacity>
+            {selectedPayees.length > 0 && (
+              <TouchableOpacity onPress={() => setSelectedPayees([])} style={styles.smallClose}>
+                <Icon name="close" size={14} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
 
       <SectionList
@@ -265,8 +403,42 @@ export default function TransactionsScreen() {
         removeClippedSubviews={true}
       />
 
-      <FilterSelector type="Category" />
-      <FilterSelector type="Payee" />
+      <FilterSelector 
+        type="Category"
+        visible={showFilterModal === 'Category'}
+        onClose={() => setShowFilterModal(null)}
+        categories={categories}
+        payees={payees}
+        selectedItems={selectedCats}
+        tempSelectedItems={tempSelectedCats}
+        setTempSelectedItems={setTempSelectedCats}
+        onApply={(selected) => { setSelectedCats(selected); setShowFilterModal(null); setModalSearch(''); }}
+        colors={colors}
+        modalSearch={modalSearch}
+        setModalSearch={setModalSearch}
+        formatIconName={formatIconName}
+      />
+      <FilterSelector 
+        type="Payee"
+        visible={showFilterModal === 'Payee'}
+        onClose={() => setShowFilterModal(null)}
+        categories={categories}
+        payees={payees}
+        selectedItems={selectedPayees}
+        tempSelectedItems={tempSelectedPayees}
+        setTempSelectedItems={setTempSelectedPayees}
+        onApply={(selected) => { setSelectedPayees(selected); setShowFilterModal(null); setModalSearch(''); }}
+        colors={colors}
+        modalSearch={modalSearch}
+        setModalSearch={setModalSearch}
+        formatIconName={formatIconName}
+      />
+      <DeleteConfirmModal 
+        transaction={deleteConfirmTx}
+        onCancel={() => setDeleteConfirmTx(null)}
+        onConfirm={confirmDelete}
+        colors={colors}
+      />
 
       {/* Add FAB */}
       <TouchableOpacity 
@@ -291,17 +463,36 @@ const styles = StyleSheet.create({
     borderWidth: 1 
   },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 16 },
-  filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 8, alignItems: 'center', gap: 8 },
+  filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, alignItems: 'center', gap: 8 },
   filterChip: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    paddingHorizontal: 12, 
-    paddingVertical: 6, 
-    borderRadius: 20, 
-    borderWidth: 1, 
+    paddingHorizontal: 14, 
+    paddingVertical: 10, 
+    borderRadius: 24, 
+    borderWidth: 1.5, 
     backgroundColor: 'transparent' 
   },
-  filterChipText: { fontSize: 12, fontWeight: '600' },
+  filterChipText: { fontSize: 13, fontWeight: '700' },
+  smallClose: {
+    marginLeft: 8,
+    padding: 2,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  clearBtnPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 24,
+    gap: 6,
+  },
+  clearBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -310,19 +501,134 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase'
   },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
   modalContent: { 
-    borderTopLeftRadius: 24, 
-    borderTopRightRadius: 24, 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
     padding: 24, 
-    maxHeight: '80%',
-    borderTopWidth: 1
+    maxHeight: '85%',
+    borderTopWidth: 1,
+    paddingBottom: 40,
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold' },
-  filterItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1 },
-  filterItemText: { fontSize: 16 },
-  modalDone: { padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 20 },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  modalTitle: { fontSize: 20, fontWeight: '800' },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1c1c1e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: 50,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  modalSearchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+  },
+  gridItem: {
+    width: '25%',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  gridIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    borderWidth: 1.5,
+  },
+  gridLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  modalDone: { 
+    padding: 18, 
+    borderRadius: 16, 
+    alignItems: 'center', 
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6
+  },
+  deleteOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'flex-end',
+    paddingBottom: 40,
+  },
+  deleteSheet: {
+    marginHorizontal: 16,
+    borderRadius: 32,
+    padding: 24,
+    alignItems: 'center',
+  },
+  deleteHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  deleteIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  deleteTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  deleteSub: {
+    fontSize: 15,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  deleteActions: {
+    width: '100%',
+    gap: 12,
+  },
+  deleteBtn: {
+    width: '100%',
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteBtnText: {
+    color: 'white',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  cancelDeleteBtn: {
+    width: '100%',
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelDeleteText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   fab: {
     position: 'absolute',
     right: 24,
