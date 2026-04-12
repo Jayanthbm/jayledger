@@ -285,11 +285,16 @@ export default function GoalsScreen() {
                <Text style={[styles.sheetTitle, { color: colors.text, marginBottom: 0 }]}>
                  {editingGoal ? 'Edit Goal' : 'Add New Goal'}
                </Text>
-               {editingGoal && (
-                 <TouchableOpacity onPress={() => confirmDelete(editingGoal.id)} style={{ padding: 8 }}>
-                   <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
+               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                 {editingGoal && (
+                   <TouchableOpacity onPress={() => confirmDelete(editingGoal.id)} style={{ padding: 8 }}>
+                     <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
+                   </TouchableOpacity>
+                 )}
+                 <TouchableOpacity onPress={resetForm} style={{ padding: 8, marginLeft: 4 }}>
+                   <MaterialIcons name="close" size={24} color={colors.text} />
                  </TouchableOpacity>
-               )}
+               </View>
             </View>
 
             <View style={styles.formRow}>
@@ -338,7 +343,7 @@ export default function GoalsScreen() {
             </TouchableOpacity>
             
             <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent', padding: 16, borderRadius: 12, alignItems: 'center' }]} onPress={() => setIsDeleteModalOpen(false)}>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Keep Goal</Text>
             </TouchableOpacity>
           </View>
         </View>
