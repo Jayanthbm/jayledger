@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Platform } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { scheduleReminder } from '../services/notificationService';
@@ -15,21 +15,37 @@ export default function SettingsScreen() {
   const navigation = useNavigation<any>();
   
   const [notificationPref, setNotificationPref] = useState('None');
-  const [remindersExpanded, setRemindersExpanded] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState<number | null>(null);
+
+  const getRelativeTime = (timestamp: number) => {
+    const mins = Math.round((Date.now() - timestamp) / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.round(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.round(hours / 24)}d ago`;
+  };
 
   useEffect(() => {
     const loadData = async () => {
+      if (!user?.id) return;
       const pref = await AsyncStorage.getItem('notification_pref');
       if (pref) setNotificationPref(pref);
+      
+      const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
+      if (last) setLastSynced(parseInt(last, 10));
     };
     loadData();
-  }, []);
+  }, [user?.id]);
 
   const handleNotificationChange = async (val: string) => {
     setNotificationPref(val);
+    await AsyncStorage.setItem('notification_pref', val);
     await scheduleReminder(val);
+    setReminderModalVisible(false);
   };
 
   const setAppTheme = (mode: 'Light' | 'Dark') => {
@@ -41,7 +57,9 @@ export default function SettingsScreen() {
     if (!user?.id) return;
     setIsSyncing(true);
     try {
-      await runFullSync(user.id);
+      await runFullSync(user.id, true);
+      const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
+      if (last) setLastSynced(parseInt(last, 10));
     } catch (e) {
       console.warn("Manual sync error", e);
     } finally {
@@ -49,95 +67,181 @@ export default function SettingsScreen() {
     }
   };
 
+  const SettingRow = ({ icon, title, value, onPress, showArrow = true, color, isLoading }: any) => (
+    <TouchableOpacity 
+      style={styles.settingRow} 
+      onPress={onPress} 
+      activeOpacity={0.6}
+      disabled={!onPress || isLoading}
+    >
+      <View style={[styles.iconBox, { backgroundColor: (color || colors.primary) + '15' }]}>
+        <Icon name={icon} size={22} color={color || colors.primary} />
+      </View>
+      <View style={styles.settingInfo}>
+        <Text style={[styles.settingTitle, { color: colors.text }]}>{title}</Text>
+        {value && <Text style={[styles.settingValue, { color: colors.textSecondary }]}>{value}</Text>}
+      </View>
+      {isLoading ? (
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginRight: 4 }} />
+      ) : (
+        showArrow && <Icon name="chevron-right" size={24} color={colors.textSecondary + '60'} />
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentPadding}>
-        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Theme</Text>
-        <View style={styles.themeRow}>
-          <TouchableOpacity 
-            style={[styles.themeBox, { backgroundColor: !isDark ? colors.primary : colors.card, borderColor: colors.border }]} 
-            onPress={() => setAppTheme('Light')}
-          >
-            <Icon name="light-mode" size={24} color={!isDark ? '#fff' : colors.text} />
-            <Text style={[styles.themeText, { color: !isDark ? '#fff' : colors.text }]}>Light</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.themeBox, { backgroundColor: isDark ? colors.primary : colors.card, borderColor: colors.border }]} 
-            onPress={() => setAppTheme('Dark')}
-          >
-            <Icon name="dark-mode" size={24} color={isDark ? '#fff' : colors.text} />
-            <Text style={[styles.themeText, { color: isDark ? '#fff' : colors.text }]}>Dark</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity 
-          style={[styles.expandableHeader, { backgroundColor: colors.card, borderColor: colors.border }]} 
-          onPress={() => setRemindersExpanded(!remindersExpanded)}
-          activeOpacity={0.7}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Icon name="notifications" size={22} color={colors.text} style={{ marginRight: 12 }} />
-            <Text style={[styles.expandableTitle, { color: colors.text }]}>Reminders</Text>
-          </View>
-          <Icon name={remindersExpanded ? "expand-less" : "expand-more"} size={24} color={colors.textSecondary} />
-        </TouchableOpacity>
-        
-        {remindersExpanded && (
-          <View style={[styles.card, styles.expandedCardContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {['None', 'Morning', 'Evening', 'Night'].map((item) => (
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          
+          {/* Section: Appearance */}
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Appearance</Text>
+          <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.themeSelector}>
               <TouchableOpacity 
-                key={item} 
-                style={[styles.radioRow, { borderBottomColor: colors.border }]} 
-                onPress={() => handleNotificationChange(item)}
+                style={[styles.themeOption, !isDark && { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]} 
+                onPress={() => setAppTheme('Light')}
               >
-                <Text style={[styles.label, { color: colors.text }]}>{item}</Text>
-                <View style={[styles.radioOuter, { borderColor: colors.textSecondary }]}>
-                  {notificationPref === item && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-                </View>
+                <Icon name="light-mode" size={20} color={!isDark ? colors.primary : colors.textSecondary} />
+                <Text style={[styles.themeOptionText, { color: !isDark ? colors.text : colors.textSecondary }]}>Light</Text>
               </TouchableOpacity>
-            ))}
+              <TouchableOpacity 
+                style={[styles.themeOption, isDark && { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]} 
+                onPress={() => setAppTheme('Dark')}
+              >
+                <Icon name="dark-mode" size={20} color={isDark ? colors.primary : colors.textSecondary} />
+                <Text style={[styles.themeOptionText, { color: isDark ? colors.text : colors.textSecondary }]}>Dark</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
 
-        <Text style={[styles.sectionTitle, { color: colors.textSecondary, marginTop: remindersExpanded ? 24 : 16 }]}>Master Data (Synced)</Text>
-        
-        <View style={styles.dataGrid}>
-          <TouchableOpacity 
-            style={[styles.dataBox, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => navigation.navigate('Categories')}
-          >
-            <Icon name="category" size={28} color={colors.primary} />
-            <Text style={[styles.dataBoxText, { color: colors.text }]}>Categories</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.dataBox, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => navigation.navigate('Payees')}
-          >
-            <Icon name="storefront" size={28} color={colors.primary} />
-            <Text style={[styles.dataBoxText, { color: colors.text }]}>Payees</Text>
-          </TouchableOpacity>
+          {/* Section: Preferences */}
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Preferences</Text>
+          <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <SettingRow 
+              icon="notifications-active" 
+              title="Daily Reminders" 
+              value={
+                notificationPref === 'None' ? 'Off' : 
+                notificationPref === 'Morning' ? 'Morning (9:00 AM)' : 
+                notificationPref === 'Evening' ? 'Evening (6:00 PM)' : 
+                notificationPref === 'Night' ? 'Night (9:00 PM)' : notificationPref
+              }
+              onPress={() => setReminderModalVisible(true)}
+            />
+          </View>
+
+          {/* Section: Manage Data */}
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Manage Data</Text>
+          <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <SettingRow 
+              icon="category" 
+              title="Categories" 
+              value="Manage icons & limits"
+              onPress={() => navigation.navigate('Categories')}
+            />
+            <View style={styles.divider} />
+            <SettingRow 
+              icon="storefront" 
+              title="Payees" 
+              value="Manage shops & vendors"
+              onPress={() => navigation.navigate('Payees')}
+            />
+            <View style={styles.divider} />
+            <SettingRow 
+              icon="sync" 
+              title="Cloud Sync" 
+              value={isSyncing ? 'Syncing...' : (lastSynced ? `Last synced ${getRelativeTime(lastSynced)}` : 'Never synced')}
+              onPress={handleManualSync}
+              isLoading={isSyncing}
+              showArrow={true}
+            />
+          </View>
+
+          {/* Section: Account */}
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Account</Text>
+          <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <SettingRow 
+              icon="person" 
+              title="User Email" 
+              value={user?.email || 'Guest'}
+              showArrow={false}
+            />
+            <View style={styles.divider} />
+            <SettingRow 
+              icon="logout" 
+              title="Sign Out" 
+              color="#ef4444"
+              onPress={() => setLogoutModalVisible(true)}
+              showArrow={true}
+            />
+          </View>
+
+          <Text style={[styles.versionText, { color: colors.textSecondary }]}>JayLedger v1.2.0 • Build 2026.04</Text>
         </View>
-
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: colors.danger, marginTop: 16 }]}
-          onPress={() => setLogoutModalVisible(true)}
-        >
-          <Text style={[styles.buttonText, { color: '#fff' }]}>Log Out</Text>
-        </TouchableOpacity>
-
       </ScrollView>
 
-      {/* Logout Action Sheet / Bottom Modal */}
-      <Modal visible={logoutModalVisible} transparent animationType="slide" onRequestClose={() => setLogoutModalVisible(false)}>
+      {/* Reminder Selection Bottom Sheet */}
+      <Modal visible={reminderModalVisible} transparent animationType="slide" onRequestClose={() => setReminderModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setReminderModalVisible(false)} />
+          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Choose Reminder</Text>
+            
+            <View style={{ marginTop: 20 }}>
+              {[
+                { label: 'None', time: null, icon: 'notifications-off' },
+                { label: 'Morning', time: '9:00 AM', icon: 'access-time' },
+                { label: 'Evening', time: '6:00 PM', icon: 'access-time' },
+                { label: 'Night', time: '9:00 PM', icon: 'access-time' }
+              ].map((item) => (
+                <TouchableOpacity 
+                  key={item.label} 
+                  style={[styles.radioRow, { borderBottomColor: colors.border }]} 
+                  onPress={() => handleNotificationChange(item.label)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Icon 
+                      name={item.icon as any} 
+                      size={20} 
+                      color={notificationPref === item.label ? colors.primary : colors.textSecondary} 
+                      style={{ marginRight: 12 }} 
+                    />
+                    <View>
+                      <Text style={[styles.label, { color: notificationPref === item.label ? colors.text : colors.textSecondary }]}>
+                        {item.label}
+                      </Text>
+                      {item.time && (
+                        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{item.time}</Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={[styles.radioOuter, { borderColor: notificationPref === item.label ? colors.primary : colors.textSecondary + '40' }]}>
+                    {notificationPref === item.label && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent', marginTop: 12 }]} onPress={() => setReminderModalVisible(false)}>
+              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Logout Confirmation */}
+      <Modal visible={logoutModalVisible} transparent animationType="fade" onRequestClose={() => setLogoutModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setLogoutModalVisible(false)} />
           <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>Sign Out</Text>
-            <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>Are you sure you want to securely log out of your JayLedger account?</Text>
+            <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>Are you sure you want to securely log out? Local data remains safe.</Text>
             
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: colors.danger }]} onPress={signOut}>
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Log Out</Text>
+            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: '#ef4444' }]} onPress={signOut}>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Sign Out</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent' }]} onPress={() => setLogoutModalVisible(false)}>
@@ -152,31 +256,85 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  contentPadding: { padding: 16, paddingBottom: 40 },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', marginTop: 24, marginBottom: 8, textTransform: 'uppercase' },
-  themeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  themeBox: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, borderWidth: 1, marginHorizontal: 4 },
-  themeText: { fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
-  expandableHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderRadius: 12, borderWidth: 1, marginTop: 24 },
-  expandableTitle: { fontSize: 18, fontWeight: '600' },
-  expandedCardContent: { borderTopWidth: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, marginTop: -8, paddingTop: 8 },
-  card: { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
-  radioRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  label: { fontSize: 16 },
-  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
-  radioInner: { width: 10, height: 10, borderRadius: 5 },
-  dataGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  dataBox: { flex: 1, alignItems: 'center', padding: 24, borderRadius: 12, borderWidth: 1, marginHorizontal: 4 },
-  dataBoxText: { marginTop: 12, fontSize: 15, fontWeight: '600' },
-  button: { marginTop: 32, padding: 18, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  buttonText: { fontSize: 16, fontWeight: 'bold' },
+  content: { padding: 16, paddingBottom: 60 },
+  
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 24,
+    marginBottom: 12,
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  groupCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  settingInfo: { flex: 1 },
+  settingTitle: { fontSize: 16, fontWeight: '600' },
+  settingValue: { fontSize: 13, marginTop: 2 },
+  divider: { height: 1, marginLeft: 72 },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  themeSelector: {
+    flexDirection: 'row',
+    padding: 8,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  themeOptionText: { fontSize: 14, fontWeight: 'bold', marginLeft: 8 },
+
+  radioRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  label: { fontSize: 16, fontWeight: '500' },
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioInner: { width: 12, height: 12, borderRadius: 6 },
+
+  versionText: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 12,
+    fontWeight: '500',
+    opacity: 0.6,
+  },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalDismiss: { flex: 1 },
-  bottomSheet: { padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40, borderTopWidth: 1 },
-  sheetHandle: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-  sheetTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-  sheetMessage: { fontSize: 15, marginBottom: 32, textAlign: 'center', lineHeight: 22 },
-  sheetButton: { padding: 18, borderRadius: 12, alignItems: 'center', marginBottom: 12 }
+  bottomSheet: { padding: 24, borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingBottom: 40, borderTopWidth: 1 },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 24, opacity: 0.3 },
+  sheetTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
+  sheetMessage: { fontSize: 16, marginBottom: 32, textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },
+  sheetButton: { padding: 18, borderRadius: 16, alignItems: 'center', marginBottom: 12 }
 });

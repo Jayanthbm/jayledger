@@ -1,76 +1,143 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from '@expo/vector-icons/MaterialIcons';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { useTheme } from '../store/ThemeContext';
-import { TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
+import { CustomTabBar } from '../components/CustomTabBar';
 import { useNavigation } from '@react-navigation/native';
 
-// Import Screens (Placeholders for now)
+// Import Screens
 import DashboardScreen from '../screens/DashboardScreen';
 import TransactionsScreen from '../screens/TransactionsScreen';
 import BudgetsScreen from '../screens/BudgetsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 
-const Tab = createBottomTabNavigator();
+import { useAuth } from '../store/AuthContext';
+
+const Tab = createMaterialTopTabNavigator();
+
+const SCREEN_TITLES: Record<string, string> = {
+  Dashboard: 'Dashboard',
+  Transactions: 'Transactions',
+  Budgets: 'Budgets',
+  Goals: 'Goals',
+  Reports: 'Reports',
+};
+
+import { syncGoals, syncTransactions, syncBudgets, syncCategories, syncPayees } from '../services/syncService';
+import { DeviceEventEmitter, ActivityIndicator } from 'react-native';
 
 export default function MainTabs() {
   const { colors } = useTheme();
+  const navigation = useNavigation<any>();
+  const { session } = useAuth();
+  const [activeTab, setActiveTab] = React.useState('Dashboard');
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleGlobalRefresh = async () => {
+    if (!session?.user?.id || isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      const userId = session.user.id;
+      // Trigger sync based on active tab
+      if (activeTab === 'Goals') await syncGoals(userId, true);
+      else if (activeTab === 'Transactions') await syncTransactions(userId, true);
+      else if (activeTab === 'Budgets') await syncBudgets(userId, true);
+      // ... Add others if needed
+      
+      // Notify active screen to reload
+      DeviceEventEmitter.emit('module_refreshed', { module: activeTab });
+    } catch (error) {
+      console.warn("Global refresh error:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
-          let iconName: React.ComponentProps<typeof Icon>['name'] = 'error';
-          if (route.name === 'Dashboard') iconName = 'dashboard';
-          else if (route.name === 'Transactions') iconName = 'receipt-long';
-          else if (route.name === 'Budgets') iconName = 'pie-chart';
-          else if (route.name === 'Goals') iconName = 'flag';
-          else if (route.name === 'Reports') iconName = 'bar-chart';
-          return <Icon name={iconName} size={size + 4} color={color} />;
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: Platform.OS === 'ios' ? 30 : 20,
-          left: 20,
-          right: 20,
-          elevation: 5,
-          backgroundColor: colors.card,
-          borderRadius: 25,
-          height: 70,
-          borderTopWidth: 0,
-          paddingBottom: Platform.OS === 'ios' ? 0 : 0,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 8,
-        },
-        headerStyle: {
-          backgroundColor: colors.background,
-        },
-        headerTintColor: colors.text,
-        headerShadowVisible: false,
-        headerRight: () => {
-          const navigation = useNavigation<any>();
-          return (
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('Settings')}
-              style={{ marginRight: 16 }}
-            >
-              <Icon name="settings" size={24} color={colors.text} />
-            </TouchableOpacity>
-          );
-        }
-      })}
+    <SafeAreaView 
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={['top', 'left', 'right', 'bottom']}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Transactions" component={TransactionsScreen} />
-      <Tab.Screen name="Budgets" component={BudgetsScreen} />
-      <Tab.Screen name="Goals" component={GoalsScreen} />
-      <Tab.Screen name="Reports" component={ReportsScreen} />
-    </Tab.Navigator>
+      {/* Global Header with Dynamic Title */}
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          {SCREEN_TITLES[activeTab] || 'JayLedger'}
+        </Text>
+        
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {['Dashboard', 'Transactions', 'Budgets', 'Goals'].includes(activeTab) && (
+            <TouchableOpacity 
+              onPress={handleGlobalRefresh}
+              style={[styles.settingsIcon, { marginRight: 8 }]}
+              activeOpacity={0.7}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Icon name="refresh" size={26} color={colors.text} />
+              )}
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.settingsIcon}
+            activeOpacity={0.7}
+          >
+            <Icon name="cog-outline" size={28} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Tab.Navigator
+        tabBarPosition="bottom"
+        tabBar={props => <CustomTabBar {...props} />}
+        initialRouteName="Dashboard"
+        screenOptions={{
+          swipeEnabled: false,
+          lazy: true,
+        }}
+        screenListeners={{
+          state: (e: any) => {
+            const index = e.data.state.index;
+            const routeName = e.data.state.routeNames[index];
+            setActiveTab(routeName);
+          },
+        }}
+      >
+        <Tab.Screen name="Dashboard" component={DashboardScreen} />
+        <Tab.Screen name="Transactions" component={TransactionsScreen} />
+        <Tab.Screen name="Budgets" component={BudgetsScreen} />
+        <Tab.Screen name="Goals" component={GoalsScreen} />
+        <Tab.Screen name="Reports" component={ReportsScreen} />
+      </Tab.Navigator>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    height: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    marginTop: Platform.OS === 'android' ? 10 : 0,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  settingsIcon: {
+    padding: 4,
+  }
+});

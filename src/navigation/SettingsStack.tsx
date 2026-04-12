@@ -19,8 +19,8 @@ export default function SettingsStack() {
       }}
     >
       <Stack.Screen name="SettingsHome" component={SettingsScreen} options={{ title: 'Settings' }} />
-      <Stack.Screen name="Categories" component={CategoriesScreen} options={{ title: 'Manage Categories' }} />
-      <Stack.Screen name="Payees" component={PayeesScreen} options={{ title: 'Manage Payees' }} />
+      <Stack.Screen name="Categories" component={CategoriesScreen} options={{ title: 'Categories' }} />
+      <Stack.Screen name="Payees" component={PayeesScreen} options={{ title: 'Payees' }} />
     </Stack.Navigator>
   );
 }

@@ -7,6 +7,9 @@ import { ActivityIndicator, View } from 'react-native';
 import LoginScreen from '../screens/LoginScreen';
 import MainTabs from './MainTabs';
 import SettingsStack from './SettingsStack';
+import DailyLimitDetailScreen from '../screens/DailyLimitDetailScreen';
+import CalendarViewScreen from '../screens/CalendarViewScreen';
+import AddTransactionScreen from '../screens/AddTransactionScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,6 +31,9 @@ export default function AppNavigator() {
           <>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="Settings" component={SettingsStack} />
+            <Stack.Screen name="DailyLimitDetail" component={DailyLimitDetailScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="CalendarView" component={CalendarViewScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="AddTransaction" component={AddTransactionScreen} options={{ headerShown: false, presentation: 'modal' }} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

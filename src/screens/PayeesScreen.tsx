@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Modal, Image, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getPayees, insertPayee } from '../db/queries';
-import { syncPayees, pushPayee } from '../services/syncService';
+import { runFullSync } from '../services/syncService';
 import { Payee } from '../models/types';
-import Icon from '@expo/vector-icons/MaterialIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
 
 // Lightweight UUIDv4 generator for offline creation
 const generateUUID = () => {
@@ -28,7 +29,7 @@ export default function PayeesScreen() {
   const [syncing, setSyncing] = useState(false);
   
   // UI State
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
   
@@ -42,15 +43,33 @@ export default function PayeesScreen() {
 
   const loadData = async () => {
     if (user?.id) {
+      // Load viewMode preference
+      try {
+        const savedMode = await AsyncStorage.getItem(`@payee_view_mode_${user.id}`);
+        if (savedMode === 'list' || savedMode === 'grid') {
+          setViewMode(savedMode);
+        }
+      } catch (e) {}
+
       let fetchedPayees = await getPayees(user.id);
       if (fetchedPayees.length === 0) {
-        await syncPayees(user.id);
+        await runFullSync(user.id);
         fetchedPayees = await getPayees(user.id);
       }
       setPayees(fetchedPayees);
       try {
         const last = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
         if (last) setLastSynced(parseInt(last, 10));
+      } catch (e) {}
+    }
+  };
+
+  const toggleViewMode = async () => {
+    const newMode = viewMode === 'list' ? 'grid' : 'list';
+    setViewMode(newMode);
+    if (user?.id) {
+      try {
+        await AsyncStorage.setItem(`@payee_view_mode_${user.id}`, newMode);
       } catch (e) {}
     }
   };
@@ -68,13 +87,21 @@ export default function PayeesScreen() {
     init();
   }, [user]);
 
-  const handleManualSync = async () => {
+  const navigation = useNavigation<any>();
+
+  const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setSyncing(true);
-    await syncPayees(user.id);
+    await runFullSync(user.id, true);
     await loadData();
     setSyncing(false);
-  };
+  }, [user?.id, loadData]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: 'Payees',
+    });
+  }, [navigation]);
 
   const handleAddPayee = async () => {
     if (!newPayeeName.trim() || !user?.id) return;
@@ -97,8 +124,8 @@ export default function PayeesScreen() {
     setNewPayeeLogo('');
     setIsSaving(false);
 
-    // Background push
-    await pushPayee(newPayee);
+    // Background push sync
+    runFullSync(user.id).catch(err => console.error("Payee sync failed", err));
   };
 
   // Memoized processing for search & sort
@@ -142,17 +169,26 @@ export default function PayeesScreen() {
           { backgroundColor: colors.card, borderColor: colors.border },
           isGrid && styles.payeeCardGrid
         ]}
+        activeOpacity={0.7}
       >
-        <View style={[styles.logoContainer, { backgroundColor: colors.background }]}>
+        <View style={[
+          styles.logoContainer, 
+          { backgroundColor: colors.primary + '15' }, // 15% opacity tint
+          isGrid && { marginRight: 0 }
+        ]}>
           {item.logo && item.logo.startsWith('http') ? (
             <Image source={{ uri: item.logo }} style={styles.logoImage} />
           ) : (
-            <Text style={[styles.logoFallback, { color: colors.primary }]}>
+            <Text style={[styles.logoFallback, { color: colors.primary, fontSize: isGrid ? 18 : 22 }]}>
               {item.name.charAt(0).toUpperCase()}
             </Text>
           )}
         </View>
-        <Text style={[styles.payeeName, { color: colors.text }, isGrid && { marginTop: 12, textAlign: 'center' }]} numberOfLines={2}>
+        <Text style={[
+          styles.payeeName, 
+          { color: colors.text }, 
+          isGrid && { marginTop: 10, textAlign: 'center', fontSize: 13 }
+        ]} numberOfLines={2}>
           {item.name}
         </Text>
       </TouchableOpacity>
@@ -165,7 +201,7 @@ export default function PayeesScreen() {
       {/* Header Tools */}
       <View style={styles.headerTools}>
         <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Icon name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <MaterialIcons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search payees..."
@@ -175,36 +211,38 @@ export default function PayeesScreen() {
           />
           {searchQuery ? (
              <TouchableOpacity style={{ padding: 8, marginRight: -8 }} onPress={() => setSearchQuery('')}>
-               <Icon name="close" size={20} color={colors.textSecondary} />
+               <MaterialIcons name="close" size={20} color={colors.textSecondary} />
              </TouchableOpacity>
           ) : null}
         </View>
 
         <View style={styles.actionRow}>
-          {lastSynced && (
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginRight: 'auto', opacity: 0.8 }}>
-              {syncing ? 'Syncing...' : `Synced ${getRelativeTime(lastSynced)}`}
+          <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border, flex: 1, marginRight: 8 }]}>
+            <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+            <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }} numberOfLines={1}>
+              {syncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
             </Text>
-          )}
+          </View>
 
           <TouchableOpacity 
             style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
-            onPress={() => setSortAsc(!sortAsc)}
-          >
-            <Icon name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
-            onPress={() => setViewMode(v => v === 'list' ? 'grid' : 'list')}
-          >
-            <Icon name={viewMode === 'list' ? "grid-view" : "view-list"} size={20} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
             onPress={handleManualSync}
             disabled={syncing}
           >
-            {syncing ? <ActivityIndicator size="small" color={colors.primary} /> : <Icon name="sync" size={20} color={colors.primary} />}
+            {syncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
+            onPress={() => setSortAsc(!sortAsc)}
+          >
+            <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
+            onPress={toggleViewMode}
+          >
+            <MaterialIcons name={viewMode === 'list' ? "grid-view" : "view-list"} size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -212,7 +250,7 @@ export default function PayeesScreen() {
       {/* Main List */}
       {filteredPayees.length === 0 ? (
         <View style={styles.centered}>
-          <Icon name="storefront" size={64} color={colors.border} />
+          <MaterialIcons name="storefront" size={64} color={colors.border} />
           <Text style={[styles.emptyHeader, { color: colors.textSecondary }]}>
             {searchQuery ? 'No Payees Found' : 'No Payees Yet'}
           </Text>
@@ -229,15 +267,16 @@ export default function PayeesScreen() {
           ) : null}
         </View>
       ) : (
-         <FlatList
+          <FlatList
             key={viewMode} // force re-render across columns dynamically
             data={filteredPayees}
-            numColumns={viewMode === 'grid' ? 2 : 1}
+            numColumns={viewMode === 'grid' ? 3 : 1}
             keyExtractor={item => item.id}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             columnWrapperStyle={viewMode === 'grid' ? styles.gridWrapper : undefined}
-         />
+            showsVerticalScrollIndicator={false}
+          />
       )}
 
       {/* Floating Action Button */}
@@ -246,7 +285,7 @@ export default function PayeesScreen() {
          onPress={() => setAddModalVisible(true)}
          activeOpacity={0.8}
       >
-        <Icon name="add" size={28} color="#fff" />
+        <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
       {/* Add Payee Modal */}
@@ -295,7 +334,7 @@ export default function PayeesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
   
   headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
   searchBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 48, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
@@ -303,23 +342,24 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   
-  listContent: { padding: 16, paddingTop: 4, paddingBottom: 100 },
-  gridWrapper: { justifyContent: 'space-between' },
+  listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 },
+  gridWrapper: { justifyContent: 'flex-start' },
   
-  payeeCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
-  payeeCardGrid: { flex: 0.48, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 24, paddingHorizontal: 16 },
+  payeeCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
+  payeeCardGrid: { width: '31%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 8, marginHorizontal: '1%' },
   
-  logoContainer: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 16 },
+  logoContainer: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
   logoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   logoFallback: { fontSize: 20, fontWeight: 'bold' },
-  payeeName: { fontSize: 16, fontWeight: '600', flex: 1 },
+  payeeName: { fontSize: 13, fontWeight: '700', flex: 1 },
+  syncBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
 
   emptyHeader: { fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
   emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  clearFilterButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginTop: 8 },
+  clearFilterButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, marginTop: 12 },
   clearFilterText: { fontWeight: '600', fontSize: 14 },
 
-  fab: { position: 'absolute', right: 24, bottom: 110, width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  fab: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalDismiss: { flex: 1 },

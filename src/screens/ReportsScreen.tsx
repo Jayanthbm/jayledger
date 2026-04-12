@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getTransactionsByCategoryForExpense } from '../db/queries';
@@ -12,22 +12,36 @@ export default function ReportsScreen() {
   const [currentMonthData, setCurrentMonthData] = useState<any[]>([]);
   const [previousMonthData, setPreviousMonthData] = useState<any[]>([]);
 
+  const [loading, setLoading] = useState(true);
+  
   const loadData = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      setLoading(false);
+      return;
+    }
     
-    const now = new Date();
-    const currStart = format(startOfMonth(now), 'yyyy-MM-dd');
-    const currEnd = format(endOfMonth(now), 'yyyy-MM-dd');
-    
-    const prevTime = subMonths(now, 1);
-    const prevStart = format(startOfMonth(prevTime), 'yyyy-MM-dd');
-    const prevEnd = format(endOfMonth(prevTime), 'yyyy-MM-dd');
+    setLoading(true);
+    console.log("[Reports] Loading data...");
+    try {
+      const now = new Date();
+      const currStart = format(startOfMonth(now), 'yyyy-MM-dd');
+      const currEnd = format(endOfMonth(now), 'yyyy-MM-dd');
+      
+      const prevTime = subMonths(now, 1);
+      const prevStart = format(startOfMonth(prevTime), 'yyyy-MM-dd');
+      const prevEnd = format(endOfMonth(prevTime), 'yyyy-MM-dd');
 
-    const curr = await getTransactionsByCategoryForExpense(session.user.id, currStart, currEnd);
-    const prev = await getTransactionsByCategoryForExpense(session.user.id, prevStart, prevEnd);
+      const curr = await getTransactionsByCategoryForExpense(session.user.id, currStart, currEnd);
+      const prev = await getTransactionsByCategoryForExpense(session.user.id, prevStart, prevEnd);
 
-    setCurrentMonthData(curr);
-    setPreviousMonthData(prev);
+      setCurrentMonthData(curr);
+      setPreviousMonthData(prev);
+      console.log("[Reports] Data loaded.");
+    } catch (e) {
+      console.error("[Reports] Load error:", e);
+    } finally {
+      setLoading(false);
+    }
   }, [session?.user?.id]);
 
   useEffect(() => {
@@ -49,6 +63,14 @@ export default function ReportsScreen() {
       )}
     </View>
   );
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>

@@ -12,8 +12,14 @@ export default function App() {
 
   useEffect(() => {
     const setup = async () => {
-      await initDB();
-      setDbReady(true);
+      console.log("[App] Starting DB setup...");
+      try {
+        await initDB();
+        console.log("[App] DB setup complete. Setting dbReady = true");
+        setDbReady(true);
+      } catch (error) {
+        console.error("[App] Critical DB Setup Error:", error);
+      }
     };
     setup();
   }, []);

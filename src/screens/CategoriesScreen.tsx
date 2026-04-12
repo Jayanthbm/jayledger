@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Modal, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getCategories, insertCategory } from '../db/queries';
-import { syncCategories, pushCategory } from '../services/syncService';
+import { runFullSync } from '../services/syncService';
 import { Category } from '../models/types';
-import Icon from '@expo/vector-icons/MaterialIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -26,7 +27,7 @@ export default function CategoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
   const [activeTab, setActiveTab] = useState<'Expense' | 'Income'>('Expense');
@@ -40,16 +41,43 @@ export default function CategoriesScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const loadData = async () => {
-    if (user?.id) {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      // Load viewMode preference
+      try {
+        const savedMode = await AsyncStorage.getItem(`@category_view_mode_${user.id}`);
+        if (savedMode === 'list' || savedMode === 'grid') {
+          setViewMode(savedMode);
+        }
+      } catch (e) {}
+
       let fetchedCats = await getCategories(user.id);
       if (fetchedCats.length === 0) {
-        await syncCategories(user.id);
+        await runFullSync(user.id);
         fetchedCats = await getCategories(user.id);
       }
       setCategories(fetchedCats);
       try {
         const last = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
         if (last) setLastSynced(parseInt(last, 10));
+      } catch (e) {}
+    } catch (err) {
+      console.error("[Categories] loadData error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleViewMode = async () => {
+    const newMode = viewMode === 'list' ? 'grid' : 'list';
+    setViewMode(newMode);
+    if (user?.id) {
+      try {
+        await AsyncStorage.setItem(`@category_view_mode_${user.id}`, newMode);
       } catch (e) {}
     }
   };
@@ -67,13 +95,21 @@ export default function CategoriesScreen() {
     init();
   }, [user]);
 
-  const handleManualSync = async () => {
+  const navigation = useNavigation<any>();
+
+  const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setSyncing(true);
-    await syncCategories(user.id);
+    await runFullSync(user.id, true);
     await loadData();
     setSyncing(false);
-  };
+  }, [user?.id, loadData]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: 'Categories',
+    });
+  }, [navigation]);
 
   const handleAddCategory = async () => {
     if (!newName.trim() || !user?.id) return;
@@ -97,7 +133,7 @@ export default function CategoriesScreen() {
     setNewAppIcon('');
     setIsSaving(false);
 
-    await pushCategory(newCategory);
+    runFullSync(user.id).catch(err => console.error("Category sync failed", err));
   };
 
   const filteredData = useMemo(() => {
@@ -132,6 +168,8 @@ export default function CategoriesScreen() {
 
   const renderItem = ({ item }: { item: Category }) => {
     const isGrid = viewMode === 'grid';
+    const accentColor = item.type === 'Income' ? colors.success : colors.primary;
+    
     return (
       <TouchableOpacity 
         style={[
@@ -139,15 +177,24 @@ export default function CategoriesScreen() {
           { backgroundColor: colors.card, borderColor: colors.border },
           isGrid && styles.itemCardGrid
         ]}
+        activeOpacity={0.7}
       >
-        <View style={[styles.iconBox, { backgroundColor: colors.background }]}>
+        <View style={[
+          styles.iconBox, 
+          { backgroundColor: accentColor + '15' }, // 15% opacity tint
+          isGrid && { marginRight: 0 }
+        ]}>
           {item.app_icon ? (
-            <Icon name={item.app_icon as any} size={28} color={activeTab === 'Income' ? colors.success : colors.primary} />
+            <MaterialIcons name={item.app_icon as any} size={isGrid ? 24 : 26} color={accentColor} />
           ) : (
-             <Text style={styles.legacyIconFallback}>{item.icon || '🏷️'}</Text>
+             <Text style={[styles.legacyIconFallback, { fontSize: isGrid ? 22 : 24 }]}>{item.icon || '🏷️'}</Text>
           )}
         </View>
-        <Text style={[styles.itemName, { color: colors.text }, isGrid && { marginTop: 12, textAlign: 'center' }]} numberOfLines={2}>
+        <Text style={[
+          styles.itemName, 
+          { color: colors.text }, 
+          isGrid && { marginTop: 10, textAlign: 'center', fontSize: 13 }
+        ]} numberOfLines={2}>
           {item.name}
         </Text>
       </TouchableOpacity>
@@ -175,7 +222,7 @@ export default function CategoriesScreen() {
         </View>
 
         <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Icon name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <MaterialIcons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder={`Search ${activeTab.toLowerCase()}...`}
@@ -185,55 +232,62 @@ export default function CategoriesScreen() {
           />
           {searchQuery ? (
              <TouchableOpacity style={{ padding: 8, marginRight: -8 }} onPress={() => setSearchQuery('')}>
-               <Icon name="close" size={20} color={colors.textSecondary} />
+               <MaterialIcons name="close" size={20} color={colors.textSecondary} />
              </TouchableOpacity>
           ) : null}
         </View>
 
         <View style={styles.actionRow}>
-          {lastSynced && (
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginRight: 'auto', opacity: 0.8 }}>
-              {syncing ? 'Syncing...' : `Synced ${getRelativeTime(lastSynced)}`}
+          <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border, flex: 1, marginRight: 8 }]}>
+            <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+            <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }} numberOfLines={1}>
+              {syncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
             </Text>
-          )}
+          </View>
 
-          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setSortAsc(!sortAsc)}>
-            <Icon name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
+          <TouchableOpacity 
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
+            onPress={handleManualSync}
+            disabled={syncing}
+          >
+            {syncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} onPress={() => setViewMode(v => v === 'list' ? 'grid' : 'list')}>
-            <Icon name={viewMode === 'list' ? "grid-view" : "view-list"} size={20} color={colors.text} />
+
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} onPress={() => setSortAsc(!sortAsc)}>
+            <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} onPress={handleManualSync} disabled={syncing}>
-            {syncing ? <ActivityIndicator size="small" color={colors.primary} /> : <Icon name="sync" size={20} color={colors.primary} />}
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} onPress={toggleViewMode}>
+            <MaterialIcons name={viewMode === 'list' ? "grid-view" : "view-list"} size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       {filteredData.length === 0 ? (
         <View style={styles.emptyCentered}>
-          <Icon name="category" size={64} color={colors.border} />
+          <MaterialIcons name="storefront" size={64} color={colors.border} />
           <Text style={[styles.emptyHeader, { color: colors.textSecondary }]}>{searchQuery ? 'No Categories Found' : `No ${activeTab} Categories`}</Text>
           <Text style={[styles.emptySub, { color: colors.textSecondary }]}>{searchQuery ? `Nothing matches "${searchQuery}".` : 'Add your first category!'}</Text>
           {searchQuery && (
-            <TouchableOpacity style={{ padding: 8, borderWidth: 1, borderColor: colors.border, borderRadius: 20 }} onPress={() => setSearchQuery('')}>
+            <TouchableOpacity style={{ paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1, borderColor: colors.border, borderRadius: 20, marginTop: 12 }} onPress={() => setSearchQuery('')}>
               <Text style={{ color: colors.primary, fontWeight: '600' }}>Clear Search</Text>
             </TouchableOpacity>
           )}
         </View>
       ) : (
-         <FlatList
+          <FlatList
             key={viewMode}
             data={filteredData}
-            numColumns={viewMode === 'grid' ? 2 : 1}
+            numColumns={viewMode === 'grid' ? 3 : 1}
             keyExtractor={item => item.id}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
             columnWrapperStyle={viewMode === 'grid' ? styles.gridWrapper : undefined}
-         />
+            showsVerticalScrollIndicator={false}
+          />
       )}
 
       <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setAddModalVisible(true)} activeOpacity={0.8}>
-        <Icon name="add" size={28} color="#fff" />
+        <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
       <Modal visible={isAddModalVisible} transparent animationType="slide" onRequestClose={() => setAddModalVisible(false)}>
@@ -284,20 +338,21 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   
-  listContent: { padding: 16, paddingTop: 4, paddingBottom: 100 },
-  gridWrapper: { justifyContent: 'space-between' },
+  listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 }, // Extra space for FAB and bottom tabs
+  gridWrapper: { justifyContent: 'flex-start' }, // Left align for more grid stability
   
-  itemCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
-  itemCardGrid: { flex: 0.48, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 24, paddingHorizontal: 16 },
+  itemCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
+  itemCardGrid: { width: '31%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 8, marginHorizontal: '1%' },
   
-  iconBox: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 16 },
-  legacyIconFallback: { fontSize: 28 },
-  itemName: { fontSize: 16, fontWeight: '600', flex: 1 },
+  iconBox: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
+  legacyIconFallback: { fontSize: 24 },
+  itemName: { fontSize: 13, fontWeight: '700', flex: 1 },
+  syncBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
 
   emptyHeader: { fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
   emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 16 },
 
-  fab: { position: 'absolute', right: 24, bottom: 110, width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  fab: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalDismiss: { flex: 1 },

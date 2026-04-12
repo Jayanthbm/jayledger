@@ -4,10 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getDb } from '../db/database';
-import { syncGoals, pushGoal, pushGoalDelete } from '../services/syncService';
+import { runFullSync } from '../services/syncService';
 import { insertGoal, deleteGoalAsync } from '../db/queries';
 import { Goal } from '../models/types';
-import Icon from '@expo/vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -18,13 +19,17 @@ const generateUUID = () => {
   });
 };
 
+import { DeviceEventEmitter } from 'react-native';
+
 export default function GoalsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
+  const navigation = useNavigation<any>();
 
   const [data, setData] = useState<Goal[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [lastSynced, setLastSynced] = useState<number | null>(null);
 
   // Form State
@@ -42,17 +47,14 @@ export default function GoalsScreen() {
   const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
     const db = getDb();
     let rows = await db.getAllAsync<Goal>(
       `SELECT * FROM goals WHERE user_id = '${user.id}' ORDER BY name ASC`
     );
-    if (rows.length === 0) {
-      await syncGoals(user.id);
-      rows = await db.getAllAsync<Goal>(
-        `SELECT * FROM goals WHERE user_id = '${user.id}' ORDER BY name ASC`
-      );
-    }
     setData(rows);
     try {
       const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
@@ -61,15 +63,15 @@ export default function GoalsScreen() {
   }, [user?.id]);
 
   useEffect(() => {
-    loadData();
+    const sub = DeviceEventEmitter.addListener('module_refreshed', (data) => {
+      if (data.module === 'Goals') loadData();
+    });
+    return () => sub.remove();
   }, [loadData]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    if(user?.id) await syncGoals(user.id);
-    await loadData();
-    setRefreshing(false);
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const getRelativeTime = (timestamp: number) => {
     const mins = Math.round((Date.now() - timestamp) / 60000);
@@ -130,8 +132,8 @@ export default function GoalsScreen() {
     resetForm();
     setIsSaving(false);
 
-    // Background push sync identically triggering Upsert on Supabase organically
-    await pushGoal(newGoal);
+    // Trigger background sync (non-blocking)
+    runFullSync(user.id).catch(err => console.error("Goal sync failed", err));
   };
 
   const handleDelete = async () => {
@@ -144,7 +146,7 @@ export default function GoalsScreen() {
     resetForm();
 
     await deleteGoalAsync(id, user.id);
-    await pushGoalDelete(id, user.id);
+    runFullSync(user.id).catch(err => console.error("Goal sync failed", err));
   };
 
   const confirmDelete = (id: string) => {
@@ -186,31 +188,42 @@ export default function GoalsScreen() {
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleOpenGoal(item); }} style={{ padding: 4, marginRight: 8 }}>
-              <Icon name="edit" size={20} color={colors.textSecondary} />
+              <MaterialIcons name="edit" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={(e) => { e.stopPropagation(); confirmDelete(item.id); }} style={{ padding: 4 }}>
-              <Icon name="delete-outline" size={22} color="#ef4444" />
+              <MaterialIcons name="delete-outline" size={22} color="#ef4444" />
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={[styles.progressWrapper, { backgroundColor: colors.border }]}>
+        <View style={styles.statsRow}>
+          <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Saved</Text>
+          <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Target</Text>
+        </View>
+        <View style={styles.statsRow}>
+          <Text style={[styles.amountValue, { color: colors.success }]}>₹{item.current_amount.toLocaleString()}</Text>
+          <Text style={[styles.amountValue, { color: colors.text }]}>₹{item.goal_amount.toLocaleString()}</Text>
+        </View>
+
+        <View style={[styles.progressWrapper, { backgroundColor: colors.border, marginTop: 12, marginBottom: 8 }]}>
           <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: progress >= 100 ? colors.success : colors.primary }]} />
         </View>
 
-        <View style={styles.bottomRow}>
-          <Text style={[styles.sub, { color: colors.success }]}>₹{item.current_amount.toLocaleString()}</Text>
-          <Text style={[styles.sub, { color: colors.textSecondary }]}>/ ₹{item.goal_amount.toLocaleString()}</Text>
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'baseline' }}>
-             <Text style={[styles.amount, { color: colors.primary, marginRight: 8 }]}>{progressDisplay}%</Text>
-             <Text style={[styles.sub, { color: colors.textSecondary }]}>
-                (₹{remaining.toLocaleString()} left)
-             </Text>
-          </View>
+        <View style={styles.statsRow}>
+          <Text style={[styles.percentLabel, { color: colors.primary }]}>{progressDisplay}% Complete</Text>
+          <Text style={[styles.remainingLabel, { color: colors.textSecondary }]}>₹{remaining.toLocaleString()} left</Text>
         </View>
       </TouchableOpacity>
     );
   };
+
+  const handleManualSync = useCallback(async () => {
+    if (!user?.id) return;
+    setIsSyncing(true);
+    await runFullSync(user.id, true);
+    await loadData();
+    setIsSyncing(false);
+  }, [user?.id, loadData]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -218,16 +231,25 @@ export default function GoalsScreen() {
       {/* Header Actions */}
       <View style={styles.headerTools}>
         <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-           <Icon name="history" size={14} color={colors.textSecondary} style={{marginRight: 6}}/>
+           <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{marginRight: 6}}/>
            <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }}>
-             {lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet'}
+             {isSyncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
            </Text>
         </View>
-        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 'auto', marginRight: 8 }]} onPress={onRefresh}>
-           <Icon name="sync" size={20} color={colors.text} />
+        
+        <TouchableOpacity 
+          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 'auto' }]} 
+          onPress={handleManualSync}
+          disabled={isSyncing}
+        >
+           {isSyncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setSortAsc(!sortAsc)}>
-           <Icon name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
+
+        <TouchableOpacity 
+          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
+          onPress={() => setSortAsc(!sortAsc)}
+        >
+           <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -236,18 +258,21 @@ export default function GoalsScreen() {
         keyExtractor={item => item.id}
         renderItem={renderItem}
         contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
-             <Icon name="flag" size={48} color={colors.border} />
+             <MaterialIcons name="flag" size={48} color={colors.border} />
              <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 16, color: colors.textSecondary }}>No Goals Assigned Offline</Text>
              <Text style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: colors.textSecondary }}>Add your explicit goal constraints remotely.</Text>
           </View>
         }
       />
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => handleOpenGoal()} activeOpacity={0.8}>
-        <Icon name="add" size={28} color="#fff" />
+      <TouchableOpacity 
+        style={[styles.fab, { backgroundColor: colors.primary }]} 
+        onPress={() => handleOpenGoal()} 
+        activeOpacity={0.8}
+      >
+        <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
       <Modal visible={isModalOpen} transparent animationType="slide" onRequestClose={resetForm}>
@@ -262,7 +287,7 @@ export default function GoalsScreen() {
                </Text>
                {editingGoal && (
                  <TouchableOpacity onPress={() => confirmDelete(editingGoal.id)} style={{ padding: 8 }}>
-                   <Icon name="delete-outline" size={24} color="#ef4444" />
+                   <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
                  </TouchableOpacity>
                )}
             </View>
@@ -338,13 +363,30 @@ const styles = StyleSheet.create({
   goalLogo: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
   goalLogoFallback: { width: 32, height: 32, borderRadius: 16, marginRight: 10, justifyContent: 'center', alignItems: 'center' },
 
-  progressWrapper: { width: '100%', height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 12 },
-  progressFill: { height: '100%', borderRadius: 4 },
+  progressWrapper: { width: '100%', height: 10, borderRadius: 5, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 5 },
 
-  bottomRow: { flexDirection: 'row', alignItems: 'center' },
-  sub: { fontSize: 14, fontWeight: '600', marginRight: 4 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  amountLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  amountValue: { fontSize: 15, fontWeight: 'bold' },
+  percentLabel: { fontSize: 13, fontWeight: '800' },
+  remainingLabel: { fontSize: 12, fontWeight: '600' },
 
-  fab: { position: 'absolute', right: 24, bottom: 110, width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  fab: { 
+    position: 'absolute', 
+    right: 16, 
+    bottom: 16, 
+    width: 56, 
+    height: 56, 
+    borderRadius: 16, // M3 style (more square, rounded corners)
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    elevation: 8, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 4 
+  },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalDismiss: { flex: 1 },
@@ -359,5 +401,10 @@ const styles = StyleSheet.create({
   inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
 
   saveButton: { height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 16 },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  listContent: { padding: 16, paddingBottom: 100 },
+  emptyContainer: { alignItems: 'center', marginTop: 60, paddingHorizontal: 40 },
+  emptyHeader: { fontSize: 18, fontWeight: 'bold', marginTop: 16 },
+  emptySub: { fontSize: 14, textAlign: 'center', marginTop: 8 },
 });

@@ -13,6 +13,11 @@ export interface Transaction {
   payee_logo?: string | null;
   type: string;
   user_id: string;
+  product_link?: string | null;
+  sync_status?: number;
+  created_at?: string;
+  updated_at?: string;
+  deleted?: number;
 }
 
 export interface Goal {
@@ -22,6 +27,7 @@ export interface Goal {
   goal_amount: number;
   current_amount: number;
   user_id: string;
+  sync_status?: number;
 }
 
 export interface Budget {
@@ -33,6 +39,7 @@ export interface Budget {
   start_date: string;
   categories: string; // JSON string of category IDs
   user_id: string;
+  sync_status?: number;
 }
 
 export interface Category {
@@ -42,6 +49,7 @@ export interface Category {
   icon: string;
   app_icon?: string | null;
   user_id: string;
+  sync_status?: number;
 }
 
 export interface Payee {
@@ -49,6 +57,7 @@ export interface Payee {
   name: string;
   logo: string;
   user_id: string;
+  sync_status?: number;
 }
 
 // Supabase session shape minimum
