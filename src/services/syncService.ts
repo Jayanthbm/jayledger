@@ -221,7 +221,17 @@ export const syncCategories = async (userId: string, force = false) => {
                 const name = (item.name || '').replace(/'/g, "''");
                 const icon = (item.icon || '').replace(/'/g, "''");
                 const appIcon = (item.app_icon || '').replace(/'/g, "''");
-                await db.execAsync(`INSERT OR REPLACE INTO categories (id, name, type, icon, app_icon, user_id, sync_status) VALUES ('${item.id}', '${name}', '${item.type}', '${icon}', '${appIcon}', '${item.user_id}', 0)`);
+                await db.execAsync(`
+                  INSERT INTO categories (id, name, type, icon, app_icon, user_id, sync_status) 
+                  VALUES ('${item.id}', '${name}', '${item.type}', '${icon}', '${appIcon}', '${item.user_id}', 0)
+                  ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name,
+                    type = excluded.type,
+                    icon = excluded.icon,
+                    app_icon = excluded.app_icon,
+                    user_id = excluded.user_id,
+                    sync_status = 0
+                `);
             }
         });
     }

@@ -49,6 +49,7 @@ export interface Category {
   icon: string;
   app_icon?: string | null;
   user_id: string;
+  is_living_cost?: number;
   sync_status?: number;
 }
 

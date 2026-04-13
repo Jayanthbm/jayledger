@@ -86,6 +86,7 @@ export const initDB = async () => {
         icon TEXT,
         app_icon TEXT,
         user_id TEXT NOT NULL,
+        is_living_cost INTEGER DEFAULT 0,
         sync_status INTEGER DEFAULT 0
       );
     `);
@@ -118,7 +119,8 @@ export const initDB = async () => {
       "ALTER TABLE categories ADD COLUMN app_icon TEXT;",
       "ALTER TABLE categories ADD COLUMN user_id TEXT;",
       "ALTER TABLE payees ADD COLUMN logo TEXT;",
-      "ALTER TABLE payees ADD COLUMN user_id TEXT;"
+      "ALTER TABLE payees ADD COLUMN user_id TEXT;",
+      "ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;"
     ];
 
     for (const m of migrations) {

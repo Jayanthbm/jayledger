@@ -44,7 +44,7 @@ export default function MainTabs() {
       const userId = session.user.id;
       // Trigger sync based on active tab
       if (activeTab === 'Goals') await syncGoals(userId, true);
-      else if (activeTab === 'Transactions') await syncTransactions(userId, true);
+      else if (activeTab === 'Transactions' || activeTab === 'Reports') await syncTransactions(userId, true);
       else if (activeTab === 'Budgets') await syncBudgets(userId, true);
       // ... Add others if needed
       
@@ -69,7 +69,7 @@ export default function MainTabs() {
         </Text>
         
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {['Dashboard', 'Transactions', 'Budgets', 'Goals'].includes(activeTab) && (
+          {['Dashboard', 'Transactions', 'Budgets', 'Goals', 'Reports'].includes(activeTab) && (
             <TouchableOpacity 
               onPress={handleGlobalRefresh}
               style={[styles.settingsIcon, { marginRight: 8 }]}
