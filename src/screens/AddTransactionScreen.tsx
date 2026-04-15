@@ -480,15 +480,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   currencySymbol: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: '700',
-    marginRight: 0,
+    marginRight: 4,
   },
   amountInput: {
-    fontSize: 20,
+    fontSize: 32,
     fontWeight: '800',
-    textAlign: 'center',
-    minWidth: 100,
+    textAlign: 'left',
   },
   divider: {
     height: 1,
