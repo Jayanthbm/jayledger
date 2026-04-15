@@ -27,23 +27,14 @@ import {
   getReportCategoriesOverview,
   getCategories,
   toggleCategoryLivingCost,
-  getTransactionsByDateRange
+  getTransactionsByDateRange,
+  getMinTransactionYear
 } from '../db/queries';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { format, endOfMonth } from 'date-fns';
 import { Transaction, Category } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 
 const { width } = Dimensions.get('window');
-
-interface ReportViewProps {
-  route: {
-    params: {
-      reportType: string;
-      title: string;
-    }
-  };
-  navigation: any;
-}
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -51,7 +42,6 @@ const months = [
 ];
 
 const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
 export default function ReportView({ route, navigation }: any) {
   const { reportType, title } = route.params;
@@ -63,6 +53,7 @@ export default function ReportView({ route, navigation }: any) {
   const [type, setType] = useState<'Expense' | 'Income'>('Expense');
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(currentYear.toString());
+  const [years, setYears] = useState<string[]>([currentYear.toString()]);
 
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
@@ -84,7 +75,7 @@ export default function ReportView({ route, navigation }: any) {
   const monthStr = (month + 1).toString().padStart(2, '0');
 
   const isSummary = ['monthlySummary', 'yearlySummary'].includes(reportType);
-  
+
   const displayTitle = useMemo(() => {
     if (!isSummary) return title;
     const dateStr = reportType === 'yearlySummary' ? year : `${months[month]} ${year}`;
@@ -95,12 +86,12 @@ export default function ReportView({ route, navigation }: any) {
     if (!isSummary) return null;
     const incomeObj = data.find(d => d.type?.toLowerCase() === 'income');
     const expenseObj = data.find(d => d.type?.toLowerCase() === 'expense');
-    
+
     const income = Number(incomeObj?.totalAmount || 0);
     const expense = Number(expenseObj?.totalAmount || 0);
     const saved = income - expense;
     const spentPercent = income > 0 ? (expense / income) * 100 : 0;
-    
+
     return { income, expense, saved, spentPercent };
   }, [data, isSummary]);
 
@@ -138,6 +129,15 @@ export default function ReportView({ route, navigation }: any) {
           break;
       }
     setData(result);
+
+    // Dynamic Years
+    const minYear = await getMinTransactionYear(userId);
+    const generatedYears = [];
+    for (let y = currentYear; y >= minYear; y--) {
+      generatedYears.push(y.toString());
+    }
+    setYears(generatedYears);
+
     } catch (error) {
       console.error("Report Load Error:", error);
     } finally {
@@ -167,13 +167,13 @@ export default function ReportView({ route, navigation }: any) {
     // For Categories and Payees overview/summary, navigate to Transactions screen
     if (['summaryByCategory', 'monthlyLivingCosts', 'payees', 'categories', 'summaryByPayee', 'subscriptionAndBills'].includes(reportType)) {
       const params: any = {};
-      
+
       if (item.category_id || (item.category_name && reportType.includes('Category')) || reportType === 'monthlyLivingCosts' || reportType === 'subscriptionAndBills') {
-        params.initialSelectedCats = item.category_id ? [item.category_id] : 
+        params.initialSelectedCats = item.category_id ? [item.category_id] :
                                     (allCategories.find(c => c.name === item.category_name)?.id ? [allCategories.find(c => c.name === item.category_name)!.id] : []);
       } else if (item.payee_id || item.name || item.payee_name) {
         params.initialSelectedPayees = item.payee_id ? [item.payee_id] : [];
-        // If we don't have ID, we might need to fetch it or match by name, 
+        // If we don't have ID, we might need to fetch it or match by name,
         // but the query results should ideally have IDs.
       }
 
@@ -230,17 +230,17 @@ export default function ReportView({ route, navigation }: any) {
   const sortedData = useMemo(() => {
     let filtered = data;
     if (searchQuery.trim()) {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         (item.name || item.category_name || item.payee_name || '')
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
       );
     }
-    
+
     return [...filtered].sort((a, b) => {
       let valA = sortKey === 'name' ? (a.name || a.category_name || '') : (a.amount || a.totalAmount || 0);
       let valB = sortKey === 'name' ? (b.name || b.category_name || '') : (b.amount || b.totalAmount || 0);
-      
+
       if (typeof valA === 'string' && typeof valB === 'string') {
         return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
       }
@@ -283,8 +283,8 @@ export default function ReportView({ route, navigation }: any) {
     navigation.setOptions({
       title: displayTitle,
       headerRight: reportType === 'monthlyLivingCosts' ? () => (
-        <TouchableOpacity 
-          onPress={() => { loadAllCategories(); setShowConfig(true); }} 
+        <TouchableOpacity
+          onPress={() => { loadAllCategories(); setShowConfig(true); }}
           style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
@@ -355,7 +355,7 @@ export default function ReportView({ route, navigation }: any) {
             )}
           </View>
           <View style={styles.sortControls}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.sortBtn, sortKey === 'name' && { borderColor: colors.primary }]}
               onPress={() => {
                 if (sortKey === 'name') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -365,7 +365,7 @@ export default function ReportView({ route, navigation }: any) {
               <Text style={[styles.sortBtnText, { color: sortKey === 'name' ? colors.primary : colors.textSecondary }]}>Name</Text>
               {sortKey === 'name' && <Icon name={sortOrder === 'asc' ? 'arrow-upward' : 'arrow-downward'} size={14} color={colors.primary} />}
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.sortBtn, sortKey === 'amount' && { borderColor: colors.primary }]}
               onPress={() => {
                 if (sortKey === 'amount') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -492,20 +492,22 @@ export default function ReportView({ route, navigation }: any) {
           style={styles.modalOverlay}
           onPress={() => setShowYearPicker(false)}
         >
-          <View style={[styles.pickerContainer, { backgroundColor: colors.card }]}>
+          <View style={[styles.pickerContainer, { backgroundColor: colors.card, maxHeight: 350 }]}>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Year</Text>
-            {years.map((y) => (
-              <TouchableOpacity
-                key={y}
-                style={styles.pickerItem}
-                onPress={() => {
-                  setYear(y);
-                  setShowYearPicker(false);
-                }}
-              >
-                <Text style={[styles.pickerText, { color: y === year ? colors.primary : colors.text }]}>{y}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {years.map((y) => (
+                <TouchableOpacity
+                  key={y}
+                  style={styles.pickerItem}
+                  onPress={() => {
+                    setYear(y);
+                    setShowYearPicker(false);
+                  }}
+                >
+                  <Text style={[styles.pickerText, { color: y === year ? colors.primary : colors.text }]}>{y}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>

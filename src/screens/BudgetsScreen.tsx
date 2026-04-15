@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Dimensions } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getBudgets, getBudgetSpending, getTransactionsByDateRange } from '../db/queries';
+import { getBudgets, getBudgetSpending, getTransactionsByDateRange, getMinTransactionYear } from '../db/queries';
 import { Budget, Transaction } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -26,7 +26,7 @@ const months = [
 ];
 
 const currentYearNum = new Date().getFullYear();
-const years = Array.from({ length: 5 }, (_, i) => (currentYearNum - i).toString());
+const currentMonthNum = new Date().getMonth();
 
 export default function BudgetsScreen() {
   const { colors } = useTheme();
@@ -35,6 +35,7 @@ export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
   
   const [data, setData] = useState<EnrichedBudget[]>([]);
+  const [years, setYears] = useState<string[]>([currentYearNum.toString()]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
@@ -158,6 +159,14 @@ export default function BudgetsScreen() {
           setIsSyncing(false);
         }
       }
+
+      // Dynamic Years
+      const minYear = await getMinTransactionYear(session.user.id);
+      const generatedYears = [];
+      for (let y = currentYearNum; y >= minYear; y--) {
+        generatedYears.push(y.toString());
+      }
+      setYears(generatedYears);
     } catch (e) {
       console.error("Load Budgets Error:", e);
     } finally {
@@ -265,20 +274,24 @@ export default function BudgetsScreen() {
           <View style={[styles.pickerContainer, { backgroundColor: colors.card }]}>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Month</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {months.map((m, i) => (
-                <TouchableOpacity
-                  key={m}
-                  style={styles.pickerItem}
-                  onPress={() => {
-                    const newDate = new Date(selectedDate);
-                    newDate.setMonth(i);
-                    setSelectedDate(newDate);
-                    setShowMonthPicker(false);
-                  }}
-                >
-                  <Text style={[styles.pickerText, { color: i === getMonth(selectedDate) ? colors.primary : colors.text }]}>{m}</Text>
-                </TouchableOpacity>
-              ))}
+              {months.map((m, i) => {
+                const isFuture = getYear(selectedDate) === currentYearNum && i > currentMonthNum;
+                return (
+                  <TouchableOpacity
+                    key={m}
+                    style={[styles.pickerItem, isFuture && { opacity: 0.3 }]}
+                    disabled={isFuture}
+                    onPress={() => {
+                      const newDate = new Date(selectedDate);
+                      newDate.setMonth(i);
+                      setSelectedDate(newDate);
+                      setShowMonthPicker(false);
+                    }}
+                  >
+                    <Text style={[styles.pickerText, { color: i === getMonth(selectedDate) ? colors.primary : colors.text }]}>{m}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         </TouchableOpacity>
@@ -287,22 +300,24 @@ export default function BudgetsScreen() {
       {/* Year Picker Modal */}
       <Modal visible={showYearPicker} transparent animationType="fade">
         <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowYearPicker(false)}>
-          <View style={[styles.pickerContainer, { backgroundColor: colors.card, maxHeight: 300 }]}>
+          <View style={[styles.pickerContainer, { backgroundColor: colors.card, maxHeight: 350 }]}>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Year</Text>
-            {years.map((y) => (
-              <TouchableOpacity
-                key={y}
-                style={styles.pickerItem}
-                onPress={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setFullYear(parseInt(y, 10));
-                  setSelectedDate(newDate);
-                  setShowYearPicker(false);
-                }}
-              >
-                <Text style={[styles.pickerText, { color: y === getYear(selectedDate).toString() ? colors.primary : colors.text }]}>{y}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {years.map((y) => (
+                <TouchableOpacity
+                  key={y}
+                  style={styles.pickerItem}
+                  onPress={() => {
+                    const newDate = new Date(selectedDate);
+                    newDate.setFullYear(parseInt(y, 10));
+                    setSelectedDate(newDate);
+                    setShowYearPicker(false);
+                  }}
+                >
+                  <Text style={[styles.pickerText, { color: y === getYear(selectedDate).toString() ? colors.primary : colors.text }]}>{y}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </TouchableOpacity>
       </Modal>

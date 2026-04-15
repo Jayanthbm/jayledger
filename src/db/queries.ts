@@ -55,14 +55,6 @@ export const getTransactionsByDateRange = async (userId: string, startDate: stri
   );
 };
 
-export const getTransactionsSummaryByDate = async (userId: string, startDate: string, endDate: string) => {
-  const db = getDb();
-  return db.getAllAsync<{ date: string; amount: number; type: string }>(
-    `SELECT date, SUM(amount) as amount, type FROM transactions WHERE user_id = ? AND date >= ? AND date <= ? AND deleted = 0 GROUP BY date, type ORDER BY date DESC`,
-    [userId, startDate, endDate]
-  );
-};
-
 export const getIncomeExpenseSummary = async (userId: string, startDate: string, endDate: string) => {
   const db = getDb();
   return db.getAllAsync<{ type: string; totalAmount: number }>(
@@ -158,6 +150,15 @@ export const getTransactionsByCategoryForExpense = async (userId: string, startD
      GROUP BY category_name ORDER BY totalAmount DESC`,
     [userId, startDate, endDate]
   );
+};
+
+export const getMinTransactionYear = async (userId: string) => {
+  const db = getDb();
+  const row = await db.getFirstAsync<{ minYear: string }>(
+    `SELECT strftime('%Y', MIN(date)) as minYear FROM transactions WHERE user_id = ? AND deleted = 0`,
+    [userId]
+  );
+  return row?.minYear ? parseInt(row.minYear) : new Date().getFullYear();
 };
 
 // Report Queries

@@ -7,12 +7,10 @@ import { Transaction } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
 
 export default function CalendarViewScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());

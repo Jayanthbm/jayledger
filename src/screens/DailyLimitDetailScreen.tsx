@@ -7,12 +7,10 @@ import { Transaction } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
 
 export default function DailyLimitDetailScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation();
   const [data, setData] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 

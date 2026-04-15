@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  TouchableOpacity, 
-  Modal, 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Modal,
   Platform,
   Alert,
-  Dimensions,
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
@@ -25,9 +24,6 @@ import { getCategories, getPayees, insertOrUpdateTransaction } from '../db/queri
 import { Category, Payee, Transaction } from '../models/types';
 import * as Crypto from 'expo-crypto';
 import { syncTransactions } from '../services/syncService';
-import { LinearGradient } from 'expo-linear-gradient';
-
-const { width } = Dimensions.get('window');
 
 const formatIconName = (name: string) => {
   if (!name) return 'category';
@@ -52,10 +48,10 @@ export default function AddTransactionScreen() {
   const [date, setDate] = useState(editTx ? new Date(editTx.transaction_timestamp) : new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  
+
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPayee, setSelectedPayee] = useState<Payee | null>(null);
-  
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
   const [showModal, setShowModal] = useState<'Category' | 'Payee' | null>(null);
@@ -77,11 +73,11 @@ export default function AddTransactionScreen() {
       ]);
       setCategories(cats);
       setPayees(p);
-      
+
       if (editTx) {
           const cat = cats.find(c => c.id === editTx.category_id);
           if (cat) setSelectedCategory(cat);
-          
+
           if (editTx.payee_id) {
               const payee = p.find(pay => pay.id === editTx.payee_id);
               if (payee) setSelectedPayee(payee);
@@ -143,7 +139,7 @@ export default function AddTransactionScreen() {
 
       await insertOrUpdateTransaction(newTx, 1);
       syncTransactions(session.user.id, true).catch(err => console.error("Background sync failed", err));
-      
+
       Alert.alert('Success', 'Transaction saved successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
@@ -157,13 +153,13 @@ export default function AddTransactionScreen() {
 
   const renderModal = (modalType: 'Category' | 'Payee') => {
     const rawData = modalType === 'Category' ? categories.filter(c => c.type === type) : payees;
-    
+
     // Add "None" option for Payees
-    const displayData = modalType === 'Payee' 
+    const displayData = modalType === 'Payee'
         ? [{ id: 'none', name: 'None' }, ...rawData] as (Category | Payee)[]
         : rawData;
 
-    const filteredData = displayData.filter(item => 
+    const filteredData = displayData.filter(item =>
       item.name.toLowerCase().includes(modalSearch.toLowerCase())
     );
     const iconColor = type === 'Income' ? colors.success : colors.danger;
@@ -184,7 +180,7 @@ export default function AddTransactionScreen() {
                 {/* Search Bar */}
                 <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
                     <Icon name="search" size={20} color={colors.textSecondary} />
-                    <TextInput 
+              <TextInput
                       style={[styles.searchInput, { color: colors.text }]}
                       placeholder={`Search ${modalType.toLowerCase()}...`}
                       placeholderTextColor={colors.textSecondary + '70'}
@@ -202,7 +198,7 @@ export default function AddTransactionScreen() {
                     renderItem={({ item }: { item: Category | Payee }) => {
                         const isSelected = (modalType === 'Category' ? (selectedCategory as Category)?.id : (selectedPayee as Payee)?.id) === item.id;
                         return (
-                            <TouchableOpacity 
+                          <TouchableOpacity
                                 style={styles.gridItem}
                                 onPress={() => {
                                     if (modalType === 'Category') {
@@ -213,14 +209,14 @@ export default function AddTransactionScreen() {
                                     setShowModal(null);
                                 }}
                             >
-                                <View style={[styles.gridIconBox, { 
-                                    backgroundColor: isSelected ? iconColor : iconBg, 
-                                    borderColor: isSelected ? iconColor : colors.border 
+                            <View style={[styles.gridIconBox, {
+                              backgroundColor: isSelected ? iconColor : iconBg,
+                              borderColor: isSelected ? iconColor : colors.border
                                 }]}>
-                                    <Icon 
-                                      name={formatIconName((item as any).app_icon || (modalType === 'Category' ? 'category' : 'person')) as any} 
-                                      size={24} 
-                                      color={isSelected ? 'white' : iconColor} 
+                              <Icon
+                                name={formatIconName((item as any).app_icon || (modalType === 'Category' ? 'category' : 'person')) as any}
+                                size={24}
+                                color={isSelected ? 'white' : iconColor}
                                     />
                                 </View>
                                 <Text style={[styles.gridLabel, { color: isSelected ? colors.primary : colors.textSecondary }]} numberOfLines={1}>{item.name}</Text>
@@ -243,7 +239,7 @@ export default function AddTransactionScreen() {
   const currentIconBg = type === 'Income' ? colors.success + '20' : colors.danger + '20';
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
@@ -646,5 +642,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-
-

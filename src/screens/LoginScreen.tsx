@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ActivityIndicator, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
@@ -19,12 +19,12 @@ import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import appConfig from '../../app.json';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const { colors, isDark } = useTheme();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -52,12 +52,12 @@ export default function LoginScreen() {
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#121417' : colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1, backgroundColor: isDark ? '#121417' : colors.background }}
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
@@ -65,7 +65,7 @@ export default function LoginScreen() {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.innerContainer}>
-              
+
               <View style={styles.headerArea}>
                 <Text style={[styles.titleText, { color: colors.text }]}>JayLedger</Text>
                 <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>

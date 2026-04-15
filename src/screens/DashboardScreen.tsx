@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { 
-  getIncomeExpenseSummary, 
-  getTransactionsByCategoryForExpense, 
-  getNetWorth, 
-  getSpentToday 
+import {
+  getIncomeExpenseSummary,
+  getTransactionsByCategoryForExpense,
+  getNetWorth,
+  getSpentToday
 } from '../db/queries';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, format, differenceInDays, addMonths, getDaysInMonth } from 'date-fns';
 import { DeviceEventEmitter } from 'react-native';
@@ -16,13 +16,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { runFullSync, isOnline, needsTransactionSync, syncTransactions } from '../services/syncService';
 import { getRelativeTime } from '../utils/dateUtils';
 
-const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation<any>();
-  
+
   const [loading, setLoading] = useState(true);
   const loadingLock = useRef(false);
   const [metrics, setMetrics] = useState({
@@ -46,7 +45,7 @@ export default function DashboardScreen() {
       return;
     }
     if (loadingLock.current) return;
-    
+
     const loadTimeout = setTimeout(() => {
       console.warn("Dashboard: loadData timed out! Forcing loading false.");
       setLoading(false);
@@ -99,10 +98,10 @@ export default function DashboardScreen() {
 
   const handleInitialSync = async () => {
     if (!session?.user?.id || isSyncing) return;
-    
+
     setIsSyncing(true);
     setSyncError(null);
-    
+
     try {
       const online = await isOnline();
       if (!online) {
@@ -137,7 +136,7 @@ export default function DashboardScreen() {
   const checkSyncStatus = useCallback(async () => {
     if (!session?.user?.id) return;
     const lastMasterSync = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
-    
+
     if (!lastMasterSync) {
       setShowSyncModal(true);
       await handleInitialSync();
@@ -194,8 +193,8 @@ export default function DashboardScreen() {
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity 
-          onPress={handleManualSync} 
+        <TouchableOpacity
+          onPress={handleManualSync}
           style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
           disabled={isSyncing}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -222,7 +221,7 @@ export default function DashboardScreen() {
     const balance = metrics.month.income - metrics.month.expense + metrics.spentToday;
     const limit = remainingDays > 0 ? balance / remainingDays : 0;
     const remainingToday = limit - metrics.spentToday;
-    
+
     return {
       limit: Math.max(0, limit),
       spentToday: metrics.spentToday,
@@ -252,7 +251,7 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-      
+
       <View style={[styles.mainCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeader}>
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -262,9 +261,9 @@ export default function DashboardScreen() {
         </View>
         <Text style={[styles.mainAmount, { color: colors.text }]}>₹{(metrics.month.income - metrics.month.expense).toLocaleString()}</Text>
         <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { 
+          <View style={[styles.progressBarFill, {
             width: `${Math.min(100, (metrics.month.expense / (metrics.month.income || 1)) * 100)}%`,
-            backgroundColor: colors.primary 
+            backgroundColor: colors.primary
           }]} />
         </View>
         <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
@@ -273,7 +272,7 @@ export default function DashboardScreen() {
       </View>
 
       {/* 2. Daily Limit -> One Row */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => navigation.navigate('DailyLimitDetail')}
       >
@@ -296,7 +295,7 @@ export default function DashboardScreen() {
       </TouchableOpacity>
 
       {/* 3. Pay Day -> One Row with Dots & Circular Progress */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => navigation.navigate('CalendarView')}
       >
@@ -309,19 +308,19 @@ export default function DashboardScreen() {
              <Text style={[styles.rowLabel, { color: colors.textSecondary, marginBottom: 12 }]}>{payDayInfo.nextMonth}</Text>
              <View style={styles.dotGrid}>
                 {Array.from({ length: payDayInfo.daysInMonth }).map((_, i) => (
-                  <View 
-                    key={i} 
+                  <View
+                    key={i}
                     style={[
-                      styles.dot, 
+                      styles.dot,
                       { backgroundColor: (i + 1) < payDayInfo.currentDay ? (isDark ? '#374151' : '#E5E7EB') : colors.primary }
-                    ]} 
+                    ]}
                   />
                 ))}
              </View>
           </View>
 
           <View style={styles.circularContainer}>
-             <View style={[styles.progressCircle, { 
+            <View style={[styles.progressCircle, {
                 borderColor: colors.border,
                 borderTopColor: colors.primary,
                 borderRightColor: (30 - payDayInfo.remaining) > 7 ? colors.primary : colors.border,
@@ -329,7 +328,7 @@ export default function DashboardScreen() {
                 borderLeftColor: (30 - payDayInfo.remaining) > 22 ? colors.primary : colors.border,
                 transform: [{ rotate: '0deg' }]
              }]}>
-                <View style={[styles.progressInner, { 
+              <View style={[styles.progressInner, {
                   backgroundColor: colors.primary + '08',
                 }]}>
                   <Text style={[styles.progressText, { color: colors.text }]}>{payDayInfo.remaining}</Text>
@@ -362,7 +361,7 @@ export default function DashboardScreen() {
           </View>
 
           <View style={styles.circularContainer}>
-             <View style={[styles.progressCircle, { 
+            <View style={[styles.progressCircle, {
                 borderColor: colors.border,
                 borderTopColor: colors.danger,
                 borderRightColor: (metrics.month.expense / (metrics.month.income || 1)) > 0.25 ? colors.danger : colors.border,
@@ -393,7 +392,7 @@ export default function DashboardScreen() {
               <Text style={[styles.catAmt, { color: colors.textSecondary }]}>₹{cat.totalAmount.toLocaleString()}</Text>
             </View>
             <View style={styles.catProgressBg}>
-              <View style={[styles.catProgressFill, { 
+              <View style={[styles.catProgressFill, {
                 width: `${Math.min(100, (cat.totalAmount / (metrics.month.expense || 1)) * 100)}%`,
                 backgroundColor: idx === 0 ? colors.primary : idx === 1 ? colors.textSecondary : colors.border
               }]} />
@@ -426,7 +425,7 @@ export default function DashboardScreen() {
           </View>
 
           <View style={styles.circularContainer}>
-             <View style={[styles.progressCircle, { 
+            <View style={[styles.progressCircle, {
                 borderColor: colors.border,
                 borderTopColor: colors.danger,
                 borderRightColor: (metrics.year.expense / (metrics.year.income || 1)) > 0.25 ? colors.danger : colors.border,
@@ -463,7 +462,7 @@ export default function DashboardScreen() {
             <View style={styles.syncIconContainer}>
                <MaterialIcons name="cloud-sync" size={60} color={colors.primary} />
             </View>
-            
+
             <Text style={[styles.syncTitle, { color: colors.text }]}>Initializing JayLedger</Text>
             <Text style={[styles.syncMessage, { color: colors.textSecondary }]}>
               {syncError ? 'Action Required' : 'Setting up your personal finance workspace...'}
@@ -474,8 +473,8 @@ export default function DashboardScreen() {
                 <View style={styles.errorContainer}>
                   <MaterialIcons name="error-outline" size={32} color={colors.danger} />
                   <Text style={[styles.errorText, { color: colors.danger }]}>{syncError}</Text>
-                  <TouchableOpacity 
-                    style={[styles.retryBtn, { backgroundColor: colors.primary }]} 
+                  <TouchableOpacity
+                    style={[styles.retryBtn, { backgroundColor: colors.primary }]}
                     onPress={handleInitialSync}
                   >
                     <Text style={styles.retryBtnText}>Connect & Retry</Text>
@@ -506,13 +505,13 @@ export default function DashboardScreen() {
                       'Calculating reports',
                       'Finalizing'
                     ].indexOf(syncStatus);
-                    
+
                     const isActive = syncStatus === step;
-                    
+
                     return (
                       <View key={step} style={styles.stepRow}>
                         <View style={[
-                          styles.stepIndicator, 
+                          styles.stepIndicator,
                           { backgroundColor: isDone ? colors.success : isActive ? colors.primary : colors.border }
                         ]}>
                           {isDone ? (
@@ -522,7 +521,7 @@ export default function DashboardScreen() {
                           ) : null}
                         </View>
                         <Text style={[
-                          styles.stepText, 
+                          styles.stepText,
                           { color: isDone ? colors.text : isActive ? colors.primary : colors.textSecondary }
                         ]}>
                           {step}
@@ -551,7 +550,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  mainCard: { 
+  mainCard: {
     padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 12,
     elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }
   },
@@ -593,7 +592,7 @@ const styles = StyleSheet.create({
   catAmt: { fontSize: 14, fontWeight: '700' },
   catProgressBg: { height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.05)', overflow: 'hidden' },
   catProgressFill: { height: '100%', borderRadius: 3 },
-  
+
   // Sync Overlay Styles
   syncOverlay: {
     flex: 1,

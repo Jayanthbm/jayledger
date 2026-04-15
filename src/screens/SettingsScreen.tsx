@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { scheduleReminder } from '../services/notificationService';
@@ -23,10 +23,6 @@ export default function SettingsScreen() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [lastSynced, setLastSynced] = useState<number | null>(null);
-
-  const getRelativeTimeDisplay = (timestamp: number) => {
-    return getRelativeTime(timestamp);
-  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -78,7 +74,7 @@ export default function SettingsScreen() {
     try {
       await resetAppData(user.id);
 
-      // We don't run runFullSync here anymore. 
+      // We don't run runFullSync here anymore.
       // Instead, we clear the sync keys so the Dashboard triggers the Initial Sync modal.
 
       // Clear relevant AsyncStorage keys

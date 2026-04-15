@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, SectionList, TextInput, Modal, FlatList, Platform } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -31,11 +31,11 @@ interface FilterSelectorProps {
 }
 
 const FilterSelector = React.memo(({
-  type, visible, onClose, categories, payees, 
-  selectedItems, tempSelectedItems, setTempSelectedItems, 
+  type, visible, onClose, categories, payees,
+  selectedItems, tempSelectedItems, setTempSelectedItems,
   onApply, colors, modalSearch, setModalSearch, formatIconName
 }: FilterSelectorProps) => {
-  const data = (type === 'Category' ? categories : payees).filter(item => 
+  const data = (type === 'Category' ? categories : payees).filter(item =>
     item.name.toLowerCase().includes(modalSearch.toLowerCase())
   );
 
@@ -73,24 +73,24 @@ const FilterSelector = React.memo(({
             renderItem={({ item }) => {
               const isSelected = tempSelectedItems.includes(item.id);
               return (
-                <TouchableOpacity 
-                  style={styles.gridItem} 
+                <TouchableOpacity
+                  style={styles.gridItem}
                   onPress={() => toggleTempSelection(item.id)}
                 >
                   <View style={[
-                    styles.gridIconBox, 
-                    { 
+                    styles.gridIconBox,
+                    {
                       backgroundColor: isSelected ? colors.primary : colors.background,
                       borderColor: isSelected ? colors.primary : colors.border
                     }
                   ]}>
-                    <Icon 
-                      name={formatIconName((item as any).app_icon || (type === 'Category' ? 'category' : 'person')) as any} 
-                      size={24} 
-                      color={isSelected ? 'white' : colors.textSecondary} 
+                    <Icon
+                      name={formatIconName((item as any).app_icon || (type === 'Category' ? 'category' : 'person')) as any}
+                      size={24}
+                      color={isSelected ? 'white' : colors.textSecondary}
                     />
                   </View>
-                  <Text 
+                  <Text
                     style={[styles.gridLabel, { color: isSelected ? colors.primary : colors.textSecondary }]}
                     numberOfLines={1}
                   >
@@ -101,9 +101,9 @@ const FilterSelector = React.memo(({
             }}
             contentContainerStyle={{ paddingBottom: 20 }}
           />
-          
-          <TouchableOpacity 
-            style={[styles.modalDone, { backgroundColor: colors.primary }]} 
+
+          <TouchableOpacity
+            style={[styles.modalDone, { backgroundColor: colors.primary }]}
             onPress={() => onApply(tempSelectedItems)}
           >
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Apply Filters</Text>
@@ -134,14 +134,14 @@ const DeleteConfirmModal = React.memo(({ transaction, onCancel, onConfirm, color
         </View>
 
         <View style={styles.deleteActions}>
-          <TouchableOpacity 
-            style={[styles.deleteBtn, { backgroundColor: colors.danger }]} 
+          <TouchableOpacity
+            style={[styles.deleteBtn, { backgroundColor: colors.danger }]}
             onPress={onConfirm}
           >
             <Text style={styles.deleteBtnText}>Confirm Delete</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.cancelDeleteBtn} 
+          <TouchableOpacity
+            style={styles.cancelDeleteBtn}
             onPress={onCancel}
           >
             <Text style={[styles.cancelDeleteText, { color: colors.textSecondary }]}>Keep Transaction</Text>
@@ -153,7 +153,7 @@ const DeleteConfirmModal = React.memo(({ transaction, onCancel, onConfirm, color
 ));
 
 export default function TransactionsScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation<any>();
 
@@ -162,14 +162,14 @@ export default function TransactionsScreen() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [sections, setSections] = useState<{ title: string, data: Transaction[] }[]>([]);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
-  
+
   // Search & Filter State
   const [search, setSearch] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedPayees, setSelectedPayees] = useState<string[]>([]);
   const [tempSelectedCats, setTempSelectedCats] = useState<string[]>([]);
   const [tempSelectedPayees, setTempSelectedPayees] = useState<string[]>([]);
-  
+
   // Master data for filters
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
@@ -199,9 +199,9 @@ export default function TransactionsScreen() {
       return;
     }
     const db = getDb();
-    
+
     let query = `SELECT * FROM transactions WHERE user_id = '${session.user.id}' AND deleted = 0`;
-    
+
     // Search logic
     if (search.trim()) {
       const s = search.trim().replace(/'/g, "''");
@@ -211,13 +211,13 @@ export default function TransactionsScreen() {
         query += ` AND (description LIKE '%${s}%' OR CAST(amount AS TEXT) LIKE '%${s}%')`;
       }
     }
-    
+
     // Filter logic
     if (selectedCats.length > 0) {
       const catIdsString = selectedCats.map(id => `'${id}'`).join(',');
       query += ` AND category_id IN (${catIdsString})`;
     }
-    
+
     if (selectedPayees.length > 0) {
       const payeeIdsString = selectedPayees.map(id => `'${id}'`).join(',');
       query += ` AND payee_id IN (${payeeIdsString})`;
@@ -229,9 +229,9 @@ export default function TransactionsScreen() {
     if (endDate) {
       query += ` AND date <= '${endDate}'`;
     }
-    
+
     query += ` ORDER BY date DESC, transaction_timestamp DESC`;
-    
+
     const rows = await db.getAllAsync<Transaction>(query);
 
     const grouped = rows.reduce((acc, tx) => {
@@ -295,8 +295,8 @@ export default function TransactionsScreen() {
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity 
-          onPress={handleManualSync} 
+        <TouchableOpacity
+          onPress={handleManualSync}
           style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
           disabled={isSyncing}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -315,7 +315,7 @@ export default function TransactionsScreen() {
     useCallback(() => {
       const initSync = async () => {
         if (!session?.user?.id) return;
-        
+
         // Initial check for last tx sync time
         const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
         if (lastTxSync) {
@@ -327,7 +327,7 @@ export default function TransactionsScreen() {
           setIsSyncing(true);
           await syncTransactions(session.user.id, true);
           setIsSyncing(false);
-          
+
           const updatedLastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
           if (updatedLastTxSync) {
             setLastSyncTime(getRelativeTime(parseInt(updatedLastTxSync)));
@@ -335,7 +335,7 @@ export default function TransactionsScreen() {
           loadData();
         }
       };
-      
+
       loadData();
       initSync();
     }, [session?.user?.id, loadData])
@@ -399,8 +399,8 @@ export default function TransactionsScreen() {
 
   const renderItem = useCallback(({ item }: { item: Transaction }) => {
     return (
-      <TransactionCard 
-        transaction={item} 
+      <TransactionCard
+        transaction={item}
         onEdit={handleEditTransaction}
         onDelete={handleDeleteTransaction}
         onFilterCategory={handleFilterCategory}
@@ -444,11 +444,11 @@ export default function TransactionsScreen() {
       {/* Filter Row */}
       <View style={styles.filterRow}>
         <View style={{ flexDirection: 'row', gap: 10, flex: 1 }}>
-          <View style={[styles.filterChip, { 
+          <View style={[styles.filterChip, {
             backgroundColor: selectedCats.length > 0 ? colors.primary + '15' : 'transparent',
-            borderColor: selectedCats.length > 0 ? colors.primary : colors.border 
+            borderColor: selectedCats.length > 0 ? colors.primary : colors.border
           }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowFilterModal('Category')}
               style={{ flexDirection: 'row', alignItems: 'center' }}
             >
@@ -465,11 +465,11 @@ export default function TransactionsScreen() {
             )}
           </View>
 
-          <View style={[styles.filterChip, { 
+          <View style={[styles.filterChip, {
             backgroundColor: selectedPayees.length > 0 ? colors.primary + '15' : 'transparent',
-            borderColor: selectedPayees.length > 0 ? colors.primary : colors.border 
+            borderColor: selectedPayees.length > 0 ? colors.primary : colors.border
           }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowFilterModal('Payee')}
               style={{ flexDirection: 'row', alignItems: 'center' }}
             >
@@ -511,7 +511,7 @@ export default function TransactionsScreen() {
         removeClippedSubviews={true}
       />
 
-      <FilterSelector 
+      <FilterSelector
         type="Category"
         visible={showFilterModal === 'Category'}
         onClose={() => setShowFilterModal(null)}
@@ -526,7 +526,7 @@ export default function TransactionsScreen() {
         setModalSearch={setModalSearch}
         formatIconName={formatIconName}
       />
-      <FilterSelector 
+      <FilterSelector
         type="Payee"
         visible={showFilterModal === 'Payee'}
         onClose={() => setShowFilterModal(null)}
@@ -541,7 +541,7 @@ export default function TransactionsScreen() {
         setModalSearch={setModalSearch}
         formatIconName={formatIconName}
       />
-      <DeleteConfirmModal 
+      <DeleteConfirmModal
         transaction={deleteConfirmTx}
         onCancel={() => setDeleteConfirmTx(null)}
         onConfirm={confirmDelete}
@@ -549,7 +549,7 @@ export default function TransactionsScreen() {
       />
 
       {/* Add FAB */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
         onPress={() => navigation.navigate('AddTransaction')}
       >
@@ -562,24 +562,24 @@ export default function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   searchContainer: { padding: 16, paddingBottom: 8 },
-  searchBar: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 12, 
-    height: 48, 
-    borderRadius: 24, 
-    borderWidth: 1 
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1
   },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 16 },
   filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, alignItems: 'center', gap: 8 },
-  filterChip: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingHorizontal: 14, 
-    paddingVertical: 10, 
-    borderRadius: 24, 
-    borderWidth: 1.5, 
-    backgroundColor: 'transparent' 
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    backgroundColor: 'transparent'
   },
   filterChipText: { fontSize: 13, fontWeight: '700' },
   smallClose: {
@@ -610,19 +610,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase'
   },
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
-  modalContent: { 
-    borderTopLeftRadius: 32, 
-    borderTopRightRadius: 32, 
-    padding: 24, 
+  modalContent: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
     maxHeight: '85%',
     borderTopWidth: 1,
     paddingBottom: 40,
   },
-  modalHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 20 
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
   },
   modalTitle: { fontSize: 20, fontWeight: '800' },
   closeBtn: {
@@ -666,10 +666,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-  modalDone: { 
-    padding: 18, 
-    borderRadius: 16, 
-    alignItems: 'center', 
+  modalDone: {
+    padding: 18,
+    borderRadius: 16,
+    alignItems: 'center',
     marginTop: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
