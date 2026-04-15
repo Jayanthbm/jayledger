@@ -165,7 +165,7 @@ export default function ReportView({ route, navigation }: any) {
     if (!session?.user?.id) return;
 
     // For Categories and Payees overview/summary, navigate to Transactions screen
-    if (['summaryByCategory', 'monthlyLivingCosts', 'payees', 'categories', 'summaryByPayee', 'subscriptionAndBills'].includes(reportType)) {
+    if (['summaryByCategory', 'payees', 'categories', 'summaryByPayee', 'subscriptionAndBills'].includes(reportType)) {
       const params: any = {};
 
       if (item.category_id || (item.category_name && reportType.includes('Category')) || reportType === 'monthlyLivingCosts' || reportType === 'subscriptionAndBills') {
