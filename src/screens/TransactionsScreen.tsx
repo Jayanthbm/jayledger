@@ -173,6 +173,24 @@ export default function TransactionsScreen() {
   const [deleteConfirmTx, setDeleteConfirmTx] = useState<Transaction | null>(null);
   const [modalSearch, setModalSearch] = useState('');
 
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
+
+  const route = navigation.getState().routes[navigation.getState().index];
+  const params = route.params as any;
+
+  useEffect(() => {
+    if (params?.initialSelectedCats) {
+      setSelectedCats(params.initialSelectedCats);
+    }
+    if (params?.initialStartDate) {
+      setStartDate(params.initialStartDate);
+    }
+    if (params?.initialEndDate) {
+      setEndDate(params.initialEndDate);
+    }
+  }, [params]);
+
   const loadFilterData = useCallback(async () => {
     if (!session?.user?.id) return;
     const [cats, p] = await Promise.all([
@@ -211,6 +229,13 @@ export default function TransactionsScreen() {
     if (selectedPayees.length > 0) {
       const payeeIdsString = selectedPayees.map(id => `'${id}'`).join(',');
       query += ` AND payee_id IN (${payeeIdsString})`;
+    }
+
+    if (startDate) {
+      query += ` AND date >= '${startDate}'`;
+    }
+    if (endDate) {
+      query += ` AND date <= '${endDate}'`;
     }
     
     query += ` ORDER BY date DESC, transaction_timestamp DESC`;

@@ -1,5 +1,5 @@
 import { getDb } from './database';
-import { Transaction, Category, Payee, Goal } from '../models/types';
+import { Transaction, Category, Payee, Goal, Budget } from '../models/types';
 
 export const getCategories = async (userId: string) => {
   const db = getDb();
@@ -264,4 +264,23 @@ export const getReportCategoriesOverview = async (userId: string, type: string) 
 export const toggleCategoryLivingCost = async (categoryId: string, isLivingCost: boolean) => {
   const db = getDb();
   await db.execAsync(`UPDATE categories SET is_living_cost = ${isLivingCost ? 1 : 0} WHERE id = '${categoryId}'`);
+};
+
+export const getBudgets = async (userId: string) => {
+  const db = getDb();
+  return db.getAllAsync<Budget>(`SELECT * FROM budgets WHERE user_id = '${userId}' ORDER BY name`);
+};
+
+export const getBudgetSpending = async (userId: string, categoryIds: string[], startDate: string, endDate: string) => {
+  if (categoryIds.length === 0) return 0;
+  const db = getDb();
+  const placeholders = categoryIds.map(() => '?').join(',');
+  const row = await db.getFirstAsync<{ total: number }>(
+    `SELECT SUM(amount) as total FROM transactions 
+     WHERE user_id = ? AND deleted = 0 AND type = 'Expense' 
+     AND date >= ? AND date <= ? 
+     AND category_id IN (${placeholders})`,
+    [userId, startDate, endDate, ...categoryIds]
+  );
+  return row?.total || 0;
 };

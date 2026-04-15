@@ -1,25 +1,65 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Dimensions } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getDb } from '../db/database';
-import { runFullSync } from '../services/syncService';
-import { Budget } from '../models/types';
+import { getBudgets, getBudgetSpending, getTransactionsByDateRange } from '../db/queries';
+import { Budget, Transaction } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { format, startOfMonth, endOfMonth, isSameMonth, differenceInDays, addMonths, subMonths, getYear, getMonth } from 'date-fns';
+import { BudgetCard } from '../components/BudgetCard';
+import { TransactionCard } from '../components/TransactionCard';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DeviceEventEmitter } from 'react-native';
+const { width } = Dimensions.get('window');
+
+interface EnrichedBudget extends Budget {
+  spent: number;
+}
+
+const months = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+const currentYearNum = new Date().getFullYear();
+const years = Array.from({ length: 5 }, (_, i) => (currentYearNum - i).toString());
 
 export default function BudgetsScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   
-  const [data, setData] = useState<Budget[]>([]);
+  const [data, setData] = useState<EnrichedBudget[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [lastSynced, setLastSynced] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
+
+  // Drill down state
+  const [showDrillDown, setShowDrillDown] = useState(false);
+  const [drillDownData, setDrillDownData] = useState<Transaction[]>([]);
+  const [drillDownTitle, setDrillDownTitle] = useState('');
+  const [drillDownLoading, setDrillDownLoading] = useState(false);
+
+  const isCurrentMonthSelected = useMemo(() => {
+    return isSameMonth(selectedDate, new Date());
+  }, [selectedDate]);
+
+  const monthStart = useMemo(() => startOfMonth(selectedDate), [selectedDate]);
+  const monthEnd = useMemo(() => endOfMonth(selectedDate), [selectedDate]);
+  
+  const startDateStr = format(monthStart, 'yyyy-MM-dd');
+  const endDateStr = format(monthEnd, 'yyyy-MM-dd');
+
+  const daysRemaining = useMemo(() => {
+    const today = new Date();
+    if (!isCurrentMonthSelected) return 0;
+    return differenceInDays(monthEnd, today) + 1;
+  }, [monthEnd, isCurrentMonthSelected]);
 
   const loadData = useCallback(async () => {
     if (!session?.user?.id) {
@@ -27,92 +67,126 @@ export default function BudgetsScreen() {
       return;
     }
     setLoading(true);
-    const db = getDb();
     try {
-      const rows = await db.getAllAsync<Budget>(
-        `SELECT * FROM budgets WHERE user_id = '${session.user.id}' ORDER BY name ASC`
-      );
-      setData(rows);
-      const last = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
-      if (last) setLastSynced(parseInt(last, 10));
+      const budgets = await getBudgets(session.user.id);
+      const enriched: EnrichedBudget[] = await Promise.all(budgets.map(async (b) => {
+        let categoryIds: string[] = [];
+        try {
+          categoryIds = JSON.parse(b.categories);
+        } catch (e) {
+          console.error("Error parsing budget categories:", e);
+        }
+        const spent = await getBudgetSpending(session.user.id, categoryIds, startDateStr, endDateStr);
+        return { ...b, spent };
+      }));
+      setData(enriched);
     } catch (e) {
       console.error("Load Budgets Error:", e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [session?.user?.id]);
-
-  const handleManualSync = useCallback(async () => {
-    if (!session?.user?.id) return;
-    setSyncing(true);
-    await runFullSync(session.user.id, true);
-    await loadData();
-    setSyncing(false);
-  }, [session?.user?.id, loadData]);
-
-  const getRelativeTime = (timestamp: number) => {
-    const mins = Math.round((Date.now() - timestamp) / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.round(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.round(hours / 24)}d ago`;
-  };
-
-  useEffect(() => {
-    const sub = DeviceEventEmitter.addListener('module_refreshed', (data) => {
-      if (data.module === 'Budgets') loadData();
-    });
-    return () => sub.remove();
-  }, [loadData]);
+  }, [session?.user?.id, startDateStr, endDateStr]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const renderItem = ({ item }: { item: Budget }) => {
-    return (
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.topRow}>
-          <View style={styles.titleGroup}>
-            <View style={[styles.iconBox, { backgroundColor: colors.primary + '15' }]}>
-               <Text style={{ fontSize: 18 }}>{item.logo || '📊'}</Text>
-            </View>
-            <Text style={[styles.title, { color: colors.text }]}>{item.name}</Text>
-          </View>
-          <Text style={[styles.amount, { color: colors.primary }]}>₹{item.amount.toLocaleString()}</Text>
-        </View>
-        <View style={styles.metaRow}>
-          <MaterialIcons name="event-repeat" size={14} color={colors.textSecondary} />
-          <Text style={[styles.sub, { color: colors.textSecondary }]}>{item.interval}</Text>
-        </View>
-      </View>
-    );
+  const handlePrevMonth = () => setSelectedDate(prev => subMonths(prev, 1));
+  const handleNextMonth = () => setSelectedDate(prev => addMonths(prev, 1));
+  const handleCurrentMonth = () => setSelectedDate(new Date());
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData();
+  }, [loadData]);
+
+  const handleCardPress = async (budget: EnrichedBudget) => {
+    if (!session?.user?.id) return;
+    setDrillDownLoading(true);
+    setDrillDownTitle(budget.name);
+    setShowDrillDown(true);
+    
+    try {
+      let categoryIds: string[] = [];
+      try {
+        categoryIds = JSON.parse(budget.categories);
+      } catch (e) {}
+      
+      const all = await getTransactionsByDateRange(session.user.id, startDateStr, endDateStr);
+      const filtered = all.filter(t => t.category_id && categoryIds.includes(t.category_id));
+      setDrillDownData(filtered);
+    } catch (e) {
+      console.error("Drill down error:", e);
+    } finally {
+      setDrillDownLoading(false);
+    }
   };
+
+  const renderItem = ({ item }: { item: EnrichedBudget }) => (
+    <BudgetCard
+      name={item.name}
+      amount={item.amount}
+      spent={item.spent}
+      startDateText={format(monthStart, 'MMM d')}
+      endDateText={format(monthEnd, 'MMM d')}
+      isCurrentMonth={isCurrentMonthSelected}
+      daysRemaining={daysRemaining}
+      onPress={() => handleCardPress(item)}
+    />
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      
-      {/* Header Tools */}
-      <View style={styles.headerTools}>
-        <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-           <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{marginRight: 6}}/>
-           <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }}>
-             {syncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
-           </Text>
+      {/* Date Selector Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <View style={styles.dateSelectors}>
+          <TouchableOpacity 
+            style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
+            onPress={() => setShowYearPicker(true)}
+          >
+            <Text style={[styles.selectorText, { color: colors.text }]}>
+              {getYear(selectedDate)}
+            </Text>
+            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
+            onPress={() => setShowMonthPicker(true)}
+          >
+            <Text style={[styles.selectorText, { color: colors.text }]}>
+              {months[getMonth(selectedDate)]}
+            </Text>
+            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
-        
+      </View>
+
+      <View style={styles.toolsRow}>
+        {!isCurrentMonthSelected && (
+          <TouchableOpacity onPress={handleCurrentMonth} style={[styles.todayBtn, { backgroundColor: colors.primary + '15' }]}>
+            <Text style={[styles.todayText, { color: colors.primary }]}>Back to Today</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity 
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 'auto' }]} 
-          onPress={handleManualSync}
-          disabled={syncing}
+          style={[styles.recalcBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
+          onPress={loadData}
+          disabled={loading}
         >
-           {syncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
+          {loading ? (
+             <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <>
+              <MaterialIcons name="refresh" size={18} color={colors.primary} />
+              <Text style={[styles.recalcText, { color: colors.primary }]}>Recalculate</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
-      {loading ? (
-        <View style={styles.emptyContainer}>
+      {loading && data.length === 0 ? (
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
@@ -120,31 +194,251 @@ export default function BudgetsScreen() {
           data={data}
           keyExtractor={item => item.id}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 16, paddingTop: 4 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-               <MaterialIcons name="account-balance-wallet" size={48} color={colors.border} />
-               <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 16, color: colors.textSecondary }}>No Budgets Defined</Text>
+               <MaterialIcons name="account-balance-wallet" size={64} color={colors.border} />
+               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Budgets Found</Text>
             </View>
           }
         />
       )}
+
+      {/* Month Picker Modal */}
+      <Modal visible={showMonthPicker} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowMonthPicker(false)}>
+          <View style={[styles.pickerContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Month</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {months.map((m, i) => (
+                <TouchableOpacity
+                  key={m}
+                  style={styles.pickerItem}
+                  onPress={() => {
+                    const newDate = new Date(selectedDate);
+                    newDate.setMonth(i);
+                    setSelectedDate(newDate);
+                    setShowMonthPicker(false);
+                  }}
+                >
+                  <Text style={[styles.pickerText, { color: i === getMonth(selectedDate) ? colors.primary : colors.text }]}>{m}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Year Picker Modal */}
+      <Modal visible={showYearPicker} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setShowYearPicker(false)}>
+          <View style={[styles.pickerContainer, { backgroundColor: colors.card, maxHeight: 300 }]}>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Year</Text>
+            {years.map((y) => (
+              <TouchableOpacity
+                key={y}
+                style={styles.pickerItem}
+                onPress={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setFullYear(parseInt(y, 10));
+                  setSelectedDate(newDate);
+                  setShowYearPicker(false);
+                }}
+              >
+                <Text style={[styles.pickerText, { color: y === getYear(selectedDate).toString() ? colors.primary : colors.text }]}>{y}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Transactions Drill Down Modal */}
+      <Modal visible={showDrillDown} animationType="slide">
+        <View style={[styles.fullModal, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+          <View style={styles.drillHeader}>
+            <TouchableOpacity onPress={() => setShowDrillDown(false)} style={styles.closeBtn}>
+              <MaterialIcons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <View style={styles.drillTitleInfo}>
+              <Text style={[styles.drillTitle, { color: colors.text }]}>{drillDownTitle}</Text>
+              <Text style={[styles.drillSub, { color: colors.textSecondary }]}>
+                {format(selectedDate, 'MMMM yyyy')}
+              </Text>
+            </View>
+            <View style={{ width: 44 }} />
+          </View>
+
+          {drillDownLoading ? (
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+          ) : (
+            <FlatList
+              data={drillDownData}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => <TransactionCard transaction={item} />}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+              ListEmptyComponent={
+                <View style={styles.emptyDrill}>
+                  <MaterialIcons name="search-off" size={64} color={colors.border} />
+                  <Text style={{ textAlign: 'center', marginTop: 12, color: colors.textSecondary }}>No transactions found for this budget</Text>
+                </View>
+              }
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerTools: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 12 },
-  syncBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  card: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  titleGroup: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  iconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  title: { fontSize: 16, fontWeight: 'bold' },
-  amount: { fontSize: 16, fontWeight: 'bold' },
-  metaRow: { flexDirection: 'row', alignItems: 'center' },
-  sub: { fontSize: 13, marginLeft: 6, fontWeight: '500' },
-  emptyContainer: { alignItems: 'center', marginTop: 60 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  dateSelectorRow: {
+    display: 'none',
+  },
+  dateSelectors: { 
+    flexDirection: 'row', 
+    gap: 12,
+    flex: 1,
+    paddingHorizontal: 8,
+  },
+  selectorBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  selectorText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  navBtn: {
+    padding: 4,
+  },
+  toolsRow: {
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 12,
+  },
+  todayBtn: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  todayText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  recalcBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 8,
+  },
+  recalcText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    marginTop: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 15,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerContainer: {
+    width: width * 0.8,
+    maxHeight: 450,
+    borderRadius: 24,
+    padding: 24,
+    elevation: 5,
+  },
+  pickerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  pickerItem: {
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  pickerText: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  fullModal: {
+    flex: 1,
+  },
+  drillHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  drillTitleInfo: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  drillTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  drillSub: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyDrill: {
+    marginTop: 80,
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
 });

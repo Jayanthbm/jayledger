@@ -136,7 +136,7 @@ export default function ReportView({ route, navigation }: any) {
           result = await getReportCategoriesOverview(userId, type);
           break;
       }
-      setData(result);
+    setData(result);
     } catch (error) {
       console.error("Report Load Error:", error);
     } finally {
