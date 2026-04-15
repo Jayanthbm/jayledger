@@ -6,7 +6,7 @@ import { getBudgets, getBudgetSpending, getTransactionsByDateRange, getMinTransa
 import { Budget, Transaction } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { format, startOfMonth, endOfMonth, isSameMonth, differenceInDays, getYear, getMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameMonth, differenceInDays, getYear, getMonth, getDaysInMonth } from 'date-fns';
 import { BudgetCard } from '../components/BudgetCard';
 import { TransactionCard } from '../components/TransactionCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -201,6 +201,15 @@ export default function BudgetsScreen() {
     }
   };
 
+  const { todayProgress, daysInMonth } = useMemo(() => {
+    const today = new Date();
+    const dim = getDaysInMonth(today);
+    return {
+      todayProgress: (today.getDate() / dim) * 100,
+      daysInMonth: dim
+    };
+  }, []);
+
   const renderItem = ({ item }: { item: EnrichedBudget }) => (
     <BudgetCard
       name={item.name}
@@ -210,6 +219,8 @@ export default function BudgetsScreen() {
       endDateText={format(monthEnd, 'MMM d')}
       isCurrentMonth={isCurrentMonthSelected}
       daysRemaining={daysRemaining}
+      todayProgress={todayProgress}
+      daysInMonth={daysInMonth}
       onPress={() => handleCardPress(item)}
     />
   );
