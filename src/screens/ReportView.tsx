@@ -162,6 +162,37 @@ export default function ReportView({ route, navigation }: any) {
 
   const handleDrillDown = async (item: any) => {
     if (!session?.user?.id) return;
+
+    // For Categories and Payees overview/summary, navigate to Transactions screen
+    if (['summaryByCategory', 'monthlyLivingCosts', 'payees', 'categories', 'summaryByPayee', 'subscriptionAndBills'].includes(reportType)) {
+      const params: any = {};
+      
+      if (item.category_id || (item.category_name && reportType.includes('Category')) || reportType === 'monthlyLivingCosts' || reportType === 'subscriptionAndBills') {
+        params.initialSelectedCats = item.category_id ? [item.category_id] : 
+                                    (allCategories.find(c => c.name === item.category_name)?.id ? [allCategories.find(c => c.name === item.category_name)!.id] : []);
+      } else if (item.payee_id || item.name || item.payee_name) {
+        params.initialSelectedPayees = item.payee_id ? [item.payee_id] : [];
+        // If we don't have ID, we might need to fetch it or match by name, 
+        // but the query results should ideally have IDs.
+      }
+
+      // Add date range if applicable (not for overall Payees/Categories)
+      if (reportType !== 'payees' && reportType !== 'categories') {
+        params.initialStartDate = `${year}-${monthStr}-01`;
+        params.initialEndDate = format(endOfMonth(new Date(parseInt(year), month)), 'yyyy-MM-dd');
+      }
+
+      // If we have categories or payees selected, navigate
+      if (params.initialSelectedCats?.length > 0 || params.initialSelectedPayees?.length > 0) {
+        navigation.navigate('Main', {
+          screen: 'Transactions',
+          params: params
+        });
+        return;
+      }
+    }
+
+    // Fallback to existing modal drilldown if navigation is not suitable or ID is missing
     setLoading(true);
     try {
       let txs: Transaction[] = [];
@@ -169,7 +200,6 @@ export default function ReportView({ route, navigation }: any) {
       const startDate = `${year}-${monthStr}-01`;
       const endDate = format(endOfMonth(new Date(parseInt(year), month)), 'yyyy-MM-dd');
 
-      // Simple implementation for now: fetch transactions by category/payee in the month
       if (reportType === 'summaryByCategory' || reportType === 'monthlyLivingCosts' || reportType === 'incomeVsExpense') {
         const all = await getTransactionsByDateRange(userId, startDate, endDate);
         txs = all.filter(t => t.category_name === item.category_name && t.type === (item.type || type));

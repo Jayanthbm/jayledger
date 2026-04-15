@@ -182,6 +182,11 @@ export default function TransactionsScreen() {
   useEffect(() => {
     if (params?.initialSelectedCats) {
       setSelectedCats(params.initialSelectedCats);
+      setSelectedPayees([]); // Clear payees if we are filtering by category
+    }
+    if (params?.initialSelectedPayees) {
+      setSelectedPayees(params.initialSelectedPayees);
+      setSelectedCats([]); // Clear categories if we are filtering by payee
     }
     if (params?.initialStartDate) {
       setStartDate(params.initialStartDate);

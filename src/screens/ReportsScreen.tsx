@@ -77,7 +77,7 @@ const reportsList = [
 export default function ReportsScreen() {
   const { colors, isDark } = useTheme();
   const navigation = useNavigation<any>();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   useEffect(() => {
     loadViewMode();

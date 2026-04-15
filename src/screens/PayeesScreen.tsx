@@ -170,6 +170,10 @@ export default function PayeesScreen() {
           isGrid && styles.payeeCardGrid
         ]}
         activeOpacity={0.7}
+        onPress={() => navigation.navigate('Main', { 
+          screen: 'Transactions', 
+          params: { initialSelectedPayees: [item.id] } 
+        })}
       >
         <View style={[
           styles.logoContainer, 

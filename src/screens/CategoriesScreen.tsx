@@ -178,6 +178,10 @@ export default function CategoriesScreen() {
           isGrid && styles.itemCardGrid
         ]}
         activeOpacity={0.7}
+        onPress={() => navigation.navigate('Main', { 
+          screen: 'Transactions', 
+          params: { initialSelectedCats: [item.id] } 
+        })}
       >
         <View style={[
           styles.iconBox, 

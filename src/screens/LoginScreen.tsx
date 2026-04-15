@@ -9,15 +9,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  Dimensions,
+  StatusBar,
+  ScrollView
 } from 'react-native';
 import { useAuth } from '../store/AuthContext';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
+import appConfig from '../../app.json';
+
+const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,129 +47,170 @@ export default function LoginScreen() {
     }
   };
 
+  const appVersion = appConfig.expo.version;
+
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: colors.background }} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
-          
-          <View style={styles.headerContainer}>
-            <Text style={[styles.title, { color: colors.text }]}>JayLedger</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Personal Finance Tracker</Text>
-          </View>
-
-          <View style={styles.formContainer}>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
-              placeholder="Email"
-              placeholderTextColor={colors.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            
-            <View style={[styles.passwordContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <TextInput
-                style={[styles.passwordInput, { color: colors.text }]}
-                placeholder="Password"
-                placeholderTextColor={colors.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={22} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            {errorMsg ? (
-              <View style={[styles.errorContainer, { backgroundColor: `${colors.danger}20` }]}>
-                <Text style={{ color: colors.danger, fontWeight: '500' }}>{errorMsg}</Text>
+    <View style={[styles.container, { backgroundColor: isDark ? '#121417' : colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          contentContainerStyle={{ flexGrow: 1, backgroundColor: isDark ? '#121417' : colors.background }}
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.innerContainer}>
+              
+              <View style={styles.headerArea}>
+                <Text style={[styles.titleText, { color: colors.text }]}>JayLedger</Text>
+                <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
+                  Manage your finances effortlessly
+                </Text>
+                <Text style={[styles.versionHeader, { color: colors.textSecondary }]}>
+                  v{appVersion}
+                </Text>
               </View>
-            ) : null}
 
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.primary, opacity: loading ? 0.7 : 1 }]}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Log In</Text>}
-            </TouchableOpacity>
-          </View>
-          
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+              <View style={styles.formArea}>
+                 <View style={[styles.inputBox, { backgroundColor: isDark ? '#1A1D21' : colors.card }]}>
+                    <Icon name="mail-outline" size={22} color="#A0AEC0" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.textInput, { color: colors.text }]}
+                      placeholder="Email"
+                      placeholderTextColor="#718096"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                    />
+                 </View>
+
+                 <View style={[styles.inputBox, { backgroundColor: isDark ? '#1A1D21' : colors.card }]}>
+                    <Icon name="lock-outline" size={22} color="#A0AEC0" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.textInput, { color: colors.text }]}
+                      placeholder="Password"
+                      placeholderTextColor="#718096"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                      <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={22} color="#A0AEC0" />
+                    </TouchableOpacity>
+                 </View>
+
+                 {errorMsg && (
+                    <View style={styles.errorContainer}>
+                      <Text style={[styles.errorText, { color: colors.danger }]}>{errorMsg}</Text>
+                    </View>
+                 )}
+
+                 <TouchableOpacity
+                    style={[styles.loginBtn, { backgroundColor: '#A0C4FF' }]}
+                    onPress={handleLogin}
+                    disabled={loading}
+                    activeOpacity={0.8}
+                 >
+                    {loading ? (
+                      <ActivityIndicator color="#121417" />
+                    ) : (
+                      <Text style={styles.loginBtnText}>Login</Text>
+                    )}
+                 </TouchableOpacity>
+              </View>
+
+            </View>
+          </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    paddingHorizontal: 32,
     justifyContent: 'center',
-    padding: 24,
   },
-  headerContainer: {
+  headerArea: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 50,
   },
-  title: {
+  titleText: {
     fontSize: 40,
-    fontWeight: '800',
-    marginBottom: 8,
-    letterSpacing: -1,
+    fontWeight: '700',
+    marginBottom: 10,
+    letterSpacing: -0.5,
   },
-  subtitle: {
+  subtitleText: {
     fontSize: 16,
+    textAlign: 'center',
+    opacity: 0.7,
     fontWeight: '500',
+    marginBottom: 4,
   },
-  formContainer: {
+  versionHeader: {
+    fontSize: 12,
+    fontWeight: '600',
+    opacity: 0.5,
+    letterSpacing: 1,
+  },
+  formArea: {
     width: '100%',
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  passwordContainer: {
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
+    height: height * 0.09, // Dynamic height relative to screen
+    minHeight: 64,
+    borderRadius: 16,
+    paddingHorizontal: 20,
     marginBottom: 16,
   },
-  passwordInput: {
-    flex: 1,
-    padding: 16,
-    fontSize: 16,
+  inputIcon: {
+    marginRight: 12,
   },
-  eyeIcon: {
-    padding: 16,
+  textInput: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '500',
+  },
+  eyeBtn: {
+    padding: 10,
   },
   errorContainer: {
-    padding: 12,
-    borderRadius: 8,
     marginBottom: 16,
-    alignItems: 'center',
+    paddingHorizontal: 8,
   },
-  button: {
-    padding: 18,
-    borderRadius: 12,
+  errorText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  loginBtn: {
+    height: 70,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 10,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    elevation: 4,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  loginBtnText: {
+    color: '#002B5B',
+    fontSize: 19,
+    fontWeight: '700',
   },
 });
