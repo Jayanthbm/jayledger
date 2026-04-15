@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, TextInput, Keyboard, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, TextInput, Keyboard, ActivityIndicator, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -73,14 +73,6 @@ export default function GoalsScreen() {
     loadData();
   }, [loadData]);
 
-  const getRelativeTime = (timestamp: number) => {
-    const mins = Math.round((Date.now() - timestamp) / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.round(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.round(hours / 24)}d ago`;
-  };
 
   const resetForm = () => {
     setEditingGoal(null);
@@ -225,39 +217,33 @@ export default function GoalsScreen() {
     setIsSyncing(false);
   }, [user?.id, loadData]);
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-
-      {/* Header Actions */}
-      <View style={styles.headerTools}>
-        <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-           <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{marginRight: 6}}/>
-           <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }}>
-             {isSyncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
-           </Text>
-        </View>
-        
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
         <TouchableOpacity 
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 'auto' }]} 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
           onPress={handleManualSync}
           disabled={isSyncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-           {isSyncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
+           {isSyncing ? (
+             <ActivityIndicator size="small" color={colors.primary} />
+           ) : (
+             <MaterialIcons name="refresh" size={24} color={colors.text} />
+           )}
         </TouchableOpacity>
+      )
+    });
+  }, [navigation, handleManualSync, isSyncing, colors.text, colors.primary]);
 
-        <TouchableOpacity 
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
-          onPress={() => setSortAsc(!sortAsc)}
-        >
-           <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
-        </TouchableOpacity>
-      </View>
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
 
       <FlatList
         data={sortedData}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
              <MaterialIcons name="flag" size={48} color={colors.border} />
@@ -355,11 +341,6 @@ export default function GoalsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerTools: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 12 },
-  
-  syncBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-
   card: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 'bold' },

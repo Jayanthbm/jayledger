@@ -42,12 +42,6 @@ export default function DailyLimitDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Today's Activity</Text>
-      </View>
 
       <View style={[styles.statsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>Total Spent Today</Text>
@@ -77,17 +71,6 @@ export default function DailyLimitDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    marginRight: 16,
   },
   headerTitle: {
     fontSize: 20,

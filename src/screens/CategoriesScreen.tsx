@@ -108,8 +108,22 @@ export default function CategoriesScreen() {
   useEffect(() => {
     navigation.setOptions({
       title: 'Categories',
+      headerRight: () => (
+        <TouchableOpacity 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
+          onPress={handleManualSync}
+          disabled={syncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          {syncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <MaterialIcons name="refresh" size={24} color={colors.text} />
+          )}
+        </TouchableOpacity>
+      )
     });
-  }, [navigation]);
+  }, [navigation, handleManualSync, syncing, colors.text, colors.primary]);
 
   const handleAddCategory = async () => {
     if (!newName.trim() || !user?.id) return;
@@ -149,14 +163,6 @@ export default function CategoriesScreen() {
     return result;
   }, [categories, searchQuery, sortAsc, activeTab]);
 
-  const getRelativeTime = (timestamp: number) => {
-    const mins = Math.round((Date.now() - timestamp) / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.round(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.round(hours / 24)}d ago`;
-  };
 
   if (loading) {
     return (
@@ -242,22 +248,7 @@ export default function CategoriesScreen() {
         </View>
 
         <View style={styles.actionRow}>
-          <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border, flex: 1, marginRight: 8 }]}>
-            <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-            <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }} numberOfLines={1}>
-              {syncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
-            </Text>
-          </View>
-
-          <TouchableOpacity 
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
-            onPress={handleManualSync}
-            disabled={syncing}
-          >
-            {syncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} onPress={() => setSortAsc(!sortAsc)}>
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setSortAsc(!sortAsc)}>
             <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} onPress={toggleViewMode}>
@@ -351,7 +342,6 @@ const styles = StyleSheet.create({
   iconBox: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
   legacyIconFallback: { fontSize: 24 },
   itemName: { fontSize: 13, fontWeight: '700', flex: 1 },
-  syncBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
 
   emptyHeader: { fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
   emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 16 },

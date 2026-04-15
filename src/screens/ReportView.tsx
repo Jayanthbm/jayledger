@@ -9,7 +9,8 @@ import {
   FlatList,
   Dimensions,
   Modal,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/ThemeContext';
@@ -278,21 +279,23 @@ export default function ReportView({ route, navigation }: any) {
     </Modal>
   );
 
+  useEffect(() => {
+    navigation.setOptions({
+      title: displayTitle,
+      headerRight: reportType === 'monthlyLivingCosts' ? () => (
+        <TouchableOpacity 
+          onPress={() => { loadAllCategories(); setShowConfig(true); }} 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <Icon name="settings" size={24} color={colors.primary} />
+        </TouchableOpacity>
+      ) : undefined
+    });
+  }, [navigation, reportType, colors.primary, displayTitle]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text, flex: 1, textAlign: 'center' }]}>{displayTitle}</Text>
-        {reportType === 'monthlyLivingCosts' ? (
-          <TouchableOpacity onPress={() => { loadAllCategories(); setShowConfig(true); }} style={styles.configButton}>
-            <Icon name="settings" size={24} color={colors.primary} />
-          </TouchableOpacity>
-        ) : (
-          <View style={{ width: 32 }} />
-        )}
-      </View>
 
       <View style={styles.selectors}>
         {showTypeToggle && (
@@ -608,7 +611,7 @@ const styles = StyleSheet.create({
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   configButton: { padding: 4 },
-  selectors: { paddingHorizontal: 16, marginBottom: 16 },
+  selectors: { paddingHorizontal: 16, marginBottom: 16, paddingTop: 12 },
   typeToggle: {
     flexDirection: 'row',
     borderRadius: 12,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, SectionList, TextInput, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, SectionList, TextInput, Modal, FlatList, Platform } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getDb } from '../db/database';
@@ -7,8 +7,8 @@ import { runFullSync } from '../services/syncService';
 import { Transaction, Category, Payee } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { format } from 'date-fns';
-import { TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/native';
+import { TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { TransactionCard } from '../components/TransactionCard';
 import { getCategories, getPayees, deleteTransactionAsync } from '../db/queries';
 
@@ -157,7 +157,40 @@ export default function TransactionsScreen() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [sections, setSections] = useState<{ title: string, data: Transaction[] }[]>([]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity 
+          onPress={handleManualSync} 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          disabled={isSyncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Icon name="refresh" size={24} color={colors.text} />
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isSyncing, colors.text, colors.primary]);
+
+  const handleManualSync = async () => {
+    if (!session?.user?.id || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await runFullSync(session.user.id, true);
+      loadData();
+    } catch (e) {
+      console.error("Manual sync error:", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
   
   // Search & Filter State
   const [search, setSearch] = useState('');
@@ -427,6 +460,7 @@ export default function TransactionsScreen() {
                 <Text style={{color: colors.textSecondary, marginTop: 12}}>No transactions found</Text>
             </View>
         )}
+        contentContainerStyle={{ paddingBottom: 40 }}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
@@ -662,7 +696,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 24,
-    bottom: 24,
+    bottom: Platform.OS === 'ios' ? 120 : 24,
     width: 60,
     height: 60,
     borderRadius: 30,

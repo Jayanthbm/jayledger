@@ -2,20 +2,25 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../store/AuthContext';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
+import { useTheme } from '../store/ThemeContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import MainTabs from './MainTabs';
-import SettingsStack from './SettingsStack';
 import DailyLimitDetailScreen from '../screens/DailyLimitDetailScreen';
 import CalendarViewScreen from '../screens/CalendarViewScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
 import ReportView from '../screens/ReportView';
+import CategoriesScreen from '../screens/CategoriesScreen';
+import PayeesScreen from '../screens/PayeesScreen';
+import Icon from '@expo/vector-icons/MaterialCommunityIcons';
+import { TouchableOpacity } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { session, loading } = useAuth();
+  const { colors } = useTheme();
 
   if (loading) {
     return (
@@ -27,15 +32,115 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator 
+        screenOptions={{ 
+          headerShown: false,
+          headerBackTitle: '',
+          headerStyle: { backgroundColor: colors.card },
+          headerTintColor: colors.text,
+          headerShadowVisible: false,
+          animation: Platform.OS === 'android' ? 'slide_from_right' : 'default',
+          gestureEnabled: true,
+        }}
+      >
         {session ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen name="Settings" component={SettingsStack} />
-            <Stack.Screen name="DailyLimitDetail" component={DailyLimitDetailScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="CalendarView" component={CalendarViewScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="AddTransaction" component={AddTransactionScreen} options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="ReportDetail" component={ReportView} options={{ headerShown: false }} />
+            <Stack.Screen 
+              name="DailyLimitDetail" 
+              component={DailyLimitDetailScreen} 
+              options={({ navigation }) => ({ 
+                headerShown: true, 
+                title: "Today's Activity",
+                headerBackTitle: ' ',
+                headerLeft: () => (
+                  <TouchableOpacity 
+                    onPress={() => navigation.goBack()}
+                    style={{ paddingLeft: 8, justifyContent: 'center', alignItems: 'center' }}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  >
+                    <Icon name="chevron-left" size={32} color={colors.text} />
+                  </TouchableOpacity>
+                )
+              })} 
+            />
+            <Stack.Screen 
+              name="CalendarView" 
+              component={CalendarViewScreen} 
+              options={({ navigation }) => ({ 
+                headerShown: true, 
+                title: 'Transaction Calendar',
+                headerBackTitle: ' ',
+                headerLeft: () => (
+                  <TouchableOpacity 
+                    onPress={() => navigation.goBack()}
+                    style={{ paddingLeft: 8, justifyContent: 'center', alignItems: 'center' }}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  >
+                    <Icon name="chevron-left" size={32} color={colors.text} />
+                  </TouchableOpacity>
+                )
+              })} 
+            />
+            <Stack.Screen 
+              name="AddTransaction" 
+              component={AddTransactionScreen} 
+              options={{ headerShown: false, presentation: 'modal' }} 
+            />
+            <Stack.Screen 
+              name="ReportDetail" 
+              component={ReportView} 
+              options={({ route, navigation }: any) => ({ 
+                headerShown: true, 
+                title: route.params?.title || 'Report',
+                headerBackTitle: ' ',
+                headerLeft: () => (
+                  <TouchableOpacity 
+                    onPress={() => navigation.goBack()}
+                    style={{ paddingLeft: 8, justifyContent: 'center', alignItems: 'center' }}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  >
+                    <Icon name="chevron-left" size={32} color={colors.text} />
+                  </TouchableOpacity>
+                )
+              })} 
+            />
+            <Stack.Screen 
+              name="Categories" 
+              component={CategoriesScreen} 
+              options={({ navigation }) => ({ 
+                headerShown: true, 
+                title: 'Categories',
+                headerBackTitle: ' ',
+                headerLeft: () => (
+                  <TouchableOpacity 
+                    onPress={() => navigation.goBack()}
+                    style={{ paddingLeft: 8, justifyContent: 'center', alignItems: 'center' }}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  >
+                    <Icon name="chevron-left" size={32} color={colors.text} />
+                  </TouchableOpacity>
+                )
+              })} 
+            />
+            <Stack.Screen 
+              name="Payees" 
+              component={PayeesScreen} 
+              options={({ navigation }) => ({ 
+                headerShown: true, 
+                title: 'Payees',
+                headerBackTitle: ' ',
+                headerLeft: () => (
+                  <TouchableOpacity 
+                    onPress={() => navigation.goBack()}
+                    style={{ paddingLeft: 8, justifyContent: 'center', alignItems: 'center' }}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  >
+                    <Icon name="chevron-left" size={32} color={colors.text} />
+                  </TouchableOpacity>
+                )
+              })} 
+            />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

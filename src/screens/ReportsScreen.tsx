@@ -11,6 +11,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../store/AuthContext';
+import { runFullSync } from '../services/syncService';
+import { ActivityIndicator } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2;
@@ -76,8 +79,29 @@ const reportsList = [
 
 export default function ReportsScreen() {
   const { colors, isDark } = useTheme();
+  const { session } = useAuth();
   const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity 
+          onPress={handleManualSync} 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          disabled={isSyncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Icon name="refresh" size={24} color={colors.text} />
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isSyncing, colors.text, colors.primary]);
 
   useEffect(() => {
     loadViewMode();
@@ -101,6 +125,18 @@ export default function ReportsScreen() {
       await AsyncStorage.setItem('reports_view_mode', newMode);
     } catch (e) {
       console.error("Error saving view mode", e);
+    }
+  };
+
+  const handleManualSync = async () => {
+    if (!session?.user?.id || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await runFullSync(session.user.id, true);
+    } catch (e) {
+      console.error("Manual sync error:", e);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -175,7 +211,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   grid: {
     flexDirection: 'row',

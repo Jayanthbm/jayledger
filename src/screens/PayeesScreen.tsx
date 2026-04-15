@@ -100,8 +100,22 @@ export default function PayeesScreen() {
   useEffect(() => {
     navigation.setOptions({
       title: 'Payees',
+      headerRight: () => (
+        <TouchableOpacity 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
+          onPress={handleManualSync}
+          disabled={syncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          {syncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <MaterialIcons name="refresh" size={24} color={colors.text} />
+          )}
+        </TouchableOpacity>
+      )
     });
-  }, [navigation]);
+  }, [navigation, handleManualSync, syncing, colors.text, colors.primary]);
 
   const handleAddPayee = async () => {
     if (!newPayeeName.trim() || !user?.id) return;
@@ -142,14 +156,6 @@ export default function PayeesScreen() {
     return result;
   }, [payees, searchQuery, sortAsc]);
 
-  const getRelativeTime = (timestamp: number) => {
-    const mins = Math.round((Date.now() - timestamp) / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.round(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.round(hours / 24)}d ago`;
-  };
 
   if (loading) {
     return (
@@ -221,23 +227,8 @@ export default function PayeesScreen() {
         </View>
 
         <View style={styles.actionRow}>
-          <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border, flex: 1, marginRight: 8 }]}>
-            <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-            <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }} numberOfLines={1}>
-              {syncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
-            </Text>
-          </View>
-
           <TouchableOpacity 
             style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
-            onPress={handleManualSync}
-            disabled={syncing}
-          >
-            {syncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
             onPress={() => setSortAsc(!sortAsc)}
           >
             <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
@@ -356,7 +347,6 @@ const styles = StyleSheet.create({
   logoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   logoFallback: { fontSize: 20, fontWeight: 'bold' },
   payeeName: { fontSize: 13, fontWeight: '700', flex: 1 },
-  syncBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
 
   emptyHeader: { fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
   emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 16 },

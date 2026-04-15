@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { 
-  getTransactionsSummaryByDate, 
   getIncomeExpenseSummary, 
   getTransactionsByCategoryForExpense, 
   getNetWorth, 
@@ -148,6 +147,38 @@ export default function DashboardScreen() {
     });
     return () => sub.remove();
   }, [loadData]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity 
+          onPress={handleManualSync} 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          disabled={isSyncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <MaterialIcons name="refresh" size={24} color={colors.text} />
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isSyncing, colors.text, colors.primary]);
+
+  const handleManualSync = async () => {
+    if (!session?.user?.id || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await runFullSync(session.user.id, true);
+      loadData();
+    } catch (e) {
+      console.error("Manual sync error:", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     checkSyncStatus();
