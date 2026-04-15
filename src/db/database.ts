@@ -101,6 +101,19 @@ export const initDB = async () => {
       );
     `);
 
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS quick_transactions (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        amount REAL,
+        category_id TEXT,
+        payee_id TEXT,
+        description TEXT,
+        user_id TEXT NOT NULL
+      );
+    `);
+
     console.log("[DB] Running migrations...");
     const coreTables = ['transactions', 'goals', 'budgets', 'categories', 'payees'];
     for (const table of coreTables) {

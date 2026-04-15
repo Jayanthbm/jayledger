@@ -62,6 +62,17 @@ export interface Payee {
   sync_status?: number;
 }
 
+export interface QuickTransaction {
+  id: string;
+  name: string;
+  type: string;
+  amount?: number;
+  category_id?: string;
+  payee_id?: string;
+  description?: string;
+  user_id: string;
+}
+
 // Supabase session shape minimum
 export interface UserSession {
   id: string;

@@ -74,6 +74,8 @@ export default function AddTransactionScreen() {
       setCategories(cats);
       setPayees(p);
 
+      const quickTx = route.params?.quickTransaction as any;
+
       if (editTx) {
           const cat = cats.find(c => c.id === editTx.category_id);
           if (cat) setSelectedCategory(cat);
@@ -82,16 +84,30 @@ export default function AddTransactionScreen() {
               const payee = p.find(pay => pay.id === editTx.payee_id);
               if (payee) setSelectedPayee(payee);
           }
+      } else if (quickTx) {
+        setType(quickTx.type as any);
+        if (quickTx.amount) setAmount(quickTx.amount.toString());
+        if (quickTx.description) setDescription(quickTx.description);
+
+        if (quickTx.category_id) {
+          const cat = cats.find(c => c.id === quickTx.category_id);
+          if (cat) setSelectedCategory(cat);
+        }
+        if (quickTx.payee_id) {
+          const payee = p.find(pay => pay.id === quickTx.payee_id);
+          if (payee) setSelectedPayee(payee);
+        }
       } else {
           const genCat = cats.find(c => c.name.toLowerCase() === 'general');
           if (genCat) setSelectedCategory(genCat);
       }
     };
     loadData();
-  }, [session?.user?.id, editTx]);
+  }, [session?.user?.id, editTx, route.params?.quickTransaction]);
+
   useEffect(() => {
-    // Apply default categories when type changes (only for new transactions)
-    if (!editTx && categories.length > 0) {
+    // Apply default categories when type changes (only for new transactions and non-quick-tx)
+    if (!editTx && !route.params?.quickTransaction && categories.length > 0) {
       if (type === 'Income') {
         const salCat = categories.find(c => c.name.toLowerCase() === 'salary');
         if (salCat) setSelectedCategory(salCat);
@@ -100,7 +116,7 @@ export default function AddTransactionScreen() {
         if (genCat) setSelectedCategory(genCat);
       }
     }
-  }, [type, editTx, categories]);
+  }, [type, editTx, categories, route.params?.quickTransaction]);
 
   const handleSave = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -241,127 +257,119 @@ export default function AddTransactionScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
+      style={styles.modalOverlay}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.modalOverlay}>
+          {/* Transparent Overlay to dismiss */}
+          <TouchableOpacity
+            style={styles.modalDismiss}
+            activeOpacity={1}
+            onPress={() => navigation.goBack()}
+          />
 
-          {/* ── Top Header ── */}
-          <View style={styles.header}>
-            <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
-              <Icon name="arrow-back" size={22} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>{editTx ? 'Edit Transaction' : 'Add Transaction'}</Text>
-            <TouchableOpacity style={[styles.headerBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
-              <Icon name="close" size={22} color={colors.text} />
-            </TouchableOpacity>
-          </View>
+          {/* Bottom Sheet Content */}
+          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
 
-          {/* ── Segment Tabs (Only for New Transactions) ── */}
-          {!editTx && (
-            <View style={[styles.segmentRow, { backgroundColor: colors.card }]}>
-              <TouchableOpacity
-                style={[styles.segmentTab, type === 'Expense' && { backgroundColor: colors.danger }]}
-                onPress={() => setType('Expense')}
-              >
-                <Text style={[styles.segmentText, { color: type === 'Expense' ? 'white' : colors.textSecondary }]}>Expense</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.segmentTab, type === 'Income' && { backgroundColor: colors.success }]}
-                onPress={() => setType('Income')}
-              >
-                <Text style={[styles.segmentText, { color: type === 'Income' ? 'white' : colors.textSecondary }]}>Income</Text>
+            {/* Header Area in Sheet */}
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>
+                {editTx ? 'Edit Transaction' : 'Add Transaction'}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.sheetCloseBtn}>
+                <Icon name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
-          )}
 
-          {/* ── Date / Time Row ── */}
-          <View style={styles.dateTimeRow}>
-            <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
-              <Icon name="calendar-today" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-              <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'dd MMM yyyy')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setShowTimePicker(true)}>
-              <Icon name="schedule" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-              <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'h:mm a')}</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Segment Tabs (Only for New Transactions) */}
+            {!editTx && (
+              <View style={[styles.segmentRow, { backgroundColor: colors.background }]}>
+                <TouchableOpacity
+                  style={[styles.segmentTab, type === 'Expense' && { backgroundColor: colors.danger }]}
+                  onPress={() => setType('Expense')}
+                >
+                  <Text style={[styles.segmentText, { color: type === 'Expense' ? 'white' : colors.textSecondary }]}>Expense</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.segmentTab, type === 'Income' && { backgroundColor: colors.success }]}
+                  onPress={() => setType('Income')}
+                >
+                  <Text style={[styles.segmentText, { color: type === 'Income' ? 'white' : colors.textSecondary }]}>Income</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
-          {/* ── Main Card ── */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {/* Date / Time Row */}
+            <View style={styles.dateTimeRow}>
+              <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
+                <Icon name="calendar-today" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'dd MMM yyyy')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowTimePicker(true)}>
+                <Icon name="schedule" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'h:mm a')}</Text>
+              </TouchableOpacity>
+            </View>
 
-            {/* Amount */}
-            <View style={styles.amountRow}>
-              <Text style={[styles.currencySymbol, { color: currentIconColor }]}>₹</Text>
+            {/* Amount & Description Row */}
+            <View style={[styles.mainFormCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <View style={styles.amountRow}>
+                <Text style={[styles.currencySymbol, { color: currentIconColor }]}>₹</Text>
+                <TextInput
+                  style={[styles.amountInput, { color: currentIconColor }]}
+                  placeholder="0"
+                  placeholderTextColor={colors.border}
+                  keyboardType="decimal-pad"
+                  value={amount}
+                  onChangeText={setAmount}
+                  autoFocus={!editTx}
+                />
+              </View>
+
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
               <TextInput
-                style={[styles.amountInput, { color: currentIconColor }]}
-                placeholder="0"
-                placeholderTextColor={colors.border}
-                keyboardType="decimal-pad"
-                value={amount}
-                onChangeText={setAmount}
-                autoFocus={!editTx}
+                style={[styles.descInput, { color: colors.text }]}
+                placeholder="Add a note..."
+                placeholderTextColor={colors.textSecondary + '70'}
+                value={description}
+                onChangeText={setDescription}
+                maxLength={255}
               />
             </View>
 
-            <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-            {/* Description */}
-            <TextInput
-              style={[styles.descInput, { color: colors.text }]}
-              placeholder="Add a note or description..."
-              placeholderTextColor={colors.textSecondary + '70'}
-              value={description}
-              onChangeText={setDescription}
-              maxLength={255}
-            />
-
-            <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-            {/* Payee | Category */}
+            {/* Selector Row */}
             <View style={styles.selectorRow}>
-              <TouchableOpacity style={styles.selectorHalf} onPress={() => setShowModal('Payee')}>
-                <View style={[styles.selectorIconBg, { backgroundColor: colors.background }]}>
+              <TouchableOpacity style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowModal('Payee')}>
+                <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
                   <Icon name="person-outline" size={18} color={colors.textSecondary} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Payee</Text>
                   <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedPayee?.name || 'Select'}</Text>
                 </View>
               </TouchableOpacity>
 
-              <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
-
-              <TouchableOpacity style={styles.selectorHalf} onPress={() => setShowModal('Category')}>
+              <TouchableOpacity style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowModal('Category')}>
                 <View style={[styles.selectorIconBg, { backgroundColor: currentIconBg }]}>
                   <Icon name={formatIconName(selectedCategory?.app_icon || selectedCategory?.icon || 'grid-view') as any} size={18} color={currentIconColor} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Category</Text>
                   <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedCategory?.name || 'Select'}</Text>
                 </View>
               </TouchableOpacity>
             </View>
 
-          </View>
-
-          <View style={{ height: 32 }} />
-
-          {/* ── Save Button (outside card) ── */}
-          <View style={styles.bottomArea}>
+            {/* Save Button */}
             <TouchableOpacity
               style={[styles.saveBtn, { backgroundColor: currentIconColor }, submitting && { opacity: 0.7 }]}
               onPress={handleSave}
               disabled={submitting}
             >
-              {submitting
-                ? <ActivityIndicator color="white" />
-                : <>
-                    <Text style={styles.saveBtnText}>Save Transaction</Text>
-                    <Icon name="check-circle" size={20} color="rgba(255,255,255,0.7)" style={{ marginLeft: 8 }} />
-                  </>
-              }
+              {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Save Transaction</Text>}
             </TouchableOpacity>
           </View>
 
@@ -384,261 +392,211 @@ export default function AddTransactionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#121212',
-    paddingTop: 52,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
   },
-
-  /* Header */
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 24,
+  modalDismiss: {
+    flex: 1,
   },
-  headerBtn: {
+  bottomSheet: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    borderTopWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 20,
+  },
+  sheetHandle: {
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1e1e1e',
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 15,
   },
-  headerTitle: {
-    color: 'white',
-    fontSize: 17,
-    fontWeight: '700',
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: '800',
   },
-
-  /* Segment tabs */
+  sheetCloseBtn: {
+    padding: 4,
+  },
   segmentRow: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 4,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   segmentTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 12,
   },
   segmentText: {
     fontSize: 15,
     fontWeight: '700',
   },
-
-  /* Date / Time row */
   dateTimeRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 20,
+    gap: 10,
+    marginBottom: 10,
   },
   dateTimeChip: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e1e1e',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2e2e2e',
   },
   dateTimeText: {
-    color: 'white',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
-
-  /* Main card */
-  card: {
-    marginHorizontal: 16,
-    backgroundColor: '#1c1c1e',
-    borderRadius: 24,
-    paddingVertical: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
+  mainFormCard: {
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    marginBottom: 10,
+    overflow: 'hidden',
   },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 2,
   },
   currencySymbol: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '700',
-    marginRight: 4,
+    marginRight: 0,
   },
   amountInput: {
-    fontSize: 52,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     textAlign: 'center',
-    padding: 0,
+    minWidth: 100,
   },
   divider: {
     height: 1,
-    backgroundColor: '#2a2a2a',
-    marginVertical: 4,
   },
   descInput: {
-    color: 'white',
-    fontSize: 15,
-    fontWeight: '400',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    minHeight: 48,
+    fontSize: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    textAlign: 'center',
   },
   selectorRow: {
     flexDirection: 'row',
-    paddingHorizontal: 4,
+    gap: 12,
+    marginBottom: 20,
   },
-  selectorHalf: {
+  selectorBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
     gap: 10,
   },
-  verticalDivider: {
-    width: 1,
-    backgroundColor: '#2a2a2a',
-    alignSelf: 'stretch',
-  },
   selectorIconBg: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectorLabel: {
-    fontSize: 11,
-    color: '#666',
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   selectorValue: {
     fontSize: 14,
-    color: 'white',
     fontWeight: '700',
-    marginTop: 2,
-  },
-
-  /* Bottom area */
-  bottomArea: {
-    padding: 20,
-    paddingBottom: 36,
+    marginTop: 1,
   },
   saveBtn: {
-    height: 60,
-    borderRadius: 30,
+    height: 50,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
   },
   saveBtnText: {
     color: 'white',
     fontSize: 17,
-    fontWeight: '700',
-  },
-  cancelBtn: {
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  cancelBtnText: {
-    color: '#666',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-
-  /* Modal */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'flex-end',
+    fontWeight: '800',
   },
   modalContent: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: 20,
-    maxHeight: '80%',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    maxHeight: '85%',
+    borderTopWidth: 1,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    flex: 1,
-    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  pillIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#222',
+    height: 48,
     borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 46,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    marginBottom: 20,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 8,
-    color: 'white',
-    fontSize: 15,
+    marginLeft: 10,
+    fontSize: 16,
   },
   gridItem: {
     flex: 1,
     alignItems: 'center',
-    margin: 6,
-    padding: 8,
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
   gridIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
     borderWidth: 1,
   },
   gridLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
-  },
-
-  /* Pill icon bg - used in modal close button */
-  pillIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

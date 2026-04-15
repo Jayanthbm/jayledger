@@ -190,6 +190,13 @@ export default function SettingsScreen() {
             />
             <View style={styles.divider} />
             <SettingRow
+              icon="bolt"
+              title="Quick Transactions"
+              value="Manage Templates"
+              onPress={() => navigation.navigate('QuickTransactions')}
+            />
+            <View style={styles.divider} />
+            <SettingRow
               icon="delete-forever"
               title="Reset Data"
               value="Wipe all local records"

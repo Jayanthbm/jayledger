@@ -4,13 +4,13 @@ import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getDb } from '../db/database';
 import { needsTransactionSync, syncTransactions } from '../services/syncService';
-import { Transaction, Category, Payee } from '../models/types';
+import { Transaction, Category, Payee, QuickTransaction } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { format } from 'date-fns';
 import { TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { TransactionCard } from '../components/TransactionCard';
-import { getCategories, getPayees, deleteTransactionAsync } from '../db/queries';
+import { getCategories, getPayees, deleteTransactionAsync, getQuickTransactions } from '../db/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
 
@@ -180,6 +180,9 @@ export default function TransactionsScreen() {
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
 
+  const [quickTransactions, setQuickTransactions] = useState<QuickTransaction[]>([]);
+  const [showQuickModal, setShowQuickModal] = useState(false);
+
   const route = navigation.getState().routes[navigation.getState().index];
   const params = route.params as any;
 
@@ -337,8 +340,16 @@ export default function TransactionsScreen() {
       };
 
       loadData();
+      loadFilterData();
+      const loadQuick = async () => {
+        if (session?.user?.id) {
+          const qts = await getQuickTransactions(session.user.id);
+          setQuickTransactions(qts);
+        }
+      };
+      loadQuick();
       initSync();
-    }, [session?.user?.id, loadData])
+    }, [session?.user?.id, loadData, loadFilterData])
   );
 
   const handleDeleteTransaction = async (tx: Transaction) => {
@@ -548,7 +559,56 @@ export default function TransactionsScreen() {
         colors={colors}
       />
 
-      {/* Add FAB */}
+      {/* Quick Transaction Modal */}
+      <Modal visible={showQuickModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.modalHeader}>
+                    <TouchableOpacity onPress={() => setShowQuickModal(false)} style={styles.closeBtn}>
+                        <Icon name="close" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>Quick Transactions</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+
+                <FlatList
+                    data={quickTransactions}
+                    keyExtractor={item => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity 
+                        style={[styles.quickItem, { backgroundColor: colors.background, borderColor: colors.border }]}
+                        onPress={() => {
+                          setShowQuickModal(false);
+                          navigation.navigate('AddTransaction', { quickTransaction: item });
+                        }}
+                      >
+                        <View style={[styles.quickIcon, { backgroundColor: item.type === 'Income' ? colors.success + '20' : colors.danger + '20' }]}>
+                          <Icon name={item.type === 'Income' ? 'add' : 'remove'} size={24} color={item.type === 'Income' ? colors.success : colors.danger} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.quickName, { color: colors.text }]}>{item.name}</Text>
+                          {item.amount ? <Text style={{ color: colors.textSecondary, fontSize: 13 }}>₹{item.amount.toLocaleString()}</Text> : null}
+                        </View>
+                        <Icon name="chevron-right" size={24} color={colors.border} />
+                      </TouchableOpacity>
+                    )}
+                    ListEmptyComponent={
+                      <View style={{ alignItems: 'center', marginTop: 40 }}>
+                        <Text style={{ color: colors.textSecondary }}>No templates found. Define some in Settings.</Text>
+                      </View>
+                    }
+                />
+            </View>
+        </View>
+      </Modal>
+
+      {/* Add FABs */}
+      <TouchableOpacity
+        style={[styles.quickFab, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => setShowQuickModal(true)}
+      >
+        <Icon name="bolt" size={28} color={colors.primary} />
+      </TouchableOpacity>
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
         onPress={() => navigation.navigate('AddTransaction')}
@@ -751,6 +811,42 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 }
+  },
+  quickFab: {
+    position: 'absolute',
+    right: 24,
+    bottom: Platform.OS === 'ios' ? 200 : 104,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1.5,
+  },
+  quickItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  quickIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  quickName: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 100 }
 });

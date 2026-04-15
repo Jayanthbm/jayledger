@@ -13,6 +13,8 @@ import AddTransactionScreen from '../screens/AddTransactionScreen';
 import ReportView from '../screens/ReportView';
 import CategoriesScreen from '../screens/CategoriesScreen';
 import PayeesScreen from '../screens/PayeesScreen';
+import QuickTransactionsScreen from '../screens/QuickTransactionsScreen';
+import AddQuickTransactionScreen from '../screens/AddQuickTransactionScreen';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 import { TouchableOpacity } from 'react-native';
 
@@ -85,7 +87,12 @@ export default function AppNavigator() {
             <Stack.Screen 
               name="AddTransaction" 
               component={AddTransactionScreen} 
-              options={{ headerShown: false, presentation: 'modal' }} 
+              options={{ 
+                headerShown: false, 
+                presentation: 'transparentModal',
+                contentStyle: { backgroundColor: 'transparent' },
+                animation: 'slide_from_bottom'
+              }} 
             />
             <Stack.Screen 
               name="ReportDetail" 
@@ -140,6 +147,34 @@ export default function AppNavigator() {
                   </TouchableOpacity>
                 )
               })} 
+            />
+            <Stack.Screen 
+              name="QuickTransactions" 
+              component={QuickTransactionsScreen} 
+              options={({ navigation }) => ({ 
+                headerShown: true, 
+                title: 'Quick Transactions',
+                headerBackTitle: ' ',
+                headerLeft: () => (
+                  <TouchableOpacity 
+                    onPress={() => navigation.goBack()}
+                    style={{ paddingLeft: 8, justifyContent: 'center', alignItems: 'center' }}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  >
+                    <Icon name="chevron-left" size={32} color={colors.text} />
+                  </TouchableOpacity>
+                )
+              })} 
+            />
+            <Stack.Screen 
+              name="AddQuickTransaction" 
+              component={AddQuickTransactionScreen} 
+              options={{ 
+                headerShown: false, 
+                presentation: 'transparentModal',
+                contentStyle: { backgroundColor: 'transparent' },
+                animation: 'slide_from_bottom'
+              }} 
             />
           </>
         ) : (
