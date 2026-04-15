@@ -1,5 +1,4 @@
 import * as SQLite from 'expo-sqlite';
-import { Transaction, Goal, Budget, Category, Payee } from '../models/types';
 
 const DB_NAME = 'jayledger.db';
 
@@ -45,6 +44,7 @@ export const initDB = async () => {
         type TEXT,
         user_id TEXT NOT NULL,
         product_link TEXT,
+        tid INTEGER DEFAULT 0,
         sync_status INTEGER DEFAULT 0,
         created_at TEXT,
         updated_at TEXT,
@@ -112,6 +112,7 @@ export const initDB = async () => {
     const migrations = [
       "ALTER TABLE transactions ADD COLUMN category_app_icon TEXT;",
       "ALTER TABLE transactions ADD COLUMN product_link TEXT;",
+      "ALTER TABLE transactions ADD COLUMN tid INTEGER DEFAULT 0;",
       "ALTER TABLE transactions ADD COLUMN created_at TEXT;",
       "ALTER TABLE transactions ADD COLUMN updated_at TEXT;",
       "ALTER TABLE transactions ADD COLUMN deleted INTEGER DEFAULT 0;",
@@ -138,6 +139,7 @@ export const initDB = async () => {
         CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
         CREATE INDEX IF NOT EXISTS idx_sync_status ON transactions(sync_status);
         CREATE INDEX IF NOT EXISTS idx_transactions_catname ON transactions(category_name);
+        CREATE INDEX IF NOT EXISTS idx_transactions_tid ON transactions(tid);
       `);
     } catch (e) {
       console.warn("[DB] Index creation warning:", e);

@@ -4,10 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getPayees, insertPayee } from '../db/queries';
-import { runFullSync } from '../services/syncService';
+import { syncPayees } from '../services/syncService';
 import { Payee } from '../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import { getRelativeTime } from '../utils/dateUtils';
 
 // Lightweight UUIDv4 generator for offline creation
 const generateUUID = () => {
@@ -33,7 +34,7 @@ export default function PayeesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
   
-  const [lastSynced, setLastSynced] = useState<number | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
 
   // Add Modal State
   const [isAddModalVisible, setAddModalVisible] = useState(false);
@@ -41,28 +42,41 @@ export default function PayeesScreen() {
   const [newPayeeLogo, setNewPayeeLogo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (user?.id) {
       // Load viewMode preference
       try {
         const savedMode = await AsyncStorage.getItem(`@payee_view_mode_${user.id}`);
         if (savedMode === 'list' || savedMode === 'grid') {
-          setViewMode(savedMode);
+          setViewMode(savedMode as 'list' | 'grid');
         }
       } catch (e) {}
 
       let fetchedPayees = await getPayees(user.id);
-      if (fetchedPayees.length === 0) {
-        await runFullSync(user.id);
-        fetchedPayees = await getPayees(user.id);
-      }
       setPayees(fetchedPayees);
-      try {
-        const last = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
-        if (last) setLastSynced(parseInt(last, 10));
-      } catch (e) {}
+
+      const last = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
+      if (last) {
+        setLastSyncTime(getRelativeTime(parseInt(last)));
+      }
+
+      if (fetchedPayees.length === 0) {
+        const alreadyChecked = await AsyncStorage.getItem(`@initial_payees_sync_checked_${user.id}`);
+        if (!alreadyChecked) {
+          setSyncing(true);
+          await syncPayees(user.id);
+          await AsyncStorage.setItem(`@initial_payees_sync_checked_${user.id}`, 'true');
+          const lastUpdated = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
+          if (lastUpdated) {
+            setLastSyncTime(getRelativeTime(parseInt(lastUpdated)));
+          }
+          fetchedPayees = await getPayees(user.id);
+          setPayees(fetchedPayees);
+          setSyncing(false);
+        }
+      }
     }
-  };
+  }, [user?.id]);
 
   const toggleViewMode = async () => {
     const newMode = viewMode === 'list' ? 'grid' : 'list';
@@ -92,14 +106,26 @@ export default function PayeesScreen() {
   const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setSyncing(true);
-    await runFullSync(user.id, true);
+    await syncPayees(user.id);
+    const last = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
+    if (last) {
+      setLastSyncTime(getRelativeTime(parseInt(last)));
+    }
     await loadData();
     setSyncing(false);
   }, [user?.id, loadData]);
 
   useEffect(() => {
     navigation.setOptions({
-      title: 'Payees',
+      headerTitle: () => (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Payees</Text>
+          {lastSyncTime ? (
+            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
+          ) : null}
+        </View>
+      ),
+      headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity 
           style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
@@ -115,7 +141,7 @@ export default function PayeesScreen() {
         </TouchableOpacity>
       )
     });
-  }, [navigation, handleManualSync, syncing, colors.text, colors.primary]);
+  }, [navigation, handleManualSync, syncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime]);
 
   const handleAddPayee = async () => {
     if (!newPayeeName.trim() || !user?.id) return;
@@ -139,7 +165,7 @@ export default function PayeesScreen() {
     setIsSaving(false);
 
     // Background push sync
-    runFullSync(user.id).catch(err => console.error("Payee sync failed", err));
+    syncPayees(user.id).catch(err => console.error("Payee sync failed", err));
   };
 
   // Memoized processing for search & sort

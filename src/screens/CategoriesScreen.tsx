@@ -4,10 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getCategories, insertCategory } from '../db/queries';
-import { runFullSync } from '../services/syncService';
+import { syncCategories } from '../services/syncService';
 import { Category } from '../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import { getRelativeTime } from '../utils/dateUtils';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -32,7 +33,7 @@ export default function CategoriesScreen() {
   const [sortAsc, setSortAsc] = useState(true);
   const [activeTab, setActiveTab] = useState<'Expense' | 'Income'>('Expense');
   
-  const [lastSynced, setLastSynced] = useState<number | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
   
   const [isAddModalVisible, setAddModalVisible] = useState(false);
   const [newName, setNewName] = useState('');
@@ -40,7 +41,7 @@ export default function CategoriesScreen() {
   const [newTabSelection, setNewTabSelection] = useState<'Expense' | 'Income'>('Expense');
   const [isSaving, setIsSaving] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user?.id) {
       setLoading(false);
       return;
@@ -51,26 +52,39 @@ export default function CategoriesScreen() {
       try {
         const savedMode = await AsyncStorage.getItem(`@category_view_mode_${user.id}`);
         if (savedMode === 'list' || savedMode === 'grid') {
-          setViewMode(savedMode);
+          setViewMode(savedMode as 'list' | 'grid');
         }
       } catch (e) {}
 
       let fetchedCats = await getCategories(user.id);
-      if (fetchedCats.length === 0) {
-        await runFullSync(user.id);
-        fetchedCats = await getCategories(user.id);
-      }
       setCategories(fetchedCats);
-      try {
-        const last = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
-        if (last) setLastSynced(parseInt(last, 10));
-      } catch (e) {}
+
+      const last = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
+      if (last) {
+        setLastSyncTime(getRelativeTime(parseInt(last)));
+      }
+
+      if (fetchedCats.length === 0) {
+        const alreadyChecked = await AsyncStorage.getItem(`@initial_categories_sync_checked_${user.id}`);
+        if (!alreadyChecked) {
+          setSyncing(true);
+          await syncCategories(user.id);
+          await AsyncStorage.setItem(`@initial_categories_sync_checked_${user.id}`, 'true');
+          const lastUpdated = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
+          if (lastUpdated) {
+            setLastSyncTime(getRelativeTime(parseInt(lastUpdated)));
+          }
+          fetchedCats = await getCategories(user.id);
+          setCategories(fetchedCats);
+          setSyncing(false);
+        }
+      }
     } catch (err) {
       console.error("[Categories] loadData error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const toggleViewMode = async () => {
     const newMode = viewMode === 'list' ? 'grid' : 'list';
@@ -100,14 +114,26 @@ export default function CategoriesScreen() {
   const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setSyncing(true);
-    await runFullSync(user.id, true);
+    await syncCategories(user.id);
+    const last = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
+    if (last) {
+      setLastSyncTime(getRelativeTime(parseInt(last)));
+    }
     await loadData();
     setSyncing(false);
   }, [user?.id, loadData]);
 
   useEffect(() => {
     navigation.setOptions({
-      title: 'Categories',
+      headerTitle: () => (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Categories</Text>
+          {lastSyncTime ? (
+            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
+          ) : null}
+        </View>
+      ),
+      headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity 
           style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
@@ -123,7 +149,7 @@ export default function CategoriesScreen() {
         </TouchableOpacity>
       )
     });
-  }, [navigation, handleManualSync, syncing, colors.text, colors.primary]);
+  }, [navigation, handleManualSync, syncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime]);
 
   const handleAddCategory = async () => {
     if (!newName.trim() || !user?.id) return;
@@ -147,7 +173,7 @@ export default function CategoriesScreen() {
     setNewAppIcon('');
     setIsSaving(false);
 
-    runFullSync(user.id).catch(err => console.error("Category sync failed", err));
+    syncCategories(user.id).catch(err => console.error("Category sync failed", err));
   };
 
   const filteredData = useMemo(() => {

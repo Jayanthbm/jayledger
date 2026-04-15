@@ -8,6 +8,7 @@ import { runFullSync } from '../services/syncService';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { resetAppData } from '../db/queries';
+import { getRelativeTime } from '../utils/dateUtils';
 
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -23,13 +24,8 @@ export default function SettingsScreen() {
   const [isResetting, setIsResetting] = useState(false);
   const [lastSynced, setLastSynced] = useState<number | null>(null);
 
-  const getRelativeTime = (timestamp: number) => {
-    const mins = Math.round((Date.now() - timestamp) / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.round(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.round(hours / 24)}d ago`;
+  const getRelativeTimeDisplay = (timestamp: number) => {
+    return getRelativeTime(timestamp);
   };
 
   useEffect(() => {
@@ -51,6 +47,12 @@ export default function SettingsScreen() {
     setReminderModalVisible(false);
   };
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitleAlign: 'left'
+    });
+  }, [navigation]);
+
   const setAppTheme = (mode: 'Light' | 'Dark') => {
     if (mode === 'Light' && isDark) toggleTheme();
     if (mode === 'Dark' && !isDark) toggleTheme();
@@ -60,7 +62,7 @@ export default function SettingsScreen() {
     if (!user?.id) return;
     setIsSyncing(true);
     try {
-      await runFullSync(user.id, true);
+      await runFullSync(user.id);
       const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
       if (last) setLastSynced(parseInt(last, 10));
     } catch (e) {
@@ -76,10 +78,22 @@ export default function SettingsScreen() {
     try {
       await resetAppData(user.id);
 
+      // We don't run runFullSync here anymore. 
+      // Instead, we clear the sync keys so the Dashboard triggers the Initial Sync modal.
+
       // Clear relevant AsyncStorage keys
       const keysToClear = [
         'notification_pref',
         `@last_sync_master_${user.id}`,
+        `@last_sync_transactions_${user.id}`,
+        `@last_sync_budgets_${user.id}`,
+        `@last_sync_goals_${user.id}`,
+        `@last_sync_categories_${user.id}`,
+        `@last_sync_payees_${user.id}`,
+        `@initial_budget_sync_checked_${user.id}`,
+        `@initial_goals_sync_checked_${user.id}`,
+        `@initial_categories_sync_checked_${user.id}`,
+        `@initial_payees_sync_checked_${user.id}`,
         'reports_view_mode'
       ];
       await AsyncStorage.multiRemove(keysToClear);

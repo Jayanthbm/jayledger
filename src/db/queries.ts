@@ -89,8 +89,8 @@ export const insertOrUpdateTransaction = async (tx: Transaction, syncStatus: num
       id, amount, description, transaction_timestamp, date,
       category_id, category_name, category_icon, category_app_icon,
       payee_id, payee_name, payee_logo, type, user_id,
-      product_link, sync_status, created_at, updated_at, deleted
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      product_link, tid, sync_status, created_at, updated_at, deleted
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       tx.id,
       tx.amount,
@@ -107,6 +107,7 @@ export const insertOrUpdateTransaction = async (tx: Transaction, syncStatus: num
       tx.type,
       tx.user_id,
       tx.product_link || null,
+      tx.tid || 0,
       syncStatus,
       tx.created_at || new Date().toISOString(),
       tx.updated_at || new Date().toISOString(),

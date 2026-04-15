@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { 
@@ -13,9 +13,10 @@ import { DeviceEventEmitter } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { runFullSync, isOnline } from '../services/syncService';
+import { runFullSync, isOnline, needsTransactionSync, syncTransactions } from '../services/syncService';
+import { getRelativeTime } from '../utils/dateUtils';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
@@ -37,52 +38,7 @@ export default function DashboardScreen() {
   const [syncStatus, setSyncStatus] = useState<string>('Syncing Transactions');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-
-  const checkSyncStatus = useCallback(async () => {
-    if (!session?.user?.id) return;
-    const lastSync = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
-    if (!lastSync) {
-      setShowSyncModal(true);
-      handleInitialSync();
-    }
-  }, [session?.user?.id]);
-
-  const handleInitialSync = async () => {
-    if (!session?.user?.id || isSyncing) return;
-    
-    setIsSyncing(true);
-    setSyncError(null);
-    
-    try {
-      const online = await isOnline();
-      if (!online) {
-        setSyncError('Please connect to the internet to sync your data.');
-        setIsSyncing(false);
-        return;
-      }
-
-      await runFullSync(session.user.id, true, (msg) => {
-        if (msg === 'Offline') {
-          setSyncError('Internet connection lost.');
-        } else if (msg === 'Error') {
-          setSyncError('An error occurred during sync. Please try again.');
-        } else {
-          setSyncStatus(msg);
-        }
-      });
-
-      // After sync, verify if successful
-      const check = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
-      if (check) {
-        setShowSyncModal(false);
-        loadData();
-      }
-    } catch (e) {
-      setSyncError('Sync failed. Please check your connection.');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
 
   const loadData = useCallback(async () => {
     if (!session?.user?.id) {
@@ -141,6 +97,67 @@ export default function DashboardScreen() {
     }
   }, [session?.user?.id]);
 
+  const handleInitialSync = async () => {
+    if (!session?.user?.id || isSyncing) return;
+    
+    setIsSyncing(true);
+    setSyncError(null);
+    
+    try {
+      const online = await isOnline();
+      if (!online) {
+        setSyncError('Please connect to the internet to sync your data.');
+        setIsSyncing(false);
+        return;
+      }
+
+      await runFullSync(session.user.id, (msg) => {
+        if (msg === 'Offline') {
+          setSyncError('Internet connection lost.');
+        } else if (msg === 'Error') {
+          setSyncError('An error occurred during sync. Please try again.');
+        } else {
+          setSyncStatus(msg);
+        }
+      });
+
+      // After sync, verify if successful
+      const check = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
+      if (check) {
+        setShowSyncModal(false);
+        loadData();
+      }
+    } catch (e) {
+      setSyncError('Sync failed. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const checkSyncStatus = useCallback(async () => {
+    if (!session?.user?.id) return;
+    const lastMasterSync = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
+    
+    if (!lastMasterSync) {
+      setShowSyncModal(true);
+      await handleInitialSync();
+    } else {
+      // Check if partial sync is needed
+      const needsPartial = await needsTransactionSync(session.user.id);
+      if (needsPartial) {
+        setIsSyncing(true);
+        await syncTransactions(session.user.id, true);
+        setIsSyncing(false);
+        loadData();
+      }
+    }
+
+    const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+    if (lastTxSync) {
+      setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+    }
+  }, [session?.user?.id, loadData]);
+
   useEffect(() => {
     const sub = DeviceEventEmitter.addListener('module_refreshed', (data) => {
       if (data.module === 'Dashboard') loadData();
@@ -148,8 +165,34 @@ export default function DashboardScreen() {
     return () => sub.remove();
   }, [loadData]);
 
+  const handleManualSync = useCallback(async () => {
+    if (!session?.user?.id || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await syncTransactions(session.user.id, true);
+      const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+      if (lastTxSync) {
+        setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+      }
+      loadData();
+    } catch (e) {
+      console.error("Manual sync error:", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [session?.user?.id, isSyncing, loadData]);
+
   useEffect(() => {
     navigation.setOptions({
+      headerTitle: () => (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Dashboard</Text>
+          {lastSyncTime ? (
+            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
+          ) : null}
+        </View>
+      ),
+      headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity 
           onPress={handleManualSync} 
@@ -165,24 +208,11 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, isSyncing, colors.text, colors.primary]);
-
-  const handleManualSync = async () => {
-    if (!session?.user?.id || isSyncing) return;
-    setIsSyncing(true);
-    try {
-      await runFullSync(session.user.id, true);
-      loadData();
-    } catch (e) {
-      console.error("Manual sync error:", e);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+  }, [navigation, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime, handleManualSync]);
 
   useEffect(() => {
-    checkSyncStatus();
     loadData();
+    checkSyncStatus();
   }, [loadData, checkSyncStatus]);
 
   const dailyLimitCalc = useMemo(() => {
@@ -223,11 +253,12 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       
-      {/* 1. Remaining For Period */}
       <View style={[styles.mainCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeader}>
-          <MaterialIcons name="account-balance-wallet" size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>REMAINING FOR PERIOD</Text>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <MaterialIcons name="account-balance-wallet" size={20} color={colors.primary} />
+            <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>REMAINING FOR PERIOD</Text>
+          </View>
         </View>
         <Text style={[styles.mainAmount, { color: colors.text }]}>₹{(metrics.month.income - metrics.month.expense).toLocaleString()}</Text>
         <View style={styles.progressBarBg}>

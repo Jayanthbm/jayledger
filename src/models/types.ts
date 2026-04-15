@@ -14,6 +14,7 @@ export interface Transaction {
   type: string;
   user_id: string;
   product_link?: string | null;
+  tid: number;
   sync_status?: number;
   created_at?: string;
   updated_at?: string;

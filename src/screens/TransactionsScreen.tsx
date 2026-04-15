@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, SectionList, TextInput, Modal, FlatList, Platfo
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getDb } from '../db/database';
-import { runFullSync } from '../services/syncService';
+import { needsTransactionSync, syncTransactions } from '../services/syncService';
 import { Transaction, Category, Payee } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { format } from 'date-fns';
@@ -11,6 +11,8 @@ import { TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { TransactionCard } from '../components/TransactionCard';
 import { getCategories, getPayees, deleteTransactionAsync } from '../db/queries';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getRelativeTime } from '../utils/dateUtils';
 
 interface FilterSelectorProps {
   type: 'Category' | 'Payee';
@@ -159,38 +161,7 @@ export default function TransactionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [sections, setSections] = useState<{ title: string, data: Transaction[] }[]>([]);
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity 
-          onPress={handleManualSync} 
-          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
-          disabled={isSyncing}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        >
-          {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Icon name="refresh" size={24} color={colors.text} />
-          )}
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, isSyncing, colors.text, colors.primary]);
-
-  const handleManualSync = async () => {
-    if (!session?.user?.id || isSyncing) return;
-    setIsSyncing(true);
-    try {
-      await runFullSync(session.user.id, true);
-      loadData();
-    } catch (e) {
-      console.error("Manual sync error:", e);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
   
   // Search & Filter State
   const [search, setSearch] = useState('');
@@ -211,23 +182,6 @@ export default function TransactionsScreen() {
 
   const route = navigation.getState().routes[navigation.getState().index];
   const params = route.params as any;
-
-  useEffect(() => {
-    if (params?.initialSelectedCats) {
-      setSelectedCats(params.initialSelectedCats);
-      setSelectedPayees([]); // Clear payees if we are filtering by category
-    }
-    if (params?.initialSelectedPayees) {
-      setSelectedPayees(params.initialSelectedPayees);
-      setSelectedCats([]); // Clear categories if we are filtering by payee
-    }
-    if (params?.initialStartDate) {
-      setStartDate(params.initialStartDate);
-    }
-    if (params?.initialEndDate) {
-      setEndDate(params.initialEndDate);
-    }
-  }, [params]);
 
   const loadFilterData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -293,12 +247,98 @@ export default function TransactionsScreen() {
 
     setSections(formattedSections);
     setLoading(false);
-  }, [session?.user?.id, search, selectedCats, selectedPayees]);
+  }, [session?.user?.id, search, selectedCats, selectedPayees, startDate, endDate]);
+
+  const handleManualSync = useCallback(async () => {
+    if (!session?.user?.id || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await syncTransactions(session.user.id, true);
+      const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+      if (lastTxSync) {
+        setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+      }
+      loadData();
+    } catch (e) {
+      console.error("Manual sync error:", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [session?.user?.id, isSyncing, loadData]);
+
+  useEffect(() => {
+    if (params?.initialSelectedCats) {
+      setSelectedCats(params.initialSelectedCats);
+      setSelectedPayees([]); // Clear payees if we are filtering by category
+    }
+    if (params?.initialSelectedPayees) {
+      setSelectedPayees(params.initialSelectedPayees);
+      setSelectedCats([]); // Clear categories if we are filtering by payee
+    }
+    if (params?.initialStartDate) {
+      setStartDate(params.initialStartDate);
+    }
+    if (params?.initialEndDate) {
+      setEndDate(params.initialEndDate);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Transactions</Text>
+          {lastSyncTime ? (
+            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
+          ) : null}
+        </View>
+      ),
+      headerTitleAlign: 'left',
+      headerRight: () => (
+        <TouchableOpacity 
+          onPress={handleManualSync} 
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          disabled={isSyncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Icon name="refresh" size={24} color={colors.text} />
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime, handleManualSync]);
 
   useFocusEffect(
     useCallback(() => {
+      const initSync = async () => {
+        if (!session?.user?.id) return;
+        
+        // Initial check for last tx sync time
+        const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+        if (lastTxSync) {
+          setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+        }
+
+        const needsSync = await needsTransactionSync(session.user.id);
+        if (needsSync) {
+          setIsSyncing(true);
+          await syncTransactions(session.user.id, true);
+          setIsSyncing(false);
+          
+          const updatedLastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+          if (updatedLastTxSync) {
+            setLastSyncTime(getRelativeTime(parseInt(updatedLastTxSync)));
+          }
+          loadData();
+        }
+      };
+      
       loadData();
-    }, [loadData])
+      initSync();
+    }, [session?.user?.id, loadData])
   );
 
   const handleDeleteTransaction = async (tx: Transaction) => {
@@ -336,7 +376,11 @@ export default function TransactionsScreen() {
   const handleRefresh = async () => {
     if (!session?.user?.id) return;
     setRefreshing(true);
-    await runFullSync(session.user.id, true);
+    await syncTransactions(session.user.id, true);
+    const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+    if (lastTxSync) {
+      setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+    }
     await loadData();
     setRefreshing(false);
   };

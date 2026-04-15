@@ -4,11 +4,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getDb } from '../db/database';
-import { runFullSync } from '../services/syncService';
+import { syncGoals } from '../services/syncService';
 import { insertGoal, deleteGoalAsync } from '../db/queries';
 import { Goal } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { getRelativeTime } from '../utils/dateUtils';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -30,7 +31,7 @@ export default function GoalsScreen() {
   const [data, setData] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSynced, setLastSynced] = useState<number | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +44,8 @@ export default function GoalsScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [sortAsc, setSortAsc] = useState(true);
+  const [sortBy, setSortBy] = useState<'name' | 'progress' | 'amount'>('name');
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
@@ -57,8 +60,28 @@ export default function GoalsScreen() {
     );
     setData(rows);
     try {
-      const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
-      if (last) setLastSynced(parseInt(last, 10));
+      const last = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
+      if (last) {
+        setLastSyncTime(getRelativeTime(parseInt(last)));
+      }
+
+      if (rows.length === 0) {
+        const alreadyChecked = await AsyncStorage.getItem(`@initial_goals_sync_checked_${user.id}`);
+        if (!alreadyChecked) {
+          setIsSyncing(true);
+          await syncGoals(user.id);
+          await AsyncStorage.setItem(`@initial_goals_sync_checked_${user.id}`, 'true');
+          const lastUpdated = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
+          if (lastUpdated) {
+            setLastSyncTime(getRelativeTime(parseInt(lastUpdated)));
+          }
+          const updatedRows = await db.getAllAsync<Goal>(
+            `SELECT * FROM goals WHERE user_id = '${user.id}' ORDER BY name ASC`
+          );
+          setData(updatedRows);
+          setIsSyncing(false);
+        }
+      }
     } catch (e) {}
   }, [user?.id]);
 
@@ -124,8 +147,8 @@ export default function GoalsScreen() {
     resetForm();
     setIsSaving(false);
 
-    // Trigger background sync (non-blocking)
-    runFullSync(user.id).catch(err => console.error("Goal sync failed", err));
+    // Trigger background sync (non-blocking) - Use syncGoals instead of full sync
+    syncGoals(user.id).catch(err => console.error("Goal sync failed", err));
   };
 
   const handleDelete = async () => {
@@ -138,7 +161,7 @@ export default function GoalsScreen() {
     resetForm();
 
     await deleteGoalAsync(id, user.id);
-    runFullSync(user.id).catch(err => console.error("Goal sync failed", err));
+    syncGoals(user.id).catch(err => console.error("Goal sync failed", err));
   };
 
   const confirmDelete = (id: string) => {
@@ -149,11 +172,20 @@ export default function GoalsScreen() {
   const sortedData = useMemo(() => {
     let result = [...data];
     result.sort((a, b) => {
-      const cmp = a.name.localeCompare(b.name);
+      let cmp = 0;
+      if (sortBy === 'name') {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortBy === 'progress') {
+        const progA = a.goal_amount ? (a.current_amount / a.goal_amount) : 0;
+        const progB = b.goal_amount ? (b.current_amount / b.goal_amount) : 0;
+        cmp = progA - progB;
+      } else if (sortBy === 'amount') {
+        cmp = a.goal_amount - b.goal_amount;
+      }
       return sortAsc ? cmp : -cmp;
     });
     return result;
-  }, [data, sortAsc]);
+  }, [data, sortAsc, sortBy]);
 
   const renderItem = ({ item }: { item: Goal }) => {
     const rawProgress = item.goal_amount ? (item.current_amount / item.goal_amount) * 100 : 0;
@@ -212,13 +244,26 @@ export default function GoalsScreen() {
   const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setIsSyncing(true);
-    await runFullSync(user.id, true);
+    await syncGoals(user.id);
+    const last = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
+    if (last) {
+      setLastSyncTime(getRelativeTime(parseInt(last)));
+    }
     await loadData();
     setIsSyncing(false);
   }, [user?.id, loadData]);
 
   useEffect(() => {
     navigation.setOptions({
+      headerTitle: () => (
+        <View style={{ alignItems: 'flex-start' }}>
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Goals</Text>
+          {lastSyncTime ? (
+            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
+          ) : null}
+        </View>
+      ),
+      headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity 
           style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
@@ -234,11 +279,23 @@ export default function GoalsScreen() {
         </TouchableOpacity>
       )
     });
-  }, [navigation, handleManualSync, isSyncing, colors.text, colors.primary]);
+  }, [navigation, handleManualSync, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-
+      
+      <View style={styles.sortContainer}>
+        <TouchableOpacity 
+          style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]} 
+          onPress={() => setIsSortModalOpen(true)}
+        >
+          <MaterialIcons name="sort" size={18} color={colors.primary} />
+          <Text style={[styles.sortButtonText, { color: colors.text }]}>
+            Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)} ({sortAsc ? 'Asc' : 'Desc'})
+          </Text>
+          <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={sortedData}
         keyExtractor={item => item.id}
@@ -315,6 +372,57 @@ export default function GoalsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Sort Picker Modal */}
+      <Modal visible={isSortModalOpen} transparent animationType="fade" onRequestClose={() => setIsSortModalOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setIsSortModalOpen(false)} />
+          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Sort Goals</Text>
+            
+            <View style={{ marginTop: 10 }}>
+              {[
+                { label: 'Name', value: 'name' },
+                { label: 'Progress', value: 'progress' },
+                { label: 'Target Amount', value: 'amount' }
+              ].map((item: any) => (
+                <TouchableOpacity 
+                  key={item.value} 
+                  style={[styles.sortOption, { borderBottomColor: colors.border }]}
+                  onPress={() => {
+                    if (sortBy === item.value) {
+                      setSortAsc(!sortAsc);
+                    } else {
+                      setSortBy(item.value as any);
+                      setSortAsc(true);
+                    }
+                    setIsSortModalOpen(false);
+                  }}
+                >
+                  <Text style={[styles.sortOptionText, { color: sortBy === item.value ? colors.primary : colors.text }]}>
+                    {item.label}
+                  </Text>
+                  {sortBy === item.value && (
+                    <MaterialIcons 
+                      name={sortAsc ? 'arrow-upward' : 'arrow-downward'} 
+                      size={20} 
+                      color={colors.primary} 
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.sheetButton, { marginTop: 20 }]} 
+              onPress={() => setIsSortModalOpen(false)}
+            >
+              <Text style={{ color: colors.textSecondary, fontWeight: 'bold' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Delete Confirmation Modal */}
       <Modal visible={isDeleteModalOpen} transparent animationType="slide" onRequestClose={() => setIsDeleteModalOpen(false)}>
         <View style={styles.modalOverlay}>
@@ -341,6 +449,37 @@ export default function GoalsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  sortContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+  },
+  sortButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sortOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   card: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 'bold' },

@@ -19,13 +19,12 @@ import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import MIcon from '@expo/vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { getCategories, getPayees, insertOrUpdateTransaction } from '../db/queries';
 import { Category, Payee, Transaction } from '../models/types';
 import * as Crypto from 'expo-crypto';
-import { runFullSync } from '../services/syncService';
+import { syncTransactions } from '../services/syncService';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -138,11 +137,12 @@ export default function AddTransactionScreen() {
         user_id: session.user.id,
         created_at: editTx?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        sync_status: 1
+        sync_status: 1,
+        tid: editTx?.tid || 0
       };
 
       await insertOrUpdateTransaction(newTx, 1);
-      runFullSync(session.user.id).catch(err => console.error("Background sync failed", err));
+      syncTransactions(session.user.id, true).catch(err => console.error("Background sync failed", err));
       
       Alert.alert('Success', 'Transaction saved successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }

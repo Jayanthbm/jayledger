@@ -12,7 +12,7 @@ import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../store/AuthContext';
-import { runFullSync } from '../services/syncService';
+import { syncTransactions } from '../services/syncService';
 import { ActivityIndicator } from 'react-native';
 
 const { width } = Dimensions.get('window');
@@ -132,7 +132,7 @@ export default function ReportsScreen() {
     if (!session?.user?.id || isSyncing) return;
     setIsSyncing(true);
     try {
-      await runFullSync(session.user.id, true);
+      await syncTransactions(session.user.id, true);
     } catch (e) {
       console.error("Manual sync error:", e);
     } finally {
