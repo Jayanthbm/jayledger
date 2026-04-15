@@ -255,22 +255,39 @@ export const syncPayees = async (userId: string, force = false) => {
 
 let isSyncingData = false;
 
-export const runFullSync = async (userId: string, force = false) => {
+export const runFullSync = async (userId: string, force = false, onProgress?: (msg: string) => void) => {
   if (isSyncingData) return;
   isSyncingData = true;
   try {
-    if (!(await isOnline())) return;
+    if (!(await isOnline())) {
+      if (onProgress) onProgress('Offline');
+      return;
+    }
     console.log(`[Sync] *** Offline-First Sync Initiation ***`);
+    if (onProgress) onProgress('Pushing local changes...');
     await pushLocalChanges(userId);
+    
+    if (onProgress) onProgress('Syncing Transactions');
     await syncTransactions(userId, force);
+    
+    if (onProgress) onProgress('Syncing Goals');
     await syncGoals(userId, force);
+    
+    if (onProgress) onProgress('Syncing Budgets');
     await syncBudgets(userId, force);
+    
+    if (onProgress) onProgress('Syncing Categories');
     await syncCategories(userId, force);
+    
+    if (onProgress) onProgress('Syncing Payees');
     await syncPayees(userId, force);
+    
+    if (onProgress) onProgress('Finalizing');
     await AsyncStorage.setItem(`@last_sync_master_${userId}`, Date.now().toString());
     console.log("[Sync] *** Sync complete ***");
   } catch (error) {
     console.error("[Sync] Sync error:", error);
+    if (onProgress) onProgress('Error');
   } finally {
     isSyncingData = false;
   }

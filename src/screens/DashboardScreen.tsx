@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Modal, Platform } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { 
@@ -13,8 +13,10 @@ import { startOfMonth, endOfMonth, startOfYear, endOfYear, format, differenceInD
 import { DeviceEventEmitter } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { runFullSync, isOnline } from '../services/syncService';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
@@ -30,6 +32,58 @@ export default function DashboardScreen() {
     spentToday: 0,
     topCategories: [] as any[],
   });
+
+  // First Sync Logic
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string>('Syncing Transactions');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const checkSyncStatus = useCallback(async () => {
+    if (!session?.user?.id) return;
+    const lastSync = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
+    if (!lastSync) {
+      setShowSyncModal(true);
+      handleInitialSync();
+    }
+  }, [session?.user?.id]);
+
+  const handleInitialSync = async () => {
+    if (!session?.user?.id || isSyncing) return;
+    
+    setIsSyncing(true);
+    setSyncError(null);
+    
+    try {
+      const online = await isOnline();
+      if (!online) {
+        setSyncError('Please connect to the internet to sync your data.');
+        setIsSyncing(false);
+        return;
+      }
+
+      await runFullSync(session.user.id, true, (msg) => {
+        if (msg === 'Offline') {
+          setSyncError('Internet connection lost.');
+        } else if (msg === 'Error') {
+          setSyncError('An error occurred during sync. Please try again.');
+        } else {
+          setSyncStatus(msg);
+        }
+      });
+
+      // After sync, verify if successful
+      const check = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
+      if (check) {
+        setShowSyncModal(false);
+        loadData();
+      }
+    } catch (e) {
+      setSyncError('Sync failed. Please check your connection.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     if (!session?.user?.id) {
@@ -56,19 +110,10 @@ export default function DashboardScreen() {
       const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
       const todayStr = format(today, 'yyyy-MM-dd');
 
-      console.log("Dashboard: Fetching incomeExpenseSummary (month)...");
       const monthSum = await getIncomeExpenseSummary(session.user.id, monthStart, monthEnd);
-      
-      console.log("Dashboard: Fetching incomeExpenseSummary (year)...");
       const yearSum = await getIncomeExpenseSummary(session.user.id, yearStart, yearEnd);
-      
-      console.log("Dashboard: Fetching top categories...");
       const topCats = await getTransactionsByCategoryForExpense(session.user.id, monthStart, monthEnd);
-      
-      console.log("Dashboard: Fetching net worth...");
       const totalNW = await getNetWorth(session.user.id);
-      
-      console.log("Dashboard: Fetching spent today...");
       const todayExp = await getSpentToday(session.user.id, todayStr);
 
       const processSummary = (summary: any[]) => {
@@ -88,7 +133,6 @@ export default function DashboardScreen() {
         netWorth: totalNW || 0,
         spentToday: todayExp || 0
       });
-      console.log("Dashboard: loadData completed successfully.");
     } catch (error) {
       console.error("Dashboard Load Error:", error);
     } finally {
@@ -106,8 +150,9 @@ export default function DashboardScreen() {
   }, [loadData]);
 
   useEffect(() => {
+    checkSyncStatus();
     loadData();
-  }, [loadData]);
+  }, [loadData, checkSyncStatus]);
 
   const dailyLimitCalc = useMemo(() => {
     const today = new Date();
@@ -349,6 +394,94 @@ export default function DashboardScreen() {
         <Text style={[styles.rowLabel, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>ALL TIME BALANCE</Text>
       </View>
 
+      {/* Sync Overlay Modal */}
+      <Modal visible={showSyncModal} transparent animationType="fade">
+        <View style={styles.syncOverlay}>
+          <View style={[styles.syncCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.syncIconContainer}>
+               <MaterialIcons name="cloud-sync" size={60} color={colors.primary} />
+            </View>
+            
+            <Text style={[styles.syncTitle, { color: colors.text }]}>Initializing JayLedger</Text>
+            <Text style={[styles.syncMessage, { color: colors.textSecondary }]}>
+              {syncError ? 'Action Required' : 'Setting up your personal finance workspace...'}
+            </Text>
+
+            <View style={styles.syncProgressContainer}>
+              {syncError ? (
+                <View style={styles.errorContainer}>
+                  <MaterialIcons name="error-outline" size={32} color={colors.danger} />
+                  <Text style={[styles.errorText, { color: colors.danger }]}>{syncError}</Text>
+                  <TouchableOpacity 
+                    style={[styles.retryBtn, { backgroundColor: colors.primary }]} 
+                    onPress={handleInitialSync}
+                  >
+                    <Text style={styles.retryBtnText}>Connect & Retry</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.stepsContainer}>
+                  {[
+                    'Pushing local changes...',
+                    'Syncing Transactions',
+                    'Syncing Budgets',
+                    'Syncing Goals',
+                    'Calculating reports',
+                    'Finalizing'
+                  ].map((step) => {
+                    const isDone = [
+                      'Pushing local changes...',
+                      'Syncing Transactions',
+                      'Syncing Budgets',
+                      'Syncing Goals',
+                      'Calculating reports',
+                      'Finalizing'
+                    ].indexOf(step) < [
+                      'Pushing local changes...',
+                      'Syncing Transactions',
+                      'Syncing Budgets',
+                      'Syncing Goals',
+                      'Calculating reports',
+                      'Finalizing'
+                    ].indexOf(syncStatus);
+                    
+                    const isActive = syncStatus === step;
+                    
+                    return (
+                      <View key={step} style={styles.stepRow}>
+                        <View style={[
+                          styles.stepIndicator, 
+                          { backgroundColor: isDone ? colors.success : isActive ? colors.primary : colors.border }
+                        ]}>
+                          {isDone ? (
+                            <MaterialIcons name="check" size={12} color="#fff" />
+                          ) : isActive ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : null}
+                        </View>
+                        <Text style={[
+                          styles.stepText, 
+                          { color: isDone ? colors.text : isActive ? colors.primary : colors.textSecondary }
+                        ]}>
+                          {step}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            {!syncError && (
+              <View style={styles.spinnerContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.syncSubMessage, { color: colors.textSecondary }]}>This may take a minute...</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -397,5 +530,100 @@ const styles = StyleSheet.create({
   catName: { fontSize: 14, fontWeight: '600' },
   catAmt: { fontSize: 14, fontWeight: '700' },
   catProgressBg: { height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.05)', overflow: 'hidden' },
-  catProgressFill: { height: '100%', borderRadius: 3 }
+  catProgressFill: { height: '100%', borderRadius: 3 },
+  
+  // Sync Overlay Styles
+  syncOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  syncCard: {
+    width: '100%',
+    padding: 32,
+    borderRadius: 32,
+    borderWidth: 1,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  syncIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  syncTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  syncMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 32,
+    opacity: 0.8,
+  },
+  syncProgressContainer: {
+    width: '100%',
+    marginBottom: 32,
+  },
+  stepsContainer: {
+    gap: 16,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  stepIndicator: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  spinnerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  syncSubMessage: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  retryBtn: {
+    marginTop: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  retryBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
 });

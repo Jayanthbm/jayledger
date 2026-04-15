@@ -284,3 +284,19 @@ export const getBudgetSpending = async (userId: string, categoryIds: string[], s
   );
   return row?.total || 0;
 };
+
+export const resetAppData = async (userId: string) => {
+  const db = getDb();
+  await db.execAsync(`BEGIN TRANSACTION;`);
+  try {
+    await db.execAsync(`DELETE FROM transactions WHERE user_id = '${userId}'`);
+    await db.execAsync(`DELETE FROM budgets WHERE user_id = '${userId}'`);
+    await db.execAsync(`DELETE FROM goals WHERE user_id = '${userId}'`);
+    await db.execAsync(`DELETE FROM categories WHERE user_id = '${userId}'`);
+    await db.execAsync(`DELETE FROM payees WHERE user_id = '${userId}'`);
+    await db.execAsync(`COMMIT;`);
+  } catch (e) {
+    await db.execAsync(`ROLLBACK;`);
+    throw e;
+  }
+};

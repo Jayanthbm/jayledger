@@ -7,17 +7,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { runFullSync } from '../services/syncService';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import { resetAppData } from '../db/queries';
 
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const { session, signOut } = useAuth();
   const user = session?.user;
   const navigation = useNavigation<any>();
-  
+
   const [notificationPref, setNotificationPref] = useState('None');
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [resetModalVisible, setResetModalVisible] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [lastSynced, setLastSynced] = useState<number | null>(null);
 
   const getRelativeTime = (timestamp: number) => {
@@ -34,7 +37,7 @@ export default function SettingsScreen() {
       if (!user?.id) return;
       const pref = await AsyncStorage.getItem('notification_pref');
       if (pref) setNotificationPref(pref);
-      
+
       const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
       if (last) setLastSynced(parseInt(last, 10));
     };
@@ -67,10 +70,37 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleResetData = async () => {
+    if (!user?.id) return;
+    setIsResetting(true);
+    try {
+      await resetAppData(user.id);
+
+      // Clear relevant AsyncStorage keys
+      const keysToClear = [
+        'notification_pref',
+        `@last_sync_master_${user.id}`,
+        'reports_view_mode'
+      ];
+      await AsyncStorage.multiRemove(keysToClear);
+
+      setResetModalVisible(false);
+      // Reload app state or navigate home
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
+    } catch (e) {
+      console.error("Reset error", e);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const SettingRow = ({ icon, title, value, onPress, showArrow = true, color, isLoading }: any) => (
-    <TouchableOpacity 
-      style={styles.settingRow} 
-      onPress={onPress} 
+    <TouchableOpacity
+      style={styles.settingRow}
+      onPress={onPress}
       activeOpacity={0.6}
       disabled={!onPress || isLoading}
     >
@@ -93,20 +123,20 @@ export default function SettingsScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          
+
           {/* Section: Appearance */}
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Appearance</Text>
           <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.themeSelector}>
-              <TouchableOpacity 
-                style={[styles.themeOption, !isDark && { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]} 
+              <TouchableOpacity
+                style={[styles.themeOption, !isDark && { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}
                 onPress={() => setAppTheme('Light')}
               >
                 <Icon name="light-mode" size={20} color={!isDark ? colors.primary : colors.textSecondary} />
                 <Text style={[styles.themeOptionText, { color: !isDark ? colors.text : colors.textSecondary }]}>Light</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.themeOption, isDark && { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]} 
+              <TouchableOpacity
+                style={[styles.themeOption, isDark && { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}
                 onPress={() => setAppTheme('Dark')}
               >
                 <Icon name="dark-mode" size={20} color={isDark ? colors.primary : colors.textSecondary} />
@@ -118,13 +148,13 @@ export default function SettingsScreen() {
           {/* Section: Preferences */}
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Preferences</Text>
           <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <SettingRow 
-              icon="notifications-active" 
-              title="Daily Reminders" 
+            <SettingRow
+              icon="notifications-active"
+              title="Daily Reminders"
               value={
-                notificationPref === 'None' ? 'Off' : 
-                notificationPref === 'Morning' ? 'Morning (9:00 AM)' : 
-                notificationPref === 'Evening' ? 'Evening (6:00 PM)' : 
+                notificationPref === 'None' ? 'Off' :
+                  notificationPref === 'Morning' ? 'Morning (9:00 AM)' :
+                    notificationPref === 'Evening' ? 'Evening (6:00 PM)' :
                 notificationPref === 'Night' ? 'Night (9:00 PM)' : notificationPref
               }
               onPress={() => setReminderModalVisible(true)}
@@ -134,23 +164,32 @@ export default function SettingsScreen() {
           {/* Section: Manage Data */}
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Manage Data</Text>
           <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <SettingRow 
-              icon="category" 
-              title="Categories" 
-              value="Manage icons & limits"
+            <SettingRow
+              icon="category"
+              title="Categories"
+              value="Manage Categories"
               onPress={() => navigation.navigate('Categories')}
             />
             <View style={styles.divider} />
-            <SettingRow 
-              icon="storefront" 
-              title="Payees" 
-              value="Manage shops & vendors"
+            <SettingRow
+              icon="storefront"
+              title="Payees"
+              value="Manage Payees"
+              activeOpacity={0.6}
               onPress={() => navigation.navigate('Payees')}
             />
             <View style={styles.divider} />
-            <SettingRow 
-              icon="sync" 
-              title="Cloud Sync" 
+            <SettingRow
+              icon="delete-forever"
+              title="Reset Data"
+              value="Wipe all local records"
+              color="#ef4444"
+              onPress={() => setResetModalVisible(true)}
+            />
+            <View style={styles.divider} />
+            <SettingRow
+              icon="sync"
+              title="Cloud Sync"
               value={isSyncing ? 'Syncing...' : (lastSynced ? `Last synced ${getRelativeTime(lastSynced)}` : 'Never synced')}
               onPress={handleManualSync}
               isLoading={isSyncing}
@@ -161,26 +200,24 @@ export default function SettingsScreen() {
           {/* Section: Account */}
           <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>Account</Text>
           <View style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <SettingRow 
-              icon="person" 
-              title="User Email" 
+            <SettingRow
+              icon="person"
+              title="User Email"
               value={user?.email || 'Guest'}
               showArrow={false}
             />
             <View style={styles.divider} />
-            <SettingRow 
-              icon="logout" 
-              title="Sign Out" 
+            <SettingRow
+              icon="logout"
+              title="Sign Out"
               color="#ef4444"
               onPress={() => setLogoutModalVisible(true)}
               showArrow={true}
             />
           </View>
 
-          <Text style={[styles.versionText, { color: colors.textSecondary }]}>JayLedger v1.2.0 • Build 2026.04</Text>
         </View>
       </ScrollView>
-
       {/* Reminder Selection Bottom Sheet */}
       <Modal visible={reminderModalVisible} transparent animationType="slide" onRequestClose={() => setReminderModalVisible(false)}>
         <View style={styles.modalOverlay}>
@@ -188,7 +225,7 @@ export default function SettingsScreen() {
           <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>Choose Reminder</Text>
-            
+
             <View style={{ marginTop: 20 }}>
               {[
                 { label: 'None', time: null, icon: 'notifications-off' },
@@ -196,17 +233,17 @@ export default function SettingsScreen() {
                 { label: 'Evening', time: '6:00 PM', icon: 'access-time' },
                 { label: 'Night', time: '9:00 PM', icon: 'access-time' }
               ].map((item) => (
-                <TouchableOpacity 
-                  key={item.label} 
-                  style={[styles.radioRow, { borderBottomColor: colors.border }]} 
+                <TouchableOpacity
+                  key={item.label}
+                  style={[styles.radioRow, { borderBottomColor: colors.border }]}
                   onPress={() => handleNotificationChange(item.label)}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Icon 
-                      name={item.icon as any} 
-                      size={20} 
-                      color={notificationPref === item.label ? colors.primary : colors.textSecondary} 
-                      style={{ marginRight: 12 }} 
+                    <Icon
+                      name={item.icon as any}
+                      size={20}
+                      color={notificationPref === item.label ? colors.primary : colors.textSecondary}
+                      style={{ marginRight: 12 }}
                     />
                     <View>
                       <Text style={[styles.label, { color: notificationPref === item.label ? colors.text : colors.textSecondary }]}>
@@ -223,14 +260,13 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            
+
             <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent', marginTop: 12 }]} onPress={() => setReminderModalVisible(false)}>
               <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
       {/* Logout Confirmation */}
       <Modal visible={logoutModalVisible} transparent animationType="fade" onRequestClose={() => setLogoutModalVisible(false)}>
         <View style={styles.modalOverlay}>
@@ -239,25 +275,54 @@ export default function SettingsScreen() {
             <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>Sign Out</Text>
             <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>Are you sure you want to securely log out? Local data remains safe.</Text>
-            
+
             <TouchableOpacity style={[styles.sheetButton, { backgroundColor: '#ef4444' }]} onPress={signOut}>
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Sign Out</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent' }]} onPress={() => setLogoutModalVisible(false)}>
               <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+      {/* Reset Confirmation */}
+      <Modal visible={resetModalVisible} transparent animationType="fade" onRequestClose={() => setResetModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setResetModalVisible(false)} />
+          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Reset Data</Text>
+            <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>
+              This will permanently delete all your Transactions, Budgets, Goals, and Categories.
+              This action cannot be undone. Account info remains safe.
+            </Text>
 
+            <TouchableOpacity
+              style={[styles.sheetButton, { backgroundColor: '#ef4444' }]}
+              onPress={handleResetData}
+              disabled={isResetting}
+            >
+              {isResetting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Reset Everything</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent' }]} onPress={() => setResetModalVisible(false)}>
+              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 60 },
-  
+
   sectionHeader: {
     fontSize: 13,
     fontWeight: '800',
