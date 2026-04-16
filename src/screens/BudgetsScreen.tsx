@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Dimensions, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, Platform } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getBudgets, getBudgetSpending, getTransactionsByDateRange, getMinTransactionYear, addBudget, updateBudget, deleteBudget, getCategories } from '../db/queries';
@@ -15,7 +15,6 @@ import { syncBudgets } from '../services/syncService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
 
-const { width } = Dimensions.get('window');
 
 interface EnrichedBudget extends Budget {
   spent: number;
@@ -83,8 +82,8 @@ export default function BudgetsScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity 
-          activeOpacity={0.7} 
+        <TouchableOpacity
+          activeOpacity={0.7}
           onPress={scrollToTop}
           style={{ alignItems: 'flex-start' }}
         >

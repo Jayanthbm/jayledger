@@ -5,12 +5,9 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Modal,
-  Platform,
   Alert,
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView
@@ -20,6 +17,7 @@ import { useAuth } from '../store/AuthContext';
 import { getCategories, getPayees, insertQuickTransaction, updateQuickTransaction } from '../db/queries';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { SearchBar } from '../components/SearchBar';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Category, Payee, QuickTransaction } from '../models/types';
@@ -136,14 +134,13 @@ export default function AddQuickTransactionScreen() {
         title={`Select ${modalType}`}
       >
         <View style={{ flex: 1 }}>
-          <View style={[styles.searchContainer, { backgroundColor: colors.background, marginHorizontal: 0, marginBottom: 10 }]}>
-            <Icon name="search" size={20} color={colors.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder={`Search ${modalType.toLowerCase()}...`}
-              placeholderTextColor={colors.textSecondary + '70'}
+          <View style={{ paddingBottom: 16 }}>
+            <SearchBar
               value={modalSearch}
               onChangeText={setModalSearch}
+              placeholder={`Search ${modalType.toLowerCase()}...`}
+              size="medium"
+              onClear={() => setModalSearch('')}
             />
           </View>
             <FlatList
@@ -294,8 +291,6 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: '800' },
   pillIconBg: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', height: 48, borderRadius: 14, paddingHorizontal: 16, marginHorizontal: 16, marginBottom: 10 },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 16 },
   gridItem: { width: '25%', alignItems: 'center', marginBottom: 20 },
   gridIconBox: { width: 56, height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 1, marginBottom: 8 },
   gridLabel: { fontSize: 12, fontWeight: '600', maxWidth: '90%', textAlign: 'center' }

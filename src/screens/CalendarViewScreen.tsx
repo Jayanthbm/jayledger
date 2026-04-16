@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Modal, ScrollView, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getTransactionsByDate } from '../db/queries';
@@ -7,13 +7,11 @@ import { Transaction } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { getMinTransactionDate } from '../db/queries';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isAfter, isBefore, startOfDay, getDaysInMonth } from 'date-fns';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isAfter, isBefore, getDaysInMonth } from 'date-fns';
 import { BottomSheet } from '../components/BottomSheet';
 
 export default function CalendarViewScreen() {
-  const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { colors, } = useTheme();
   const { session } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -95,12 +93,12 @@ export default function CalendarViewScreen() {
   const updatePeriod = (year: number, month: number) => {
     const currentDay = selectedDate.getDate();
     const daysInNewMonth = getDaysInMonth(new Date(year, month));
-    
+
     let newDay = currentDay;
     if (currentDay > daysInNewMonth) {
       newDay = 1;
     }
-    
+
     const newDate = new Date(year, month, newDay);
     setCurrentMonth(newDate);
     setSelectedDate(newDate);

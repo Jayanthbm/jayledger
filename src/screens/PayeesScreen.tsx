@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Modal, Image, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -10,6 +10,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { getRelativeTime } from '../utils/dateUtils';
 import { BottomSheet } from '../components/BottomSheet';
+import { SearchBar } from '../components/SearchBar';
 
 // Lightweight UUIDv4 generator for offline creation
 const generateUUID = () => {
@@ -25,16 +26,16 @@ export default function PayeesScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
-  
+
   const [payees, setPayees] = useState<Payee[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  
+
   // UI State
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
-  
+
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
 
   // Add Modal State
@@ -124,8 +125,8 @@ export default function PayeesScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity 
-          activeOpacity={0.7} 
+        <TouchableOpacity
+          activeOpacity={0.7}
           onPress={scrollToTop}
           style={{ alignItems: 'flex-start' }}
         >
@@ -137,8 +138,8 @@ export default function PayeesScreen() {
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity 
-          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
+        <TouchableOpacity
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
           onPress={handleManualSync}
           disabled={syncing}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -157,7 +158,7 @@ export default function PayeesScreen() {
     if (!newPayeeName.trim() || !user?.id) return;
     Keyboard.dismiss();
     setIsSaving(true);
-    
+
     const newPayee: Payee = {
       id: generateUUID(),
       name: newPayeeName.trim(),
@@ -168,7 +169,7 @@ export default function PayeesScreen() {
     // Optimistic Local Insert
     await insertPayee(newPayee);
     setPayees(prev => [...prev, newPayee]);
-    
+
     setAddModalVisible(false);
     setNewPayeeName('');
     setNewPayeeLogo('');
@@ -203,22 +204,22 @@ export default function PayeesScreen() {
 
   const renderItem = ({ item }: { item: Payee }) => {
     const isGrid = viewMode === 'grid';
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
-          styles.payeeCard, 
+          styles.payeeCard,
           { backgroundColor: colors.card, borderColor: colors.border },
           isGrid && styles.payeeCardGrid
         ]}
         activeOpacity={0.7}
-        onPress={() => navigation.navigate('Main', { 
-          screen: 'Transactions', 
-          params: { initialSelectedPayees: [item.id] } 
+        onPress={() => navigation.navigate('Main', {
+          screen: 'Transactions',
+          params: { initialSelectedPayees: [item.id] }
         })}
       >
         <View style={[
-          styles.logoContainer, 
+          styles.logoContainer,
           { backgroundColor: colors.primary + '15' }, // 15% opacity tint
           isGrid && { marginRight: 0 }
         ]}>
@@ -231,8 +232,8 @@ export default function PayeesScreen() {
           )}
         </View>
         <Text style={[
-          styles.payeeName, 
-          { color: colors.text }, 
+          styles.payeeName,
+          { color: colors.text },
           isGrid && { marginTop: 10, textAlign: 'center', fontSize: 13 }
         ]} numberOfLines={2}>
           {item.name}
@@ -243,34 +244,26 @@ export default function PayeesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      
+
       {/* Header Tools */}
       <View style={styles.headerTools}>
-        <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <MaterialIcons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search payees..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-             <TouchableOpacity style={{ padding: 8, marginRight: -8 }} onPress={() => setSearchQuery('')}>
-               <MaterialIcons name="close" size={20} color={colors.textSecondary} />
-             </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search payees..."
+          size="medium"
+          containerStyle={{ marginBottom: 16 }}
+        />
 
         <View style={styles.actionRow}>
-          <TouchableOpacity 
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
+          <TouchableOpacity
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => setSortAsc(!sortAsc)}
           >
             <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
+          <TouchableOpacity
+            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]}
             onPress={toggleViewMode}
           >
             <MaterialIcons name={viewMode === 'list' ? "grid-view" : "view-list"} size={20} color={colors.text} />
@@ -289,8 +282,8 @@ export default function PayeesScreen() {
             {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : 'Add your first payee to see it here.'}
           </Text>
           {searchQuery ? (
-            <TouchableOpacity 
-              style={[styles.clearFilterButton, { borderColor: colors.border }]} 
+            <TouchableOpacity
+              style={[styles.clearFilterButton, { borderColor: colors.border }]}
               onPress={() => setSearchQuery('')}
             >
               <Text style={[styles.clearFilterText, { color: colors.primary }]}>Clear Search</Text>
@@ -312,8 +305,8 @@ export default function PayeesScreen() {
       )}
 
       {/* Floating Action Button */}
-      <TouchableOpacity 
-         style={[styles.fab, { backgroundColor: colors.primary }]} 
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.primary }]}
          onPress={() => setAddModalVisible(true)}
          activeOpacity={0.8}
       >
@@ -365,19 +358,17 @@ export default function PayeesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
-  
+
   headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 48, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
-  searchInput: { flex: 1, fontSize: 16 },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  
+
   listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 },
   gridWrapper: { justifyContent: 'flex-start' },
-  
+
   payeeCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
   payeeCardGrid: { width: '31%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 8, marginHorizontal: '1%' },
-  
+
   logoContainer: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
   logoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   logoFallback: { fontSize: 20, fontWeight: 'bold' },
@@ -393,7 +384,7 @@ const styles = StyleSheet.create({
 
   inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
   inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-  
+
   saveButton: { height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 32 },
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
 });

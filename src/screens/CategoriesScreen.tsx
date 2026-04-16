@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Modal, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { getRelativeTime } from '../utils/dateUtils';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { SearchBar } from '../components/SearchBar';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -133,8 +134,8 @@ export default function CategoriesScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity 
-          activeOpacity={0.7} 
+        <TouchableOpacity
+          activeOpacity={0.7}
           onPress={scrollToTop}
           style={{ alignItems: 'flex-start' }}
         >
@@ -264,21 +265,13 @@ export default function CategoriesScreen() {
           containerStyle={{ marginBottom: 16 }}
         />
 
-        <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <MaterialIcons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder={`Search ${activeTab.toLowerCase()}...`}
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-             <TouchableOpacity style={{ padding: 8, marginRight: -8 }} onPress={() => setSearchQuery('')}>
-               <MaterialIcons name="close" size={20} color={colors.textSecondary} />
-             </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder={`Search ${activeTab.toLowerCase()}...`}
+          size="medium"
+          containerStyle={{ marginBottom: 16 }}
+        />
 
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => setSortAsc(!sortAsc)}>
@@ -358,9 +351,6 @@ const styles = StyleSheet.create({
   emptyCentered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
 
   headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
-
-  searchBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 48, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
-  searchInput: { flex: 1, fontSize: 16 },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
 

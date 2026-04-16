@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, TextInput, Keyboard, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, TextInput, Keyboard, ActivityIndicator, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -200,7 +200,7 @@ export default function GoalsScreen() {
     const remaining = Math.max(item.goal_amount - item.current_amount, 0);
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
          style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
          activeOpacity={0.7}
          onPress={() => handleOpenGoal(item)}
@@ -254,8 +254,8 @@ export default function GoalsScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity 
-          activeOpacity={0.7} 
+        <TouchableOpacity
+          activeOpacity={0.7}
           onPress={scrollToTop}
           style={{ alignItems: 'flex-start' }}
         >
@@ -267,8 +267,8 @@ export default function GoalsScreen() {
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity 
-          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
+        <TouchableOpacity
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
           onPress={handleManualSync}
           disabled={isSyncing}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -285,10 +285,10 @@ export default function GoalsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      
+
       <View style={styles.sortContainer}>
-        <TouchableOpacity 
-          style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]} 
+        <TouchableOpacity
+          style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => setIsSortModalOpen(true)}
         >
           <MaterialIcons name="sort" size={18} color={colors.primary} />
@@ -313,9 +313,9 @@ export default function GoalsScreen() {
         }
       />
 
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: colors.primary }]} 
-        onPress={() => handleOpenGoal()} 
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.primary }]}
+        onPress={() => handleOpenGoal()}
         activeOpacity={0.8}
       >
         <MaterialIcons name="add" size={28} color="#fff" />
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 'bold' },
   amount: { fontSize: 16, fontWeight: 'bold' },
-  
+
   goalLogo: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
   goalLogoFallback: { width: 32, height: 32, borderRadius: 16, marginRight: 10, justifyContent: 'center', alignItems: 'center' },
 
@@ -471,20 +471,20 @@ const styles = StyleSheet.create({
   percentLabel: { fontSize: 13, fontWeight: '800' },
   remainingLabel: { fontSize: 12, fontWeight: '600' },
 
-  fab: { 
-    position: 'absolute', 
-    right: 16, 
-    bottom: 16, 
-    width: 56, 
-    height: 56, 
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 16,
+    width: 56,
+    height: 56,
     borderRadius: 16, // M3 style (more square, rounded corners)
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    elevation: 8, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 4 
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4
   },
 
 

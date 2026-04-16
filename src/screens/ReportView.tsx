@@ -8,11 +8,10 @@ import {
   ActivityIndicator,
   FlatList,
   Dimensions,
-  TextInput,
-  Platform
 } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { SearchBar } from '../components/SearchBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -416,28 +415,22 @@ export default function ReportView({ route, navigation }: any) {
       </View>
 
       {(reportType === 'payees' || reportType === 'categories') && (
-        <View style={[styles.searchContainer, { flexDirection: 'row', alignItems: 'center' }]}>
-          <View style={[styles.searchBar, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Icon name="search" size={20} color={colors.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder={`Search ${reportType === 'payees' ? 'payees' : 'categories'}...`}
-              placeholderTextColor={colors.textSecondary}
+        <View style={styles.searchContainer}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
+              placeholder={`Search ${reportType === 'payees' ? 'payees' : 'categories'}...`}
+              size="medium"
+              containerStyle={{ flex: 1 }}
             />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Icon name="close" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={[styles.sortTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setShowSortPicker(true)}
+            >
+              <Icon name="sort" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[styles.sortTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowSortPicker(true)}
-          >
-            <Icon name="sort" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
         </View>
       )}
 
@@ -572,21 +565,12 @@ export default function ReportView({ route, navigation }: any) {
       >
         <View style={{ flex: 1 }}>
             <View style={styles.searchContainer}>
-              <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Icon name="search" size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={[styles.searchInput, { color: colors.text }]}
-                  placeholder="Search categories..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery !== '' && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Icon name="cancel" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                )}
-              </View>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search categories..."
+              size="medium"
+            />
             </View>
 
             <FlatList
@@ -729,21 +713,6 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    height: 40,
-    padding: 0,
   },
   sortTrigger: {
     width: 48,

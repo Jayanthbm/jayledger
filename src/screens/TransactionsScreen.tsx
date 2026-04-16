@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Platform, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -12,6 +12,7 @@ import { TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { TransactionCard } from '../components/TransactionCard';
 import { BottomSheet } from '../components/BottomSheet';
+import { SearchBar } from '../components/SearchBar';
 import { getCategories, getPayees, deleteTransactionAsync, getQuickTransactions, getMonthlyFilteredStats } from '../db/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
@@ -51,28 +52,15 @@ const FilterSelector = React.memo(({
       onClose={onClose}
       title={`Select ${type === 'Category' ? 'Categories' : 'Payees'}`}
     >
-      <View>
-        <View style={[styles.modalSearchContainer, { backgroundColor: colors.background, marginHorizontal: 0 }]}>
-          <Icon name="search" size={20} color={colors.textSecondary} />
-          <TextInput
-            placeholder={`Search ${type}...`}
-            placeholderTextColor={colors.textSecondary + '80'}
-            style={[styles.modalSearchInput, { color: colors.text }]}
-            value={modalSearch}
-            onChangeText={setModalSearch}
-          />
-        </View>
-
-          <View style={[styles.modalSearchContainer, { backgroundColor: colors.background }]}>
-            <Icon name="search" size={20} color={colors.textSecondary} />
-            <TextInput
-              placeholder={`Search ${type}...`}
-              placeholderTextColor={colors.textSecondary + '80'}
-              style={[styles.modalSearchInput, { color: colors.text }]}
-              value={modalSearch}
-              onChangeText={setModalSearch}
-            />
-          </View>
+      <View style={{ paddingBottom: 16 }}>
+        <SearchBar
+          value={modalSearch}
+          onChangeText={setModalSearch}
+          placeholder={`Search ${type}...`}
+          size="medium"
+          onClear={() => setModalSearch('')}
+        />
+      </View>
 
           <FlatList
             data={data as any[]}
@@ -115,8 +103,7 @@ const FilterSelector = React.memo(({
             onPress={() => onApply(tempSelectedItems)}
           >
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Apply Filters</Text>
-          </TouchableOpacity>
-        </View>
+      </TouchableOpacity>
     </BottomSheet>
   );
 });
@@ -332,8 +319,8 @@ export default function TransactionsScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity 
-          activeOpacity={0.7} 
+        <TouchableOpacity
+          activeOpacity={0.7}
           onPress={scrollToTop}
           style={{ alignItems: 'flex-start' }}
         >
@@ -482,21 +469,13 @@ export default function TransactionsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Icon name="search" size={20} color={colors.textSecondary} />
-          <TextInput
-            placeholder="Search transactions..."
-            placeholderTextColor={colors.textSecondary + '80'}
-            style={[styles.searchInput, { color: colors.text }]}
-            value={search}
-            onChangeText={setSearch}
-          />
-          {search ? (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Icon name="close" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search transactions..."
+          size="medium"
+          onClear={() => setSearch('')}
+        />
       </View>
 
       {/* Filter Row */}
@@ -549,8 +528,8 @@ export default function TransactionsScreen() {
       {/* Filter Stats Display */}
       {(selectedCats.length > 0 || selectedPayees.length > 0) && (
         <View style={styles.statsRow}>
-          <TouchableOpacity 
-            style={[styles.statsPill, { backgroundColor: colors.card, borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40' }]} 
+          <TouchableOpacity
+            style={[styles.statsPill, { backgroundColor: colors.card, borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40' }]}
             onPress={loadStatsBreakdown}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -652,7 +631,7 @@ export default function TransactionsScreen() {
                     data={quickTransactions}
                     keyExtractor={item => item.id}
                     renderItem={({ item }) => (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={[styles.quickItem, { backgroundColor: colors.background, borderColor: colors.border }]}
                         onPress={() => {
                           setShowQuickModal(false);
@@ -722,15 +701,6 @@ export default function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   searchContainer: { padding: 16, paddingBottom: 8 },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1
-  },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 16 },
   filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, alignItems: 'center', gap: 8 },
   filterChip: {
     flexDirection: 'row',
@@ -804,19 +774,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase'
-  },
-  modalSearchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 50,
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-  modalSearchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
   },
   gridItem: {
     width: '25%',

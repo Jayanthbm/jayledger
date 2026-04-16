@@ -5,11 +5,9 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Platform,
   Alert,
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView
@@ -24,6 +22,7 @@ import { format } from 'date-fns';
 import { getCategories, getPayees, insertOrUpdateTransaction } from '../db/queries';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { SearchBar } from '../components/SearchBar';
 import { Category, Payee, Transaction } from '../models/types';
 import * as Crypto from 'expo-crypto';
 import { syncTransactions } from '../services/syncService';
@@ -193,14 +192,13 @@ export default function AddTransactionScreen() {
       >
         <View style={{ maxHeight: 500 }}>
           {/* Search Bar */}
-          <View style={[styles.searchContainer, { backgroundColor: colors.background, marginHorizontal: 0 }]}>
-            <Icon name="search" size={20} color={colors.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder={`Search ${modalType.toLowerCase()}...`}
-              placeholderTextColor={colors.textSecondary + '70'}
+          <View style={{ paddingBottom: 16 }}>
+            <SearchBar
               value={modalSearch}
               onChangeText={setModalSearch}
+              placeholder={`Search ${modalType.toLowerCase()}...`}
+              size="medium"
+              onClear={() => setModalSearch('')}
             />
           </View>
 
@@ -489,19 +487,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
   },
   gridItem: {
     flex: 1,
