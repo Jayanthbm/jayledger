@@ -1,14 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { ActivityIndicator, View, AppState } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider } from './src/store/ThemeContext';
 import { AuthProvider } from './src/store/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initDB } from './src/db/database';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BiometricLock } from './src/components/BiometricLock';
 
 export default function App() {
   const [dbReady, setDbReady] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const checkBiometrics = async () => {
+      const useBiometrics = await AsyncStorage.getItem('use_biometrics');
+      if (useBiometrics === 'true') {
+        setIsLocked(true);
+      }
+    };
+    checkBiometrics();
+
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        checkBiometrics();
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const setup = async () => {
@@ -29,6 +57,14 @@ export default function App() {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
       </View>
+    );
+  }
+
+  if (isLocked) {
+    return (
+      <ThemeProvider>
+        <BiometricLock onUnlock={() => setIsLocked(false)} />
+      </ThemeProvider>
     );
   }
 

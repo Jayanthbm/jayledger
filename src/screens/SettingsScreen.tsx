@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Switch, Alert } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { scheduleReminder } from '../services/notificationService';
@@ -24,6 +25,7 @@ export default function SettingsScreen() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [lastSynced, setLastSynced] = useState<number | null>(null);
+  const [useBiometrics, setUseBiometrics] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -33,9 +35,41 @@ export default function SettingsScreen() {
 
       const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
       if (last) setLastSynced(parseInt(last, 10));
+
+      const biometrics = await AsyncStorage.getItem('use_biometrics');
+      setUseBiometrics(biometrics === 'true');
     };
     loadData();
   }, [user?.id]);
+
+  const handleBiometricToggle = async (value: boolean) => {
+    if (value) {
+      // Check if hardware supports it
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert(
+          'Biometrics Unavailable',
+          'Your device does not support biometrics or you have not enrolled any fingerprints/faces.'
+        );
+        return;
+      }
+
+      // Verify once before enabling
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Verify biometrics to enable app lock',
+      });
+
+      if (result.success) {
+        setUseBiometrics(true);
+        await AsyncStorage.setItem('use_biometrics', 'true');
+      }
+    } else {
+      setUseBiometrics(false);
+      await AsyncStorage.setItem('use_biometrics', 'false');
+    }
+  };
 
   const handleNotificationChange = async (val: string) => {
     setNotificationPref(val);
@@ -170,6 +204,22 @@ export default function SettingsScreen() {
               }
               onPress={() => setReminderModalVisible(true)}
             />
+            <View style={styles.divider} />
+            <View style={styles.settingRow}>
+              <View style={[styles.iconBox, { backgroundColor: colors.primary + '15' }]}>
+                <Icon name="fingerprint" size={22} color={colors.primary} />
+              </View>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>Use Biometrics</Text>
+                <Text style={[styles.settingValue, { color: colors.textSecondary }]}>Protect app with Fingerprint/FaceID</Text>
+              </View>
+              <Switch
+                value={useBiometrics}
+                onValueChange={handleBiometricToggle}
+                trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                thumbColor={useBiometrics ? colors.primary : '#f4f3f4'}
+              />
+            </View>
           </View>
 
           {/* Section: Manage Data */}
