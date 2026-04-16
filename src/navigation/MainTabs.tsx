@@ -30,30 +30,33 @@ export default function MainTabs() {
         tabBarStyle: { 
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          height: 70 + (insets.bottom > 0 ? insets.bottom - 10 : 10),
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
+          height: 84 + (insets.bottom > 0 ? insets.bottom : 0),
+          paddingTop: 14,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 14,
+          borderTopWidth: 1,
+          elevation: 0,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarShowLabel: false,
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           let iconName: any = 'help';
-          if (route.name === 'Dashboard') iconName = 'home';
-          else if (route.name === 'Transactions') iconName = 'swap-horizontal';
-          else if (route.name === 'Budgets') iconName = 'wallet';
-          else if (route.name === 'Reports') iconName = 'chart-bar';
-          else if (route.name === 'Goals') iconName = 'target';
-          else if (route.name === 'Settings') iconName = 'cog';
+          if (route.name === 'Dashboard') iconName = focused ? 'home-variant' : 'home-variant-outline';
+          else if (route.name === 'Transactions') iconName = 'swap-vertical';
+          else if (route.name === 'Budgets') iconName = focused ? 'wallet' : 'wallet-outline';
+          else if (route.name === 'Goals') iconName = focused ? 'bullseye-arrow' : 'bullseye';
+          else if (route.name === 'Reports') iconName = focused ? 'chart-box' : 'chart-box-outline';
+          else if (route.name === 'Settings') iconName = focused ? 'tune' : 'tune-variant';
           
-          return <Icon name={iconName} size={size + 4} color={color} />;
+          return <Icon name={iconName} size={26} color={color} />;
         },
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Transactions" component={TransactionsScreen} />
       <Tab.Screen name="Budgets" component={BudgetsScreen} />
-      <Tab.Screen name="Reports" component={ReportsScreen} />
       <Tab.Screen name="Goals" component={GoalsScreen} />
+      <Tab.Screen name="Reports" component={ReportsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

@@ -32,14 +32,7 @@ export const BottomSheet = ({
 
   const Header = () => (
     <View style={styles.modalHeader}>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
-        {subtitle ? (
-          <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
-        ) : null}
-      </View>
-      <View style={styles.headerActions}>
-        {headerRight}
+      <View style={styles.leftAction}>
         {showCloseButton && (
           <TouchableOpacity 
             onPress={onClose} 
@@ -49,6 +42,17 @@ export const BottomSheet = ({
             <Icon name="close" size={24} color={colors.text} />
           </TouchableOpacity>
         )}
+      </View>
+
+      <View style={styles.centerAction}>
+        <Text style={[styles.modalTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+        {subtitle ? (
+          <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{subtitle}</Text>
+        ) : null}
+      </View>
+
+      <View style={styles.rightAction}>
+        {headerRight}
       </View>
     </View>
   );
@@ -62,7 +66,7 @@ export const BottomSheet = ({
         onRequestClose={onClose}
       >
         <View style={[styles.fullModal, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-          <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
+          <View style={{ paddingHorizontal: 24, paddingTop: 12 }}>
             <Header />
           </View>
           <View style={{ flex: 1 }}>
@@ -130,25 +134,38 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    marginBottom: 24,
+    minHeight: 40,
   },
-  headerActions: {
-    flexDirection: 'row',
+  leftAction: {
+    position: 'absolute',
+    left: 0,
+    zIndex: 1,
+  },
+  rightAction: {
+    position: 'absolute',
+    right: 0,
+    zIndex: 1,
+  },
+  centerAction: {
+    flex: 1,
     alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: 48,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
+    textAlign: 'center',
   },
   modalSubtitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
   closeBtn: {
     width: 40,

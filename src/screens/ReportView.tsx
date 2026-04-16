@@ -291,7 +291,7 @@ export default function ReportView({ route, navigation }: any) {
       { label: 'Name (A-Z)', key: 'name', order: 'asc' },
       { label: 'Name (Z-A)', key: 'name', order: 'desc' },
     ];
-    
+
     return (
       <BottomSheet
         visible={showSortPicker}
@@ -326,31 +326,14 @@ export default function ReportView({ route, navigation }: any) {
       visible={showDrillDown}
       onClose={() => setShowDrillDown(false)}
       title={drillDownTitle}
-      containerStyle={{ paddingHorizontal: 16 }}
+      isFullScreen
     >
-      <View style={{ height: Dimensions.get('window').height * 0.75 }}>
-        {drillDownData.length > 0 && (
-          <View style={[styles.drillDownSummary, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.summaryIconBox, { backgroundColor: (drillDownData[0].type === 'Income' ? colors.success : colors.danger) + '15', width: 44, height: 44, borderRadius: 14 }]}>
-              <Icon name={drillDownData[0].type === 'Income' ? 'trending-up' : 'trending-down'} size={24} color={drillDownData[0].type === 'Income' ? colors.success : colors.danger} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.summaryLabel, { color: colors.textSecondary, fontSize: 10, marginBottom: 2, letterSpacing: 1 }]}>TOTAL FOR PERIOD</Text>
-              <Text style={[styles.drillDownTotal, { color: drillDownData[0].type === 'Income' ? colors.success : colors.danger, fontSize: 24 }]}>
-                ₹{drillDownData.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
-              </Text>
-            </View>
-            <View style={[styles.transactionCount, { backgroundColor: colors.border + '30' }]}>
-              <Text style={[styles.countText, { color: colors.textSecondary }]}>{drillDownData.length} TXNS</Text>
-            </View>
-          </View>
-        )}
-
+      <View style={{ flex: 1 }}>
         <FlatList
           data={drillDownData}
           keyExtractor={item => item.id}
-          renderItem={({ item }) => <TransactionCard transaction={item} compact={true} />}
-          contentContainerStyle={{ paddingBottom: 60 }}
+          renderItem={({ item }) => <TransactionCard transaction={item} />}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
           ListEmptyComponent={
             <View style={{ alignItems: 'center', marginTop: 60 }}>
               <Icon name="receipt-long" size={48} color={colors.border} />
@@ -365,8 +348,8 @@ export default function ReportView({ route, navigation }: any) {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity 
-          activeOpacity={0.7} 
+        <TouchableOpacity
+          activeOpacity={0.7}
           onPress={scrollToTop}
           style={{ alignItems: 'flex-start' }}
         >
@@ -376,7 +359,7 @@ export default function ReportView({ route, navigation }: any) {
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ paddingLeft: 16 }}
+          style={{ paddingRight: 12, justifyContent: 'center', alignItems: 'center' }}
         >
           <Icon name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -449,7 +432,7 @@ export default function ReportView({ route, navigation }: any) {
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.sortTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => setShowSortPicker(true)}
           >
@@ -513,9 +496,9 @@ export default function ReportView({ route, navigation }: any) {
       {loading ? (
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView 
+          <ScrollView
           ref={scrollRef}
-          style={styles.content} 
+            style={styles.content}
           showsVerticalScrollIndicator={false}
         >
           {sortedData.length === 0 ? (
@@ -585,8 +568,9 @@ export default function ReportView({ route, navigation }: any) {
         visible={showConfig}
         onClose={() => setShowConfig(false)}
         title="Configure Living Costs"
+        isFullScreen
       >
-        <View style={{ height: Dimensions.get('window').height * 0.7 }}>
+        <View style={{ flex: 1 }}>
             <View style={styles.searchContainer}>
               <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Icon name="search" size={20} color={colors.textSecondary} />
@@ -633,7 +617,7 @@ export default function ReportView({ route, navigation }: any) {
                   )}
                 </TouchableOpacity>
               )}
-              contentContainerStyle={{ padding: 12, paddingBottom: 40 }}
+              contentContainerStyle={{ padding: 12, paddingBottom: insets.bottom + 40 }}
               columnWrapperStyle={{ justifyContent: 'flex-start', gap: 8 }}
             />
         </View>
@@ -804,27 +788,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'white',
-  },
-  drillDownSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginHorizontal: 0,
-    marginBottom: 16,
-  },
-  drillDownTotal: {
-    fontSize: 20,
-    fontWeight: '900',
-  },
-  transactionCount: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  countText: {
-    fontSize: 10,
-    fontWeight: '800',
   }
 });
