@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Modal, Image, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
@@ -9,6 +9,7 @@ import { Payee } from '../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { getRelativeTime } from '../utils/dateUtils';
+import { BottomSheet } from '../components/BottomSheet';
 
 // Lightweight UUIDv4 generator for offline creation
 const generateUUID = () => {
@@ -41,6 +42,11 @@ export default function PayeesScreen() {
   const [newPayeeName, setNewPayeeName] = useState('');
   const [newPayeeLogo, setNewPayeeLogo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const listRef = useRef<FlatList>(null);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
 
   const loadData = useCallback(async () => {
     if (user?.id) {
@@ -118,12 +124,16 @@ export default function PayeesScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View style={{ alignItems: 'flex-start' }}>
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Payees</Text>
           {lastSyncTime ? (
             <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
           ) : null}
-        </View>
+        </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
@@ -289,6 +299,7 @@ export default function PayeesScreen() {
         </View>
       ) : (
           <FlatList
+            ref={listRef}
             key={viewMode} // force re-render across columns dynamically
             data={filteredPayees}
             numColumns={viewMode === 'grid' ? 3 : 1}
@@ -310,13 +321,12 @@ export default function PayeesScreen() {
       </TouchableOpacity>
 
       {/* Add Payee Modal */}
-      <Modal visible={isAddModalVisible} transparent animationType="slide" onRequestClose={() => setAddModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setAddModalVisible(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>Add New Payee</Text>
-            
+      <BottomSheet
+        visible={isAddModalVisible}
+        onClose={() => setAddModalVisible(false)}
+        title="Add New Payee"
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Payee Name</Text>
             <TextInput
               style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
@@ -338,16 +348,15 @@ export default function PayeesScreen() {
               keyboardType="url"
             />
 
-            <TouchableOpacity 
-              style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!newPayeeName.trim() || isSaving) ? 0.5 : 1 }]} 
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!newPayeeName.trim() || isSaving) ? 0.5 : 1 }]}
               onPress={handleAddPayee}
               disabled={!newPayeeName.trim() || isSaving}
             >
               {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save Payee</Text>}
             </TouchableOpacity>
-          </View>
         </KeyboardAvoidingView>
-      </Modal>
+      </BottomSheet>
 
     </View>
   );
@@ -381,12 +390,7 @@ const styles = StyleSheet.create({
 
   fab: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalDismiss: { flex: 1 },
-  bottomSheet: { padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40, borderTopWidth: 1 },
-  sheetHandle: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-  sheetTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
-  
+
   inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
   inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
   

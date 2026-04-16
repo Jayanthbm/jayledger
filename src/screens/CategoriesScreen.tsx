@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Modal, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
@@ -9,6 +9,8 @@ import { Category } from '../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { getRelativeTime } from '../utils/dateUtils';
+import { BottomSheet } from '../components/BottomSheet';
+import { SegmentedControl } from '../components/SegmentedControl';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -23,23 +25,28 @@ export default function CategoriesScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
-  
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  
+
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
   const [activeTab, setActiveTab] = useState<'Expense' | 'Income'>('Expense');
-  
+
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
-  
+
   const [isAddModalVisible, setAddModalVisible] = useState(false);
   const [newName, setNewName] = useState('');
   const [newAppIcon, setNewAppIcon] = useState('');
   const [newTabSelection, setNewTabSelection] = useState<'Expense' | 'Income'>('Expense');
   const [isSaving, setIsSaving] = useState(false);
+  const listRef = useRef<FlatList>(null);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
 
   const loadData = useCallback(async () => {
     if (!user?.id) {
@@ -126,17 +133,21 @@ export default function CategoriesScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View style={{ alignItems: 'flex-start' }}>
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Categories</Text>
           {lastSyncTime ? (
             <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
           ) : null}
-        </View>
+        </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity 
-          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }} 
+        <TouchableOpacity
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
           onPress={handleManualSync}
           disabled={syncing}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -155,7 +166,7 @@ export default function CategoriesScreen() {
     if (!newName.trim() || !user?.id) return;
     Keyboard.dismiss();
     setIsSaving(true);
-    
+
     const newCategory: Category = {
       id: generateUUID(),
       name: newName.trim(),
@@ -167,7 +178,7 @@ export default function CategoriesScreen() {
 
     await insertCategory(newCategory);
     setCategories(prev => [...prev, newCategory]);
-    
+
     setAddModalVisible(false);
     setNewName('');
     setNewAppIcon('');
@@ -201,22 +212,22 @@ export default function CategoriesScreen() {
   const renderItem = ({ item }: { item: Category }) => {
     const isGrid = viewMode === 'grid';
     const accentColor = item.type === 'Income' ? colors.success : colors.primary;
-    
+
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[
-          styles.itemCard, 
+          styles.itemCard,
           { backgroundColor: colors.card, borderColor: colors.border },
           isGrid && styles.itemCardGrid
         ]}
         activeOpacity={0.7}
-        onPress={() => navigation.navigate('Main', { 
-          screen: 'Transactions', 
-          params: { initialSelectedCats: [item.id] } 
+        onPress={() => navigation.navigate('Main', {
+          screen: 'Transactions',
+          params: { initialSelectedCats: [item.id] }
         })}
       >
         <View style={[
-          styles.iconBox, 
+          styles.iconBox,
           { backgroundColor: accentColor + '15' }, // 15% opacity tint
           isGrid && { marginRight: 0 }
         ]}>
@@ -227,8 +238,8 @@ export default function CategoriesScreen() {
           )}
         </View>
         <Text style={[
-          styles.itemName, 
-          { color: colors.text }, 
+          styles.itemName,
+          { color: colors.text },
           isGrid && { marginTop: 10, textAlign: 'center', fontSize: 13 }
         ]} numberOfLines={2}>
           {item.name}
@@ -239,23 +250,19 @@ export default function CategoriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      
+
       {/* Header Toolbar */}
       <View style={styles.headerTools}>
-        <View style={styles.tabContainer}>
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'Expense' ? { backgroundColor: colors.card, borderColor: colors.border } : { borderColor: 'transparent' }]}
-            onPress={() => setActiveTab('Expense')}
-          >
-            <Text style={[styles.tabText, { color: activeTab === 'Expense' ? colors.text : colors.textSecondary }]}>Expense</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'Income' ? { backgroundColor: colors.card, borderColor: colors.border } : { borderColor: 'transparent' }]}
-            onPress={() => setActiveTab('Income')}
-          >
-            <Text style={[styles.tabText, { color: activeTab === 'Income' ? colors.text : colors.textSecondary }]}>Income</Text>
-          </TouchableOpacity>
-        </View>
+        <SegmentedControl
+          options={[
+            { label: 'Expense', value: 'Expense', activeColor: colors.danger },
+            { label: 'Income', value: 'Income', activeColor: colors.success }
+          ]}
+          selectedValue={activeTab}
+          onValueChange={(val: 'Expense' | 'Income') => setActiveTab(val)}
+          variant="medium"
+          containerStyle={{ marginBottom: 16 }}
+        />
 
         <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <MaterialIcons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
@@ -296,6 +303,7 @@ export default function CategoriesScreen() {
         </View>
       ) : (
           <FlatList
+            ref={listRef}
             key={viewMode}
             data={filteredData}
             numColumns={viewMode === 'grid' ? 3 : 1}
@@ -311,21 +319,22 @@ export default function CategoriesScreen() {
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
-      <Modal visible={isAddModalVisible} transparent animationType="slide" onRequestClose={() => setAddModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setAddModalVisible(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>New Category</Text>
-            
-            <View style={[styles.tabContainer, { marginBottom: 20 }]}>
-              <TouchableOpacity style={[styles.tabButton, newTabSelection === 'Expense' ? { backgroundColor: colors.background, borderColor: colors.border } : { borderColor: 'transparent' }]} onPress={() => setNewTabSelection('Expense')}>
-                <Text style={[styles.tabText, { color: newTabSelection === 'Expense' ? colors.text : colors.textSecondary }]}>Expense</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.tabButton, newTabSelection === 'Income' ? { backgroundColor: colors.background, borderColor: colors.border } : { borderColor: 'transparent' }]} onPress={() => setNewTabSelection('Income')}>
-                <Text style={[styles.tabText, { color: newTabSelection === 'Income' ? colors.text : colors.textSecondary }]}>Income</Text>
-              </TouchableOpacity>
-            </View>
+      <BottomSheet
+        visible={isAddModalVisible}
+        onClose={() => setAddModalVisible(false)}
+        title="New Category"
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <SegmentedControl
+            options={[
+              { label: 'Expense', value: 'Expense', activeColor: colors.danger },
+              { label: 'Income', value: 'Income', activeColor: colors.success }
+            ]}
+            selectedValue={newTabSelection}
+            onValueChange={(val: 'Expense' | 'Income') => setNewTabSelection(val)}
+            variant="small"
+            containerStyle={{ marginBottom: 20 }}
+          />
 
             <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Category Name</Text>
             <TextInput style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} placeholder="e.g. Groceries" placeholderTextColor={colors.textSecondary} value={newName} onChangeText={setNewName} />
@@ -335,10 +344,9 @@ export default function CategoriesScreen() {
 
             <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!newName.trim() || isSaving) ? 0.5 : 1 }]} onPress={handleAddCategory} disabled={!newName.trim() || isSaving}>
               {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save Category</Text>}
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </KeyboardAvoidingView>
-      </Modal>
+      </BottomSheet>
 
     </View>
   );
@@ -348,23 +356,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyCentered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
-  
+
   headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
-  tabContainer: { flexDirection: 'row', backgroundColor: 'transparent', padding: 4, borderRadius: 12, marginBottom: 16 },
-  tabButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, borderWidth: 1 },
-  tabText: { fontWeight: '600', fontSize: 14 },
-  
+
   searchBox: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 48, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
   searchInput: { flex: 1, fontSize: 16 },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  
+
   listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 }, // Extra space for FAB and bottom tabs
   gridWrapper: { justifyContent: 'flex-start' }, // Left align for more grid stability
-  
+
   itemCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
   itemCardGrid: { width: '31%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 8, marginHorizontal: '1%' },
-  
+
   iconBox: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
   legacyIconFallback: { fontSize: 24 },
   itemName: { fontSize: 13, fontWeight: '700', flex: 1 },
@@ -374,15 +379,10 @@ const styles = StyleSheet.create({
 
   fab: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalDismiss: { flex: 1 },
-  bottomSheet: { padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40, borderTopWidth: 1 },
-  sheetHandle: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-  sheetTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  
+
   inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
   inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-  
+
   saveButton: { height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 32 },
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
 });

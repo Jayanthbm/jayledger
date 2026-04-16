@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, TextInput, Keyboard, ActivityIndicator, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
@@ -10,6 +10,7 @@ import { Goal } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { getRelativeTime } from '../utils/dateUtils';
+import { BottomSheet } from '../components/BottomSheet';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -32,6 +33,11 @@ export default function GoalsScreen() {
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const listRef = useRef<FlatList>(null);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -200,7 +206,7 @@ export default function GoalsScreen() {
          onPress={() => handleOpenGoal(item)}
       >
         <View style={styles.topRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             {item.logo && item.logo.startsWith('http') ? (
               <Image source={{ uri: item.logo }} style={styles.goalLogo} />
             ) : (
@@ -208,15 +214,7 @@ export default function GoalsScreen() {
                  <Text style={{ fontSize: 16 }}>🎯</Text>
               </View>
             )}
-            <Text style={[styles.title, { color: colors.text, flexShrink: 1 }]} numberOfLines={2}>{item.name}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleOpenGoal(item); }} style={{ padding: 4, marginRight: 8 }}>
-              <MaterialIcons name="edit" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={(e) => { e.stopPropagation(); confirmDelete(item.id); }} style={{ padding: 4 }}>
-              <MaterialIcons name="delete-outline" size={22} color="#ef4444" />
-            </TouchableOpacity>
+            <Text style={[styles.title, { color: colors.text, flex: 1 }]} numberOfLines={1}>{item.name}</Text>
           </View>
         </View>
 
@@ -256,12 +254,16 @@ export default function GoalsScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View style={{ alignItems: 'flex-start' }}>
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Goals</Text>
           {lastSyncTime ? (
             <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
           ) : null}
-        </View>
+        </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
@@ -297,6 +299,7 @@ export default function GoalsScreen() {
         </TouchableOpacity>
       </View>
       <FlatList
+        ref={listRef}
         data={sortedData}
         keyExtractor={item => item.id}
         renderItem={renderItem}
@@ -318,28 +321,17 @@ export default function GoalsScreen() {
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
-      <Modal visible={isModalOpen} transparent animationType="slide" onRequestClose={resetForm}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={resetForm} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-               <Text style={[styles.sheetTitle, { color: colors.text, marginBottom: 0 }]}>
-                 {editingGoal ? 'Edit Goal' : 'Add New Goal'}
-               </Text>
-               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                 {editingGoal && (
-                   <TouchableOpacity onPress={() => confirmDelete(editingGoal.id)} style={{ padding: 8 }}>
-                     <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
-                   </TouchableOpacity>
-                 )}
-                 <TouchableOpacity onPress={resetForm} style={{ padding: 8, marginLeft: 4 }}>
-                   <MaterialIcons name="close" size={24} color={colors.text} />
-                 </TouchableOpacity>
-               </View>
-            </View>
-
+      <BottomSheet
+        visible={isModalOpen}
+        onClose={resetForm}
+        title={editingGoal ? 'Edit Goal' : 'Add New Goal'}
+        headerRight={editingGoal ? (
+          <TouchableOpacity onPress={() => confirmDelete(editingGoal.id)} style={{ padding: 8 }}>
+            <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
+          </TouchableOpacity>
+        ) : undefined}
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.formRow}>
                <View style={{ flex: 1 }}>
                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Image URL (Logo)</Text>
@@ -368,80 +360,62 @@ export default function GoalsScreen() {
             <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!name.trim() || isSaving) ? 0.5 : 1 }]} onPress={handleSave} disabled={!name.trim() || isSaving}>
               {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>{editingGoal ? 'Save Changes' : 'Create Goal'}</Text>}
             </TouchableOpacity>
-          </View>
         </KeyboardAvoidingView>
-      </Modal>
+      </BottomSheet>
 
-      {/* Sort Picker Modal */}
-      <Modal visible={isSortModalOpen} transparent animationType="fade" onRequestClose={() => setIsSortModalOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setIsSortModalOpen(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>Sort Goals</Text>
-            
-            <View style={{ marginTop: 10 }}>
-              {[
-                { label: 'Name', value: 'name' },
-                { label: 'Progress', value: 'progress' },
-                { label: 'Target Amount', value: 'amount' }
-              ].map((item: any) => (
-                <TouchableOpacity 
-                  key={item.value} 
-                  style={[styles.sortOption, { borderBottomColor: colors.border }]}
-                  onPress={() => {
-                    if (sortBy === item.value) {
-                      setSortAsc(!sortAsc);
-                    } else {
-                      setSortBy(item.value as any);
-                      setSortAsc(true);
-                    }
-                    setIsSortModalOpen(false);
-                  }}
-                >
-                  <Text style={[styles.sortOptionText, { color: sortBy === item.value ? colors.primary : colors.text }]}>
-                    {item.label}
-                  </Text>
-                  {sortBy === item.value && (
-                    <MaterialIcons 
-                      name={sortAsc ? 'arrow-upward' : 'arrow-downward'} 
-                      size={20} 
-                      color={colors.primary} 
-                    />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.sheetButton, { marginTop: 20 }]} 
-              onPress={() => setIsSortModalOpen(false)}
+      <BottomSheet
+        visible={isSortModalOpen}
+        onClose={() => setIsSortModalOpen(false)}
+        title="Sort Goals"
+      >
+        <View style={{ marginTop: 10 }}>
+          {[
+            { label: 'Name', value: 'name' },
+            { label: 'Progress', value: 'progress' },
+            { label: 'Target Amount', value: 'amount' }
+          ].map((item: any) => (
+            <TouchableOpacity
+              key={item.value}
+              style={[styles.sortOption, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                if (sortBy === item.value) {
+                  setSortAsc(!sortAsc);
+                } else {
+                  setSortBy(item.value as any);
+                  setSortAsc(true);
+                }
+                setIsSortModalOpen(false);
+              }}
             >
-              <Text style={{ color: colors.textSecondary, fontWeight: 'bold' }}>Close</Text>
+              <Text style={[styles.sortOptionText, { color: sortBy === item.value ? colors.primary : colors.text }]}>
+                {item.label}
+              </Text>
+              {sortBy === item.value && (
+                <MaterialIcons
+                  name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+                  size={20}
+                  color={colors.primary}
+                />
+              )}
             </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      </Modal>
+      </BottomSheet>
 
-      {/* Delete Confirmation Modal */}
-      <Modal visible={isDeleteModalOpen} transparent animationType="slide" onRequestClose={() => setIsDeleteModalOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setIsDeleteModalOpen(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text, textAlign: 'center', marginBottom: 12 }]}>Delete Goal</Text>
-            <Text style={[styles.sheetMessage, { color: colors.textSecondary, textAlign: 'center', marginBottom: 32, fontSize: 15, lineHeight: 22 }]}>Are you perfectly sure you want to delete this Goal? This action cannot be undone.</Text>
-            
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: colors.danger, padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 }]} onPress={handleDelete}>
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Delete</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent', padding: 16, borderRadius: 12, alignItems: 'center' }]} onPress={() => setIsDeleteModalOpen(false)}>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Keep Goal</Text>
-            </TouchableOpacity>
-          </View>
+      <BottomSheet
+        visible={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Goal"
+      >
+        <View>
+          <Text style={[styles.sheetMessage, { color: colors.textSecondary, textAlign: 'center', marginBottom: 32, fontSize: 15, lineHeight: 22 }]}>Are you perfectly sure you want to delete this Goal? This action cannot be undone.</Text>
+
+          <TouchableOpacity style={[styles.sheetButton, { backgroundColor: colors.danger, padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 }]} onPress={handleDelete}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Delete</Text>
+          </TouchableOpacity>
+
         </View>
-      </Modal>
+      </BottomSheet>
 
     </View>
   );
@@ -513,11 +487,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4 
   },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalDismiss: { flex: 1 },
-  bottomSheet: { padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40, borderTopWidth: 1 },
-  sheetHandle: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-  sheetTitle: { fontSize: 22, fontWeight: 'bold' },
+
   sheetMessage: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   sheetButton: { padding: 18, borderRadius: 12, alignItems: 'center' },
 

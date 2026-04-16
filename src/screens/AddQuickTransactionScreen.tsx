@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  TouchableOpacity, 
-  Modal, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Modal,
   Platform,
   Alert,
   ActivityIndicator,
@@ -18,6 +18,8 @@ import {
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getCategories, getPayees, insertQuickTransaction, updateQuickTransaction } from '../db/queries';
+import { BottomSheet } from '../components/BottomSheet';
+import { SegmentedControl } from '../components/SegmentedControl';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Category, Payee, QuickTransaction } from '../models/types';
@@ -72,6 +74,18 @@ export default function AddQuickTransactionScreen() {
     loadData();
   }, [session?.user?.id, editQt]);
 
+  useEffect(() => {
+    if (!editQt && categories.length > 0) {
+      if (type === 'Income') {
+        const salCat = categories.find(c => c.name.toLowerCase() === 'salary');
+        if (salCat) setSelectedCategory(salCat);
+      } else {
+        const genCat = categories.find(c => c.name.toLowerCase() === 'general');
+        if (genCat) setSelectedCategory(genCat);
+      }
+    }
+  }, [type, editQt, categories]);
+
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter a name for this template');
@@ -116,26 +130,22 @@ export default function AddQuickTransactionScreen() {
     const iconBg = type === 'Income' ? colors.success + '15' : colors.danger + '15';
 
     return (
-      <Modal visible={showModal === modalType} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <TouchableOpacity onPress={() => setShowModal(null)} style={[styles.pillIconBg, { backgroundColor: colors.background }]}>
-                <Icon name="close" size={20} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Select {modalType}</Text>
-              <View style={{ width: 40 }} />
-            </View>
-            <View style={[styles.searchContainer, { backgroundColor: colors.background, marginHorizontal: 16, marginBottom: 10 }]}>
-              <Icon name="search" size={20} color={colors.textSecondary} />
-              <TextInput
-                style={[styles.searchInput, { color: colors.text }]}
-                placeholder={`Search ${modalType.toLowerCase()}...`}
-                placeholderTextColor={colors.textSecondary + '70'}
-                value={modalSearch}
-                onChangeText={setModalSearch}
-              />
-            </View>
+      <BottomSheet
+        visible={showModal === modalType}
+        onClose={() => setShowModal(null)}
+        title={`Select ${modalType}`}
+      >
+        <View style={{ flex: 1 }}>
+          <View style={[styles.searchContainer, { backgroundColor: colors.background, marginHorizontal: 0, marginBottom: 10 }]}>
+            <Icon name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder={`Search ${modalType.toLowerCase()}...`}
+              placeholderTextColor={colors.textSecondary + '70'}
+              value={modalSearch}
+              onChangeText={setModalSearch}
+            />
+          </View>
             <FlatList
               data={filteredData}
               keyExtractor={item => item.id}
@@ -160,41 +170,29 @@ export default function AddQuickTransactionScreen() {
                   </TouchableOpacity>
                 );
               }}
-            />
-          </View>
+            columnWrapperStyle={{ justifyContent: 'flex-start' }}
+            style={{ maxHeight: 400 }}
+          />
         </View>
-      </Modal>
+      </BottomSheet>
     );
   };
 
   const currentIconColor = type === 'Income' ? colors.success : colors.danger;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.modalOverlay}>
-          {/* Transparent Overlay to dismiss */}
-          <TouchableOpacity 
-            style={styles.modalDismiss} 
-            activeOpacity={1} 
-            onPress={() => navigation.goBack()} 
-          />
-
-          {/* Bottom Sheet Content */}
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-
-            {/* Header Area in Sheet */}
-            <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: colors.text }]}>
-                {editQt ? 'Edit Template' : 'New Template'}
-              </Text>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.sheetCloseBtn}>
-                <Icon name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1 }}>
+      <BottomSheet
+        visible={true}
+        onClose={() => navigation.goBack()}
+        title={editQt ? 'Edit Template' : 'New Template'}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 24 }}
+            >
               <Text style={[styles.label, { color: colors.textSecondary }]}>Template Name</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
@@ -204,16 +202,16 @@ export default function AddQuickTransactionScreen() {
                 onChangeText={setName}
               />
 
-              <View style={styles.typeContainer}>
-                <TouchableOpacity style={[styles.typeBtn, { backgroundColor: colors.background, borderColor: type === 'Expense' ? colors.danger : colors.border }]} onPress={() => setType('Expense')}>
-                  <Icon name="remove-circle-outline" size={20} color={type === 'Expense' ? colors.danger : colors.textSecondary} />
-                  <Text style={[styles.typeText, { color: type === 'Expense' ? colors.danger : colors.textSecondary }]}>Expense</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.typeBtn, { backgroundColor: colors.background, borderColor: type === 'Income' ? colors.success : colors.border }]} onPress={() => setType('Income')}>
-                  <Icon name="add-circle-outline" size={20} color={type === 'Income' ? colors.success : colors.textSecondary} />
-                  <Text style={[styles.typeText, { color: type === 'Income' ? colors.success : colors.textSecondary }]}>Income</Text>
-                </TouchableOpacity>
-              </View>
+              <SegmentedControl
+                options={[
+                  { label: 'Expense', value: 'Expense', activeColor: colors.danger },
+                  { label: 'Income', value: 'Income', activeColor: colors.success }
+                ]}
+                selectedValue={type}
+                onValueChange={(val: 'Expense' | 'Income') => setType(val)}
+                variant="medium"
+                containerStyle={{ marginTop: 24, marginBottom: 16 }}
+              />
 
               <Text style={[styles.label, { color: colors.textSecondary }]}>Default Amount (Optional)</Text>
               <TextInput
@@ -251,8 +249,7 @@ export default function AddQuickTransactionScreen() {
                 value={description}
                 onChangeText={setDescription}
               />
-              
-              <View style={{ height: 40 }} />
+
             </ScrollView>
 
             {/* Save Button */}
@@ -261,81 +258,35 @@ export default function AddQuickTransactionScreen() {
               onPress={handleSave}
               disabled={submitting}
             >
-              {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Save Template</Text>}
+              {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>{editQt ? 'Save Changes' : 'Save Template'}</Text>}
             </TouchableOpacity>
           </View>
-
-          {renderModal('Category')}
-          {renderModal('Payee')}
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+        {renderModal('Category')}
+        {renderModal('Payee')}
+      </BottomSheet>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalDismiss: {
-    flex: 1,
-  },
-  bottomSheet: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    borderTopWidth: 1,
-    maxHeight: '85%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 20,
-  },
-  sheetHandle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sheetTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  sheetCloseBtn: {
-    padding: 4,
-  },
-  content: { paddingBottom: 20 },
+  content: { flex: 1 },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 8, marginTop: 16, textTransform: 'uppercase' },
   input: { height: 50, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
   textArea: { height: 100, paddingTop: 16, textAlignVertical: 'top' },
-  typeContainer: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  typeBtn: { flex: 1, height: 50, borderRadius: 12, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  typeText: { fontSize: 15, fontWeight: '700' },
   row: { flexDirection: 'row' },
   picker: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pickerText: { fontSize: 15, fontWeight: '600' },
   saveBtn: {
-    height: 56,
-    borderRadius: 28,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
   },
   saveBtnText: {
     color: 'white',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
   },
   modalOverlayInner: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },

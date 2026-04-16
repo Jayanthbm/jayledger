@@ -8,13 +8,14 @@ import {
   getNetWorth,
   getSpentToday
 } from '../db/queries';
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, format, differenceInDays, addMonths, getDaysInMonth } from 'date-fns';
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, format, differenceInDays, addMonths, getDaysInMonth, subMonths, subYears } from 'date-fns';
 import { DeviceEventEmitter } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { runFullSync, isOnline, needsTransactionSync, syncTransactions } from '../services/syncService';
 import { getRelativeTime } from '../utils/dateUtils';
+import { BottomSheet } from '../components/BottomSheet';
 
 
 export default function DashboardScreen() {
@@ -24,9 +25,16 @@ export default function DashboardScreen() {
 
   const [loading, setLoading] = useState(true);
   const loadingLock = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const scrollToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
   const [metrics, setMetrics] = useState({
     month: { income: 0, expense: 0 },
+    prevMonthComp: { income: 0, expense: 0 },
     year: { income: 0, expense: 0 },
+    prevYearComp: { income: 0, expense: 0 },
     netWorth: 0,
     spentToday: 0,
     topCategories: [] as any[],
@@ -64,8 +72,21 @@ export default function DashboardScreen() {
       const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
       const todayStr = format(today, 'yyyy-MM-dd');
 
-      const monthSum = await getIncomeExpenseSummary(session.user.id, monthStart, monthEnd);
-      const yearSum = await getIncomeExpenseSummary(session.user.id, yearStart, yearEnd);
+      // Previous Month Comparison (up to same day of month)
+      const prevMonthSameDate = subMonths(today, 1);
+      const prevMonthStartStr = format(startOfMonth(prevMonthSameDate), 'yyyy-MM-dd');
+      const prevMonthDateStr = format(prevMonthSameDate, 'yyyy-MM-dd');
+
+      // Previous Year Comparison (up to same date)
+      const prevYearSameDate = subYears(today, 1);
+      const prevYearStartStr = format(startOfYear(prevYearSameDate), 'yyyy-MM-dd');
+      const prevYearDateStr = format(prevYearSameDate, 'yyyy-MM-dd');
+
+      const monthSum = await getIncomeExpenseSummary(session.user.id, monthStart, todayStr);
+      const prevMonthSum = await getIncomeExpenseSummary(session.user.id, prevMonthStartStr, prevMonthDateStr);
+      const yearSum = await getIncomeExpenseSummary(session.user.id, yearStart, todayStr);
+      const prevYearSum = await getIncomeExpenseSummary(session.user.id, prevYearStartStr, prevYearDateStr);
+
       const topCats = await getTransactionsByCategoryForExpense(session.user.id, monthStart, monthEnd);
       const totalNW = await getNetWorth(session.user.id);
       const todayExp = await getSpentToday(session.user.id, todayStr);
@@ -82,7 +103,9 @@ export default function DashboardScreen() {
 
       setMetrics({
         month: processSummary(monthSum),
+        prevMonthComp: processSummary(prevMonthSum),
         year: processSummary(yearSum),
+        prevYearComp: processSummary(prevYearSum),
         topCategories: Array.isArray(topCats) ? topCats.slice(0, 3) : [],
         netWorth: totalNW || 0,
         spentToday: todayExp || 0
@@ -184,12 +207,16 @@ export default function DashboardScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View style={{ alignItems: 'flex-start' }}>
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Dashboard</Text>
           {lastSyncTime ? (
             <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
           ) : null}
-        </View>
+        </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
@@ -250,7 +277,11 @@ export default function DashboardScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      ref={scrollRef}
+      style={[styles.container, { backgroundColor: colors.background }]} 
+      showsVerticalScrollIndicator={false}
+    >
 
       <View style={[styles.mainCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeader}>
@@ -340,22 +371,44 @@ export default function DashboardScreen() {
       </TouchableOpacity>
 
       {/* 4. This Month -> One Row with Circular Progress */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => navigation.navigate('ReportDetail', { reportType: 'monthlySummary', title: 'Monthly Summary' })}
+      >
         <View style={styles.cardHeader}>
           <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
-          <View>
-            <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS MONTH</Text>
-            <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'MMMM')}</Text>
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View>
+              <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS MONTH</Text>
+              <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'MMMM')}</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
           </View>
         </View>
         <View style={styles.rowBetween}>
           <View style={{ flex: 1 }}>
             <View style={{ marginBottom: 16 }}>
-              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
+                {metrics.prevMonthComp.expense > 0 && (
+                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.month.expense > metrics.prevMonthComp.expense ? colors.danger : colors.success }}>
+                     {metrics.month.expense > metrics.prevMonthComp.expense ? '↑' : '↓'}
+                     {Math.abs(((metrics.month.expense - metrics.prevMonthComp.expense) / metrics.prevMonthComp.expense) * 100).toFixed(0)}%
+                   </Text>
+                )}
+              </View>
               <Text style={[styles.rowValue, { color: colors.danger }]}>₹{metrics.month.expense.toLocaleString()}</Text>
             </View>
             <View>
-              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>INCOME</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>INCOME</Text>
+                 {metrics.prevMonthComp.income > 0 && (
+                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.month.income > metrics.prevMonthComp.income ? colors.success : colors.danger }}>
+                     {metrics.month.income > metrics.prevMonthComp.income ? '↑' : '↓'}
+                     {Math.abs(((metrics.month.income - metrics.prevMonthComp.income) / metrics.prevMonthComp.income) * 100).toFixed(0)}%
+                   </Text>
+                )}
+              </View>
               <Text style={[styles.rowValue, { color: colors.success }]}>₹{metrics.month.income.toLocaleString()}</Text>
             </View>
           </View>
@@ -377,18 +430,29 @@ export default function DashboardScreen() {
              </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* 5. Top Categories */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => navigation.navigate('ReportDetail', { reportType: 'summaryByCategory', title: 'Transactions By Category' })}
+      >
         <View style={styles.cardHeader}>
           <MaterialIcons name="pie-chart" size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>TOP CATEGORIES</Text>
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>TOP CATEGORIES</Text>
+            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+          </View>
         </View>
         {metrics.topCategories.length > 0 ? metrics.topCategories.map((cat, idx) => (
           <View key={cat.category_name} style={styles.catRow}>
             <View style={styles.catInfo}>
-              <Text style={[styles.catName, { color: colors.text }]}>{cat.category_name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={[styles.catName, { color: colors.text }]}>{cat.category_name}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
+                  ({((cat.totalAmount / (metrics.month.expense || 1)) * 100).toFixed(0)}%)
+                </Text>
+              </View>
               <Text style={[styles.catAmt, { color: colors.textSecondary }]}>₹{cat.totalAmount.toLocaleString()}</Text>
             </View>
             <View style={styles.catProgressBg}>
@@ -401,25 +465,47 @@ export default function DashboardScreen() {
         )) : (
           <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 10 }}>No expenses yet</Text>
         )}
-      </View>
+      </TouchableOpacity>
 
       {/* 6. This Year -> One Row with Circular Progress */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => navigation.navigate('ReportDetail', { reportType: 'yearlySummary', title: 'Yearly Summary' })}
+      >
         <View style={styles.cardHeader}>
           <MaterialIcons name="event-note" size={20} color={colors.primary} />
-          <View>
-            <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS YEAR</Text>
-            <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'yyyy')}</Text>
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View>
+              <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS YEAR</Text>
+              <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'yyyy')}</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
           </View>
         </View>
         <View style={styles.rowBetween}>
           <View style={{ flex: 1 }}>
             <View style={{ marginBottom: 16 }}>
-              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
+               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
+                {metrics.prevYearComp.expense > 0 && (
+                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.year.expense > metrics.prevYearComp.expense ? colors.danger : colors.success }}>
+                     {metrics.year.expense > metrics.prevYearComp.expense ? '↑' : '↓'}
+                     {Math.abs(((metrics.year.expense - metrics.prevYearComp.expense) / metrics.prevYearComp.expense) * 100).toFixed(0)}%
+                   </Text>
+                )}
+              </View>
               <Text style={[styles.rowValue, { color: colors.danger }]}>₹{metrics.year.expense.toLocaleString()}</Text>
             </View>
             <View>
-              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>INCOME</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>INCOME</Text>
+                 {metrics.prevYearComp.income > 0 && (
+                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.year.income > metrics.prevYearComp.income ? colors.success : colors.danger }}>
+                     {metrics.year.income > metrics.prevYearComp.income ? '↑' : '↓'}
+                     {Math.abs(((metrics.year.income - metrics.prevYearComp.income) / metrics.prevYearComp.income) * 100).toFixed(0)}%
+                   </Text>
+                )}
+              </View>
               <Text style={[styles.rowValue, { color: colors.success }]}>₹{metrics.year.income.toLocaleString()}</Text>
             </View>
           </View>
@@ -441,7 +527,7 @@ export default function DashboardScreen() {
              </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* 7. Net Worth */}
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 40 }]}>
@@ -455,23 +541,20 @@ export default function DashboardScreen() {
         <Text style={[styles.rowLabel, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>ALL TIME BALANCE</Text>
       </View>
 
-      {/* Sync Overlay Modal */}
-      <Modal visible={showSyncModal} transparent animationType="fade">
-        <View style={styles.syncOverlay}>
-          <View style={[styles.syncCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.syncIconContainer}>
-               <MaterialIcons name="cloud-sync" size={60} color={colors.primary} />
-            </View>
-
-            <Text style={[styles.syncTitle, { color: colors.text }]}>Initializing JayLedger</Text>
-            <Text style={[styles.syncMessage, { color: colors.textSecondary }]}>
-              {syncError ? 'Action Required' : 'Setting up your personal finance workspace...'}
-            </Text>
-
+      <BottomSheet
+        visible={showSyncModal}
+        onClose={() => {}} // Non-dismissable during initial setup
+        title="Initializing JayLedger"
+        subtitle={syncError ? 'Action Required' : 'Setting up your personal finance workspace...'}
+        showCloseButton={!!syncError}
+      >
+        <View style={{ paddingBottom: 20 }}>
             <View style={styles.syncProgressContainer}>
               {syncError ? (
                 <View style={styles.errorContainer}>
-                  <MaterialIcons name="error-outline" size={32} color={colors.danger} />
+                   <View style={styles.syncIconContainer}>
+                      <MaterialIcons name="error-outline" size={60} color={colors.danger} />
+                   </View>
                   <Text style={[styles.errorText, { color: colors.danger }]}>{syncError}</Text>
                   <TouchableOpacity
                     style={[styles.retryBtn, { backgroundColor: colors.primary }]}
@@ -482,6 +565,9 @@ export default function DashboardScreen() {
                 </View>
               ) : (
                 <View style={styles.stepsContainer}>
+                   <View style={[styles.syncIconContainer, { alignSelf: 'center' }]}>
+                      <MaterialIcons name="cloud-sync" size={60} color={colors.primary} />
+                   </View>
                   {[
                     'Pushing local changes...',
                     'Syncing Transactions',
@@ -490,22 +576,15 @@ export default function DashboardScreen() {
                     'Calculating reports',
                     'Finalizing'
                   ].map((step) => {
-                    const isDone = [
+                    const steps = [
                       'Pushing local changes...',
                       'Syncing Transactions',
                       'Syncing Budgets',
                       'Syncing Goals',
                       'Calculating reports',
                       'Finalizing'
-                    ].indexOf(step) < [
-                      'Pushing local changes...',
-                      'Syncing Transactions',
-                      'Syncing Budgets',
-                      'Syncing Goals',
-                      'Calculating reports',
-                      'Finalizing'
-                    ].indexOf(syncStatus);
-
+                    ];
+                    const isDone = steps.indexOf(step) < steps.indexOf(syncStatus);
                     const isActive = syncStatus === step;
 
                     return (
@@ -539,9 +618,8 @@ export default function DashboardScreen() {
                 <Text style={[styles.syncSubMessage, { color: colors.textSecondary }]}>This may take a minute...</Text>
               </View>
             )}
-          </View>
         </View>
-      </Modal>
+      </BottomSheet>
 
     </ScrollView>
   );
@@ -594,25 +672,6 @@ const styles = StyleSheet.create({
   catProgressFill: { height: '100%', borderRadius: 3 },
 
   // Sync Overlay Styles
-  syncOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  syncCard: {
-    width: '100%',
-    padding: 32,
-    borderRadius: 32,
-    borderWidth: 1,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-  },
   syncIconContainer: {
     width: 100,
     height: 100,
@@ -621,18 +680,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-  },
-  syncTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  syncMessage: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 32,
-    opacity: 0.8,
   },
   syncProgressContainer: {
     width: '100%',

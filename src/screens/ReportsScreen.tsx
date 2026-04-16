@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -83,9 +83,24 @@ export default function ReportsScreen() {
   const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isSyncing, setIsSyncing] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const scrollToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
 
   useEffect(() => {
     navigation.setOptions({
+      headerTitle: () => (
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Reports</Text>
+        </TouchableOpacity>
+      ),
+      headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
@@ -156,6 +171,7 @@ export default function ReportsScreen() {
         </TouchableOpacity>
       </View>
       <ScrollView
+        ref={scrollRef}
         style={styles.container}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}

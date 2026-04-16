@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -6,8 +6,8 @@ import {
   FlatList, 
   TouchableOpacity, 
   ActivityIndicator,
-  Alert
 } from 'react-native';
+import { BottomSheet } from '../components/BottomSheet';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getQuickTransactions, deleteQuickTransaction } from '../db/queries';
@@ -20,10 +20,32 @@ export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation<any>();
+
   const insets = useSafeAreaInsets();
-  
+  const listRef = useRef<FlatList>(null);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Quick Transactions</Text>
+        </TouchableOpacity>
+      ),
+      headerTitleAlign: 'left',
+    });
+  }, [navigation, colors.text, scrollToTop]);
+
   const [data, setData] = useState<QuickTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -44,22 +66,14 @@ export default function QuickTransactionsScreen() {
   );
 
   const handleDelete = (id: string) => {
-    Alert.alert(
-      'Delete Template',
-      'Are you sure you want to delete this template?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            if (!session?.user?.id) return;
-            await deleteQuickTransaction(id, session.user.id);
-            loadData();
-          }
-        }
-      ]
-    );
+    setDeletingId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!session?.user?.id || !deletingId) return;
+    await deleteQuickTransaction(deletingId, session.user.id);
+    setDeletingId(null);
+    loadData();
   };
 
   const renderItem = ({ item }: { item: QuickTransaction }) => (
@@ -97,6 +111,7 @@ export default function QuickTransactionsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
+        ref={listRef}
         data={data}
         keyExtractor={item => item.id}
         renderItem={renderItem}
@@ -117,6 +132,30 @@ export default function QuickTransactionsScreen() {
       >
         <Icon name="add" size={30} color="#fff" />
       </TouchableOpacity>
+
+      <BottomSheet
+        visible={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        title="Delete Template?"
+      >
+        <View style={{ paddingBottom: 10 }}>
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: colors.danger + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+              <Icon name="delete-outline" size={32} color={colors.danger} />
+            </View>
+            <Text style={{ color: colors.textSecondary, textAlign: 'center', fontSize: 16, lineHeight: 22 }}>
+              Are you sure you want to delete this template? This action cannot be undone.
+            </Text>
+          </View>
+
+          <TouchableOpacity 
+            style={{ backgroundColor: colors.danger, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}
+            onPress={confirmDelete}
+          >
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Delete Template</Text>
+          </TouchableOpacity>
+        </View>
+      </BottomSheet>
     </View>
   );
 }

@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SectionList, TextInput, Modal, FlatList, Platform } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TextInput, FlatList, Platform, ScrollView } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getDb } from '../db/database';
@@ -10,7 +11,8 @@ import { format } from 'date-fns';
 import { TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { TransactionCard } from '../components/TransactionCard';
-import { getCategories, getPayees, deleteTransactionAsync, getQuickTransactions } from '../db/queries';
+import { BottomSheet } from '../components/BottomSheet';
+import { getCategories, getPayees, deleteTransactionAsync, getQuickTransactions, getMonthlyFilteredStats } from '../db/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
 
@@ -44,16 +46,22 @@ const FilterSelector = React.memo(({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Icon name="close" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Select {type === 'Category' ? 'Categories' : 'Payees'}</Text>
-            <View style={{ width: 40 }} />
-          </View>
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      title={`Select ${type === 'Category' ? 'Categories' : 'Payees'}`}
+    >
+      <View>
+        <View style={[styles.modalSearchContainer, { backgroundColor: colors.background, marginHorizontal: 0 }]}>
+          <Icon name="search" size={20} color={colors.textSecondary} />
+          <TextInput
+            placeholder={`Search ${type}...`}
+            placeholderTextColor={colors.textSecondary + '80'}
+            style={[styles.modalSearchInput, { color: colors.text }]}
+            value={modalSearch}
+            onChangeText={setModalSearch}
+          />
+        </View>
 
           <View style={[styles.modalSearchContainer, { backgroundColor: colors.background }]}>
             <Icon name="search" size={20} color={colors.textSecondary} />
@@ -109,8 +117,7 @@ const FilterSelector = React.memo(({
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </Modal>
+    </BottomSheet>
   );
 });
 
@@ -122,35 +129,34 @@ interface DeleteConfirmModalProps {
 }
 
 const DeleteConfirmModal = React.memo(({ transaction, onCancel, onConfirm, colors }: DeleteConfirmModalProps) => (
-  <Modal visible={!!transaction} animationType="fade" transparent>
-    <View style={styles.deleteOverlay}>
-      <View style={[styles.deleteSheet, { backgroundColor: colors.card }]}>
+  <BottomSheet
+    visible={!!transaction}
+    onClose={onCancel}
+    title="Delete Transaction?"
+  >
+    <View style={{ paddingBottom: 10 }}>
         <View style={styles.deleteHeader}>
           <View style={[styles.deleteIconBg, { backgroundColor: colors.danger + '15' }]}>
             <Icon name="delete-outline" size={28} color={colors.danger} />
           </View>
-          <Text style={[styles.deleteTitle, { color: colors.text }]}>Delete Transaction?</Text>
-          <Text style={[styles.deleteSub, { color: colors.textSecondary }]}>This action cannot be undone.</Text>
+          <Text style={[styles.deleteSub, { color: colors.textSecondary, textAlign: 'center', marginTop: 12, fontSize: 16 }]}>This action cannot be undone. Are you sure you want to delete this transaction?</Text>
         </View>
 
-        <View style={styles.deleteActions}>
+        <View style={[styles.deleteActions, { marginTop: 24 }]}>
           <TouchableOpacity
-            style={[styles.deleteBtn, { backgroundColor: colors.danger }]}
+            style={[styles.deleteBtn, { backgroundColor: colors.danger, borderRadius: 16, height: 56 }]}
             onPress={onConfirm}
           >
             <Text style={styles.deleteBtnText}>Confirm Delete</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.cancelDeleteBtn}
-            onPress={onCancel}
-          >
-            <Text style={[styles.cancelDeleteText, { color: colors.textSecondary }]}>Keep Transaction</Text>
-          </TouchableOpacity>
         </View>
-      </View>
     </View>
-  </Modal>
+  </BottomSheet>
 ));
+
+type FlashListItem = (Transaction & { itemType: 'transaction' }) | { itemType: 'header', date: string, total: number, transactions: Transaction[] };
+
+const TypedFlashList = FlashList as any;
 
 export default function TransactionsScreen() {
   const { colors } = useTheme();
@@ -160,8 +166,20 @@ export default function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [sections, setSections] = useState<{ title: string, data: Transaction[] }[]>([]);
+  const [listData, setListData] = useState<FlashListItem[]>([]);
+  const [stickyHeaderIndices, setStickyHeaderIndices] = useState<number[]>([]);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [totalFiltered, setTotalFiltered] = useState(0);
+  const listRef = useRef<any>(null);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
+
+  // Stats Breakdown State
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [statsBreakdown, setStatsBreakdown] = useState<any[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // Search & Filter State
   const [search, setSearch] = useState('');
@@ -238,19 +256,44 @@ export default function TransactionsScreen() {
     const rows = await db.getAllAsync<Transaction>(query);
 
     const grouped = rows.reduce((acc, tx) => {
-      if (!acc[tx.date]) acc[tx.date] = [];
-      acc[tx.date].push(tx);
+      if (!acc[tx.date]) acc[tx.date] = { date: tx.date, total: 0, transactions: [] };
+      acc[tx.date].transactions.push(tx);
+      acc[tx.date].total += (tx.type === 'Income' ? tx.amount : -tx.amount);
       return acc;
-    }, {} as Record<string, Transaction[]>);
+    }, {} as Record<string, { date: string, total: number, transactions: Transaction[] }>);
 
-    const formattedSections = Object.entries(grouped).map(([date, data]) => ({
-      title: format(new Date(date), 'MMM dd, yyyy'),
-      data,
-    }));
+    const flattened: any[] = [];
+    const stickyIndices: number[] = [];
+    let currentTotal = 0;
 
-    setSections(formattedSections);
+    Object.values(grouped).forEach(group => {
+      stickyIndices.push(flattened.length);
+      flattened.push({ itemType: 'header', ...group });
+      group.transactions.forEach((tx: any) => {
+        flattened.push({ itemType: 'transaction', ...tx });
+        currentTotal += (tx.type === 'Income' ? tx.amount : -tx.amount);
+      });
+    });
+
+    setListData(flattened);
+    setStickyHeaderIndices(stickyIndices);
+    setTotalFiltered(currentTotal);
     setLoading(false);
   }, [session?.user?.id, search, selectedCats, selectedPayees, startDate, endDate]);
+
+  const loadStatsBreakdown = async () => {
+    if (!session?.user?.id) return;
+    setLoadingStats(true);
+    setShowStatsModal(true);
+    try {
+      const stats = await getMonthlyFilteredStats(session.user.id, selectedCats, selectedPayees, search);
+      setStatsBreakdown(stats);
+    } catch (e) {
+      console.error("Error loading stats breakdown:", e);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const handleManualSync = useCallback(async () => {
     if (!session?.user?.id || isSyncing) return;
@@ -289,12 +332,16 @@ export default function TransactionsScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View style={{ alignItems: 'flex-start' }}>
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Transactions</Text>
           {lastSyncTime ? (
             <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
           ) : null}
-        </View>
+        </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
@@ -499,15 +546,54 @@ export default function TransactionsScreen() {
         </View>
       </View>
 
-      <SectionList
-        sections={sections}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        renderSectionHeader={({ section: { title } }) => (
-          <Text style={[styles.header, { backgroundColor: colors.background, color: colors.textSecondary }]}>
-            {title}
-          </Text>
-        )}
+      {/* Filter Stats Display */}
+      {(selectedCats.length > 0 || selectedPayees.length > 0) && (
+        <View style={styles.statsRow}>
+          <TouchableOpacity 
+            style={[styles.statsPill, { backgroundColor: colors.card, borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40' }]} 
+            onPress={loadStatsBreakdown}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+               <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>FILTER TOTAL</Text>
+               <Text style={[styles.statsValue, { color: totalFiltered >= 0 ? colors.success : colors.danger }]}>
+                 {totalFiltered >= 0 ? '+' : ''}₹{totalFiltered.toLocaleString()}
+               </Text>
+               <Icon name="bar-chart" size={16} color={colors.primary} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <TypedFlashList
+        ref={listRef}
+        data={listData}
+        keyExtractor={(item: FlashListItem, index: number) => item.itemType === 'header' ? `header-${item.date}` : item.id}
+        renderItem={({ item }: { item: FlashListItem }) => {
+          if (item.itemType === 'header') {
+            return (
+              <View style={[styles.headerContainer, { backgroundColor: colors.background }]}>
+                <Text style={[styles.headerDate, { color: colors.textSecondary }]}>
+                  {format(new Date(item.date), 'MMM dd, yyyy')}
+                </Text>
+                <Text style={[styles.headerTotal, { color: item.total >= 0 ? colors.success : colors.danger }]}>
+                  {item.total >= 0 ? '+' : ''}₹{item.total.toLocaleString()}
+                </Text>
+              </View>
+            );
+          }
+          return (
+            <TransactionCard
+              transaction={item}
+              onEdit={handleEditTransaction}
+              onDelete={handleDeleteTransaction}
+              onFilterCategory={handleFilterCategory}
+              onFilterPayee={handleFilterPayee}
+            />
+          );
+        }}
+        getItemType={(item: FlashListItem) => item.itemType}
+        stickyHeaderIndices={stickyHeaderIndices}
+        estimatedItemSize={80}
         onEndReachedThreshold={0.5}
         ListEmptyComponent={loading ? <ActivityIndicator style={{marginTop: 40}} color={colors.primary} /> : (
             <View style={styles.emptyContainer}>
@@ -515,11 +601,7 @@ export default function TransactionsScreen() {
                 <Text style={{color: colors.textSecondary, marginTop: 12}}>No transactions found</Text>
             </View>
         )}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-        removeClippedSubviews={true}
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
 
       <FilterSelector
@@ -560,16 +642,11 @@ export default function TransactionsScreen() {
       />
 
       {/* Quick Transaction Modal */}
-      <Modal visible={showQuickModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.modalHeader}>
-                    <TouchableOpacity onPress={() => setShowQuickModal(false)} style={styles.closeBtn}>
-                        <Icon name="close" size={24} color={colors.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.modalTitle, { color: colors.text }]}>Quick Transactions</Text>
-                    <View style={{ width: 40 }} />
-                </View>
+      <BottomSheet
+        visible={showQuickModal}
+        onClose={() => setShowQuickModal(false)}
+        title="Quick Transactions"
+      >
 
                 <FlatList
                     data={quickTransactions}
@@ -598,9 +675,7 @@ export default function TransactionsScreen() {
                       </View>
                     }
                 />
-            </View>
-        </View>
-      </Modal>
+      </BottomSheet>
 
       {/* Add FABs */}
       <TouchableOpacity
@@ -615,6 +690,31 @@ export default function TransactionsScreen() {
       >
         <Icon name="add" size={32} color="#fff" />
       </TouchableOpacity>
+
+      {/* Stats Breakdown Bottom Sheet */}
+      <BottomSheet
+        visible={showStatsModal}
+        onClose={() => setShowStatsModal(false)}
+        title="Last 5 Months"
+      >
+
+                {loadingStats ? (
+                  <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+                ) : (
+                  <ScrollView>
+                    {statsBreakdown.map((s, idx) => (
+                      <View key={s.month} style={[styles.statItem, { borderBottomWidth: idx === statsBreakdown.length - 1 ? 0 : 1, borderColor: colors.border }]}>
+                         <Text style={[styles.statMonth, { color: colors.text }]}>{s.month}</Text>
+                         <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={[styles.statsValue, { color: (s.income - s.expense) >= 0 ? colors.success : colors.danger, fontSize: 18 }]}>
+                               {(s.income - s.expense) >= 0 ? '+' : ''}₹{(s.income - s.expense).toLocaleString()}
+                            </Text>
+                         </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+      </BottomSheet>
     </View>
   );
 }
@@ -661,6 +761,42 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
   },
+  statsRow: {
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'flex-end',
+  },
+  statsPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  statsLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  statsValue: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerDate: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase'
+  },
+  headerTotal: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -668,30 +804,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase'
-  },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
-  modalContent: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 24,
-    maxHeight: '85%',
-    borderTopWidth: 1,
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20
-  },
-  modalTitle: { fontSize: 20, fontWeight: '800' },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1c1c1e',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   modalSearchContainer: {
     flexDirection: 'row',
@@ -737,18 +849,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6
   },
-  deleteOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'flex-end',
-    paddingBottom: 40,
-  },
-  deleteSheet: {
-    marginHorizontal: 16,
-    borderRadius: 32,
-    padding: 24,
-    alignItems: 'center',
-  },
   deleteHeader: {
     alignItems: 'center',
     marginBottom: 24,
@@ -760,11 +860,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-  },
-  deleteTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 8,
   },
   deleteSub: {
     fontSize: 15,
@@ -847,6 +942,21 @@ const styles = StyleSheet.create({
   quickName: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  statItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  statMonth: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  statTotal: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 4,
   },
   emptyContainer: { flex: 1, alignItems: 'center', marginTop: 100 }
 });

@@ -74,7 +74,8 @@ export const initDB = async () => {
         start_date TEXT,
         categories TEXT,
         user_id TEXT NOT NULL,
-        sync_status INTEGER DEFAULT 0
+        sync_status INTEGER DEFAULT 0,
+        deleted INTEGER DEFAULT 0
       );
     `);
 
@@ -134,7 +135,8 @@ export const initDB = async () => {
       "ALTER TABLE categories ADD COLUMN user_id TEXT;",
       "ALTER TABLE payees ADD COLUMN logo TEXT;",
       "ALTER TABLE payees ADD COLUMN user_id TEXT;",
-      "ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;"
+      "ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;",
+      "ALTER TABLE budgets ADD COLUMN deleted INTEGER DEFAULT 0;"
     ];
 
     for (const m of migrations) {

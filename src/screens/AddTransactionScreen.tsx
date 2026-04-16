@@ -5,22 +5,25 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Modal,
   Platform,
   Alert,
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  ScrollView
 } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { getCategories, getPayees, insertOrUpdateTransaction } from '../db/queries';
+import { BottomSheet } from '../components/BottomSheet';
+import { SegmentedControl } from '../components/SegmentedControl';
 import { Category, Payee, Transaction } from '../models/types';
 import * as Crypto from 'expo-crypto';
 import { syncTransactions } from '../services/syncService';
@@ -41,6 +44,7 @@ export default function AddTransactionScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const editTx = route.params?.transaction as Transaction | undefined;
+  const insets = useSafeAreaInsets();
 
   const [amount, setAmount] = useState(editTx ? editTx.amount.toString() : '');
   const [description, setDescription] = useState(editTx ? editTx.description || '' : '');
@@ -182,72 +186,67 @@ export default function AddTransactionScreen() {
     const iconBg = type === 'Income' ? colors.success + '15' : colors.danger + '15';
 
     return (
-      <Modal visible={showModal === modalType} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                    <TouchableOpacity onPress={() => setShowModal(null)} style={[styles.pillIconBg, { backgroundColor: colors.background }]}>
-                        <Icon name="close" size={20} color={colors.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.modalTitle, { color: colors.text }]}>Select {modalType}</Text>
-                    <View style={{ width: 40 }} />
-                </View>
+      <BottomSheet
+        visible={showModal === modalType}
+        onClose={() => setShowModal(null)}
+        title={`Select ${modalType}`}
+      >
+        <View style={{ maxHeight: 500 }}>
+          {/* Search Bar */}
+          <View style={[styles.searchContainer, { backgroundColor: colors.background, marginHorizontal: 0 }]}>
+            <Icon name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder={`Search ${modalType.toLowerCase()}...`}
+              placeholderTextColor={colors.textSecondary + '70'}
+              value={modalSearch}
+              onChangeText={setModalSearch}
+            />
+          </View>
 
-                {/* Search Bar */}
-                <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
-                    <Icon name="search" size={20} color={colors.textSecondary} />
-              <TextInput
-                      style={[styles.searchInput, { color: colors.text }]}
-                      placeholder={`Search ${modalType.toLowerCase()}...`}
-                      placeholderTextColor={colors.textSecondary + '70'}
-                      value={modalSearch}
-                      onChangeText={setModalSearch}
-                    />
-                </View>
-
-                <FlatList
-                    data={filteredData}
-                    keyExtractor={item => item.id}
-                    numColumns={4}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 10 }}
-                    renderItem={({ item }: { item: Category | Payee }) => {
-                        const isSelected = (modalType === 'Category' ? (selectedCategory as Category)?.id : (selectedPayee as Payee)?.id) === item.id;
-                        return (
-                          <TouchableOpacity
-                                style={styles.gridItem}
-                                onPress={() => {
-                                    if (modalType === 'Category') {
-                                        setSelectedCategory(item as Category);
-                                    } else {
-                                        setSelectedPayee(item.id === 'none' ? null : item as Payee);
-                                    }
-                                    setShowModal(null);
-                                }}
-                            >
-                            <View style={[styles.gridIconBox, {
-                              backgroundColor: isSelected ? iconColor : iconBg,
-                              borderColor: isSelected ? iconColor : colors.border
-                                }]}>
-                              <Icon
-                                name={formatIconName((item as any).app_icon || (modalType === 'Category' ? 'category' : 'person')) as any}
-                                size={24}
-                                color={isSelected ? 'white' : iconColor}
-                                    />
-                                </View>
-                                <Text style={[styles.gridLabel, { color: isSelected ? colors.primary : colors.textSecondary }]} numberOfLines={1}>{item.name}</Text>
-                            </TouchableOpacity>
-                        );
-                    }}
-                    ListEmptyComponent={
-                      <View style={{ alignItems: 'center', marginTop: 40 }}>
-                        <Text style={{ color: '#666' }}>No {modalType.toLowerCase()} found</Text>
-                      </View>
+          <FlatList
+            data={filteredData}
+            keyExtractor={item => item.id}
+            numColumns={4}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 10 }}
+            renderItem={({ item }: { item: Category | Payee }) => {
+              const isSelected = (modalType === 'Category' ? (selectedCategory as Category)?.id : (selectedPayee as Payee)?.id) === item.id;
+              return (
+                <TouchableOpacity
+                  style={styles.gridItem}
+                  onPress={() => {
+                    if (modalType === 'Category') {
+                      setSelectedCategory(item as Category);
+                    } else {
+                      setSelectedPayee(item.id === 'none' ? null : item as Payee);
                     }
-                />
-            </View>
+                    setShowModal(null);
+                  }}
+                >
+                  <View style={[styles.gridIconBox, {
+                    backgroundColor: isSelected ? iconColor : iconBg,
+                    borderColor: isSelected ? iconColor : colors.border
+                  }]}>
+                    <Icon
+                      name={formatIconName((item as any).app_icon || (modalType === 'Category' ? 'category' : 'person')) as any}
+                      size={24}
+                      color={isSelected ? 'white' : iconColor}
+                    />
+                  </View>
+                  <Text style={[styles.gridLabel, { color: isSelected ? colors.primary : colors.textSecondary }]} numberOfLines={1}>{item.name}</Text>
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={{ alignItems: 'center', marginTop: 40 }}>
+                <Text style={{ color: '#666' }}>No {modalType.toLowerCase()} found</Text>
+              </View>
+            }
+            style={{ maxHeight: 400 }}
+          />
         </View>
-      </Modal>
+      </BottomSheet>
     );
   };
 
@@ -255,113 +254,93 @@ export default function AddTransactionScreen() {
   const currentIconBg = type === 'Income' ? colors.success + '20' : colors.danger + '20';
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.modalOverlay}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.modalOverlay}>
-          {/* Transparent Overlay to dismiss */}
-          <TouchableOpacity
-            style={styles.modalDismiss}
-            activeOpacity={1}
-            onPress={() => navigation.goBack()}
-          />
+    <View style={{ flex: 1 }}>
+      <BottomSheet
+        visible={true}
+        onClose={() => navigation.goBack()}
+        title={editTx ? 'Edit Transaction' : 'Add Transaction'}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            >
+              {!editTx && (
+                <SegmentedControl
+                  options={[
+                    { label: 'Expense', value: 'Expense', activeColor: colors.danger },
+                    { label: 'Income', value: 'Income', activeColor: colors.success }
+                  ]}
+                  selectedValue={type}
+                  onValueChange={(val: 'Expense' | 'Income') => setType(val)}
+                  variant="medium"
+                  containerStyle={{ marginBottom: 12 }}
+                />
+              )}
 
-          {/* Bottom Sheet Content */}
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-
-            {/* Header Area in Sheet */}
-            <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: colors.text }]}>
-                {editTx ? 'Edit Transaction' : 'Add Transaction'}
-              </Text>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.sheetCloseBtn}>
-                <Icon name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Segment Tabs (Only for New Transactions) */}
-            {!editTx && (
-              <View style={[styles.segmentRow, { backgroundColor: colors.background }]}>
-                <TouchableOpacity
-                  style={[styles.segmentTab, type === 'Expense' && { backgroundColor: colors.danger }]}
-                  onPress={() => setType('Expense')}
-                >
-                  <Text style={[styles.segmentText, { color: type === 'Expense' ? 'white' : colors.textSecondary }]}>Expense</Text>
+              {/* Date / Time Row */}
+              <View style={styles.dateTimeRow}>
+                <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
+                  <Icon name="calendar-today" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'dd MMM yyyy')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.segmentTab, type === 'Income' && { backgroundColor: colors.success }]}
-                  onPress={() => setType('Income')}
-                >
-                  <Text style={[styles.segmentText, { color: type === 'Income' ? 'white' : colors.textSecondary }]}>Income</Text>
+                <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowTimePicker(true)}>
+                  <Icon name="schedule" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'h:mm a')}</Text>
                 </TouchableOpacity>
               </View>
-            )}
 
-            {/* Date / Time Row */}
-            <View style={styles.dateTimeRow}>
-              <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowDatePicker(true)}>
-                <Icon name="calendar-today" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'dd MMM yyyy')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.dateTimeChip, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowTimePicker(true)}>
-                <Icon name="schedule" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'h:mm a')}</Text>
-              </TouchableOpacity>
-            </View>
+              {/* Amount & Description Row */}
+              <View style={[styles.mainFormCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <View style={styles.amountRow}>
+                  <Text style={[styles.currencySymbol, { color: currentIconColor }]}>₹</Text>
+                  <TextInput
+                    style={[styles.amountInput, { color: currentIconColor }]}
+                    placeholder="0"
+                    placeholderTextColor={colors.border}
+                    keyboardType="decimal-pad"
+                    value={amount}
+                    onChangeText={setAmount}
+                    autoFocus={!editTx}
+                  />
+                </View>
 
-            {/* Amount & Description Row */}
-            <View style={[styles.mainFormCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
-              <View style={styles.amountRow}>
-                <Text style={[styles.currencySymbol, { color: currentIconColor }]}>₹</Text>
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
                 <TextInput
-                  style={[styles.amountInput, { color: currentIconColor }]}
-                  placeholder="0"
-                  placeholderTextColor={colors.border}
-                  keyboardType="decimal-pad"
-                  value={amount}
-                  onChangeText={setAmount}
-                  autoFocus={!editTx}
+                  style={[styles.descInput, { color: colors.text }]}
+                  placeholder="Add a note..."
+                  placeholderTextColor={colors.textSecondary + '70'}
+                  value={description}
+                  onChangeText={setDescription}
+                  maxLength={255}
                 />
               </View>
 
-              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              {/* Selector Row */}
+              <View style={styles.selectorRow}>
+                <TouchableOpacity style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowModal('Payee')}>
+                  <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
+                    <Icon name="person-outline" size={18} color={colors.textSecondary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Payee</Text>
+                    <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedPayee?.name || 'Select'}</Text>
+                  </View>
+                </TouchableOpacity>
 
-              <TextInput
-                style={[styles.descInput, { color: colors.text }]}
-                placeholder="Add a note..."
-                placeholderTextColor={colors.textSecondary + '70'}
-                value={description}
-                onChangeText={setDescription}
-                maxLength={255}
-              />
-            </View>
-
-            {/* Selector Row */}
-            <View style={styles.selectorRow}>
-              <TouchableOpacity style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowModal('Payee')}>
-                <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
-                  <Icon name="person-outline" size={18} color={colors.textSecondary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Payee</Text>
-                  <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedPayee?.name || 'Select'}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowModal('Category')}>
-                <View style={[styles.selectorIconBg, { backgroundColor: currentIconBg }]}>
-                  <Icon name={formatIconName(selectedCategory?.app_icon || selectedCategory?.icon || 'grid-view') as any} size={18} color={currentIconColor} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Category</Text>
-                  <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedCategory?.name || 'Select'}</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={() => setShowModal('Category')}>
+                  <View style={[styles.selectorIconBg, { backgroundColor: currentIconBg }]}>
+                    <Icon name={formatIconName(selectedCategory?.app_icon || selectedCategory?.icon || 'grid-view') as any} size={18} color={currentIconColor} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Category</Text>
+                    <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>{selectedCategory?.name || 'Select'}</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
 
             {/* Save Button */}
             <TouchableOpacity
@@ -371,88 +350,34 @@ export default function AddTransactionScreen() {
             >
               {submitting ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Save Transaction</Text>}
             </TouchableOpacity>
+
+            {/* Date / Time pickers */}
+            {showDatePicker && (
+              <DateTimePicker value={date} mode="date" display="default"
+                onChange={(_, d) => { setShowDatePicker(false); if (d) setDate(d); }} />
+            )}
+            {showTimePicker && (
+              <DateTimePicker value={date} mode="time" display="default"
+                onChange={(_, t) => { setShowTimePicker(false); if (t) setDate(t); }} />
+            )}
+
+            {renderModal('Category')}
+            {renderModal('Payee')}
           </View>
-
-          {/* Date / Time pickers */}
-          {showDatePicker && (
-            <DateTimePicker value={date} mode="date" display="default"
-              onChange={(_, d) => { setShowDatePicker(false); if (d) setDate(d); }} />
-          )}
-          {showTimePicker && (
-            <DateTimePicker value={date} mode="time" display="default"
-              onChange={(_, t) => { setShowTimePicker(false); if (t) setDate(t); }} />
-          )}
-
-          {renderModal('Category')}
-          {renderModal('Payee')}
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+      </BottomSheet>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalDismiss: {
-    flex: 1,
-  },
-  bottomSheet: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 20,
-  },
-  sheetHandle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sheetTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  sheetCloseBtn: {
-    padding: 4,
-  },
-  segmentRow: {
-    flexDirection: 'row',
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 10,
-  },
-  segmentTab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  segmentText: {
-    fontSize: 15,
-    fontWeight: '700',
+  container: {
+    flex: 1
   },
   dateTimeRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   dateTimeChip: {
     flex: 1,
@@ -470,7 +395,7 @@ const styles = StyleSheet.create({
   mainFormCard: {
     borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 3,
     overflow: 'hidden',
   },
   amountRow: {
@@ -531,14 +456,14 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   saveBtn: {
-    height: 50,
+    height: 40,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   saveBtnText: {
     color: 'white',
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: '800',
   },
   modalContent: {

@@ -13,6 +13,7 @@ export interface BudgetCardProps {
   todayProgress?: number; // percentage of month elapsed
   daysInMonth?: number;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 export const BudgetCard = ({ 
@@ -25,7 +26,8 @@ export const BudgetCard = ({
   daysRemaining,
   todayProgress,
   daysInMonth = 30,
-  onPress 
+  onPress,
+  onLongPress
 }: BudgetCardProps) => {
   const { colors } = useTheme();
   
@@ -54,6 +56,7 @@ export const BudgetCard = ({
     <TouchableOpacity 
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
       onPress={onPress}
+      onLongPress={onLongPress}
       activeOpacity={0.7}
     >
       <View style={styles.header}>

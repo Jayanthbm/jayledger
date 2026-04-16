@@ -9,6 +9,7 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { resetAppData } from '../db/queries';
 import { getRelativeTime } from '../utils/dateUtils';
+import { BottomSheet } from '../components/BottomSheet';
 
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -236,103 +237,87 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
       {/* Reminder Selection Bottom Sheet */}
-      <Modal visible={reminderModalVisible} transparent animationType="slide" onRequestClose={() => setReminderModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setReminderModalVisible(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>Choose Reminder</Text>
-
-            <View style={{ marginTop: 20 }}>
-              {[
-                { label: 'None', time: null, icon: 'notifications-off' },
-                { label: 'Morning', time: '9:00 AM', icon: 'access-time' },
-                { label: 'Evening', time: '6:00 PM', icon: 'access-time' },
-                { label: 'Night', time: '9:00 PM', icon: 'access-time' }
-              ].map((item) => (
-                <TouchableOpacity
-                  key={item.label}
-                  style={[styles.radioRow, { borderBottomColor: colors.border }]}
-                  onPress={() => handleNotificationChange(item.label)}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Icon
-                      name={item.icon as any}
-                      size={20}
-                      color={notificationPref === item.label ? colors.primary : colors.textSecondary}
-                      style={{ marginRight: 12 }}
-                    />
-                    <View>
-                      <Text style={[styles.label, { color: notificationPref === item.label ? colors.text : colors.textSecondary }]}>
-                        {item.label}
-                      </Text>
-                      {item.time && (
-                        <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{item.time}</Text>
-                      )}
-                    </View>
-                  </View>
-                  <View style={[styles.radioOuter, { borderColor: notificationPref === item.label ? colors.primary : colors.textSecondary + '40' }]}>
-                    {notificationPref === item.label && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent', marginTop: 12 }]} onPress={() => setReminderModalVisible(false)}>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* Logout Confirmation */}
-      <Modal visible={logoutModalVisible} transparent animationType="fade" onRequestClose={() => setLogoutModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setLogoutModalVisible(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>Sign Out</Text>
-            <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>Are you sure you want to securely log out? Local data remains safe.</Text>
-
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: '#ef4444' }]} onPress={signOut}>
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Sign Out</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent' }]} onPress={() => setLogoutModalVisible(false)}>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* Reset Confirmation */}
-      <Modal visible={resetModalVisible} transparent animationType="fade" onRequestClose={() => setResetModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setResetModalVisible(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>Reset Data</Text>
-            <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>
-              This will permanently delete all your Transactions, Budgets, Goals, and Categories.
-              This action cannot be undone. Account info remains safe.
-            </Text>
-
+      <BottomSheet
+        visible={reminderModalVisible}
+        onClose={() => setReminderModalVisible(false)}
+        title="Choose Reminder"
+      >
+        <View style={{ marginTop: 10 }}>
+          {[
+            { label: 'None', time: null, icon: 'notifications-off' },
+            { label: 'Morning', time: '9:00 AM', icon: 'access-time' },
+            { label: 'Evening', time: '6:00 PM', icon: 'access-time' },
+            { label: 'Night', time: '9:00 PM', icon: 'access-time' }
+          ].map((item) => (
             <TouchableOpacity
-              style={[styles.sheetButton, { backgroundColor: '#ef4444' }]}
-              onPress={handleResetData}
-              disabled={isResetting}
+              key={item.label}
+              style={[styles.radioRow, { borderBottomColor: colors.border }]}
+              onPress={() => handleNotificationChange(item.label)}
             >
-              {isResetting ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Reset Everything</Text>
-              )}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Icon
+                  name={item.icon as any}
+                  size={20}
+                  color={notificationPref === item.label ? colors.primary : colors.textSecondary}
+                  style={{ marginRight: 12 }}
+                />
+                <View>
+                  <Text style={[styles.label, { color: notificationPref === item.label ? colors.text : colors.textSecondary }]}>
+                    {item.label}
+                  </Text>
+                  {item.time && (
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{item.time}</Text>
+                  )}
+                </View>
+              </View>
+              <View style={[styles.radioOuter, { borderColor: notificationPref === item.label ? colors.primary : colors.textSecondary + '40' }]}>
+                {notificationPref === item.label && <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />}
+              </View>
             </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent' }]} onPress={() => setResetModalVisible(false)}>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      </Modal>
+      </BottomSheet>
+      {/* Logout Confirmation Bottom Sheet */}
+      <BottomSheet
+        visible={logoutModalVisible}
+        onClose={() => setLogoutModalVisible(false)}
+        title="Sign Out"
+      >
+        <View>
+          <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>Are you sure you want to securely log out? Local data remains safe.</Text>
+
+          <TouchableOpacity style={[styles.sheetButton, { backgroundColor: '#ef4444' }]} onPress={signOut}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Sign Out</Text>
+          </TouchableOpacity>
+
+        </View>
+      </BottomSheet>
+      {/* Reset Confirmation Bottom Sheet */}
+      <BottomSheet
+        visible={resetModalVisible}
+        onClose={() => setResetModalVisible(false)}
+        title="Reset Data"
+      >
+        <View>
+          <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>
+            This will permanently delete all your Transactions, Budgets, Goals, and Categories.
+            This action cannot be undone. Account info remains safe.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.sheetButton, { backgroundColor: '#ef4444' }]}
+            onPress={handleResetData}
+            disabled={isResetting}
+          >
+            {isResetting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Reset Everything</Text>
+            )}
+          </TouchableOpacity>
+
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -412,11 +397,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalDismiss: { flex: 1 },
-  bottomSheet: { padding: 24, borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingBottom: 40, borderTopWidth: 1 },
-  sheetHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 24, opacity: 0.3 },
-  sheetTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
   sheetMessage: { fontSize: 16, marginBottom: 32, textAlign: 'center', lineHeight: 24, paddingHorizontal: 20 },
   sheetButton: { padding: 18, borderRadius: 16, alignItems: 'center', marginBottom: 12 }
 });
