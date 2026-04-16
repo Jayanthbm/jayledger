@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,10 @@ import {
   ActivityIndicator,
   FlatList,
   Dimensions,
-  Modal,
-  TextInput
 } from 'react-native';
+import { BottomSheet } from '../components/BottomSheet';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { SearchBar } from '../components/SearchBar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -26,23 +27,14 @@ import {
   getReportCategoriesOverview,
   getCategories,
   toggleCategoryLivingCost,
-  getTransactionsByDateRange
+  getTransactionsByDateRange,
+  getMinTransactionYear
 } from '../db/queries';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { format, endOfMonth } from 'date-fns';
 import { Transaction, Category } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 
 const { width } = Dimensions.get('window');
-
-interface ReportViewProps {
-  route: {
-    params: {
-      reportType: string;
-      title: string;
-    }
-  };
-  navigation: any;
-}
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -50,18 +42,23 @@ const months = [
 ];
 
 const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
 export default function ReportView({ route, navigation }: any) {
   const { reportType, title } = route.params;
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
+
+  const scrollToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [type, setType] = useState<'Expense' | 'Income'>('Expense');
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(currentYear.toString());
+  const [years, setYears] = useState<string[]>([currentYear.toString()]);
 
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [showYearPicker, setShowYearPicker] = useState(false);
@@ -75,6 +72,7 @@ export default function ReportView({ route, navigation }: any) {
   const [drillDownTitle, setDrillDownTitle] = useState('');
   const [sortKey, setSortKey] = useState<'name' | 'amount'>('amount');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showSortPicker, setShowSortPicker] = useState(false);
 
   const showMonthSelector = reportType !== 'yearlySummary' && reportType !== 'payees' && reportType !== 'categories';
   const showYearSelector = reportType !== 'payees' && reportType !== 'categories';
@@ -83,7 +81,7 @@ export default function ReportView({ route, navigation }: any) {
   const monthStr = (month + 1).toString().padStart(2, '0');
 
   const isSummary = ['monthlySummary', 'yearlySummary'].includes(reportType);
-  
+
   const displayTitle = useMemo(() => {
     if (!isSummary) return title;
     const dateStr = reportType === 'yearlySummary' ? year : `${months[month]} ${year}`;
@@ -94,12 +92,12 @@ export default function ReportView({ route, navigation }: any) {
     if (!isSummary) return null;
     const incomeObj = data.find(d => d.type?.toLowerCase() === 'income');
     const expenseObj = data.find(d => d.type?.toLowerCase() === 'expense');
-    
+
     const income = Number(incomeObj?.totalAmount || 0);
     const expense = Number(expenseObj?.totalAmount || 0);
     const saved = income - expense;
     const spentPercent = income > 0 ? (expense / income) * 100 : 0;
-    
+
     return { income, expense, saved, spentPercent };
   }, [data, isSummary]);
 
@@ -137,6 +135,15 @@ export default function ReportView({ route, navigation }: any) {
           break;
       }
     setData(result);
+
+    // Dynamic Years
+    const minYear = await getMinTransactionYear(userId);
+    const generatedYears = [];
+    for (let y = currentYear; y >= minYear; y--) {
+      generatedYears.push(y.toString());
+    }
+    setYears(generatedYears);
+
     } catch (error) {
       console.error("Report Load Error:", error);
     } finally {
@@ -163,36 +170,6 @@ export default function ReportView({ route, navigation }: any) {
   const handleDrillDown = async (item: any) => {
     if (!session?.user?.id) return;
 
-    // For Categories and Payees overview/summary, navigate to Transactions screen
-    if (['summaryByCategory', 'monthlyLivingCosts', 'payees', 'categories', 'summaryByPayee', 'subscriptionAndBills'].includes(reportType)) {
-      const params: any = {};
-      
-      if (item.category_id || (item.category_name && reportType.includes('Category')) || reportType === 'monthlyLivingCosts' || reportType === 'subscriptionAndBills') {
-        params.initialSelectedCats = item.category_id ? [item.category_id] : 
-                                    (allCategories.find(c => c.name === item.category_name)?.id ? [allCategories.find(c => c.name === item.category_name)!.id] : []);
-      } else if (item.payee_id || item.name || item.payee_name) {
-        params.initialSelectedPayees = item.payee_id ? [item.payee_id] : [];
-        // If we don't have ID, we might need to fetch it or match by name, 
-        // but the query results should ideally have IDs.
-      }
-
-      // Add date range if applicable (not for overall Payees/Categories)
-      if (reportType !== 'payees' && reportType !== 'categories') {
-        params.initialStartDate = `${year}-${monthStr}-01`;
-        params.initialEndDate = format(endOfMonth(new Date(parseInt(year), month)), 'yyyy-MM-dd');
-      }
-
-      // If we have categories or payees selected, navigate
-      if (params.initialSelectedCats?.length > 0 || params.initialSelectedPayees?.length > 0) {
-        navigation.navigate('Main', {
-          screen: 'Transactions',
-          params: params
-        });
-        return;
-      }
-    }
-
-    // Fallback to existing modal drilldown if navigation is not suitable or ID is missing
     setLoading(true);
     try {
       let txs: Transaction[] = [];
@@ -200,17 +177,18 @@ export default function ReportView({ route, navigation }: any) {
       const startDate = `${year}-${monthStr}-01`;
       const endDate = format(endOfMonth(new Date(parseInt(year), month)), 'yyyy-MM-dd');
 
-      if (reportType === 'summaryByCategory' || reportType === 'monthlyLivingCosts' || reportType === 'incomeVsExpense') {
-        const all = await getTransactionsByDateRange(userId, startDate, endDate);
-        txs = all.filter(t => t.category_name === item.category_name && t.type === (item.type || type));
+      const isOverview = reportType === 'payees' || reportType === 'categories';
+
+      if (reportType === 'summaryByCategory' || reportType === 'monthlyLivingCosts' || reportType === 'incomeVsExpense' || reportType === 'categories') {
+        const fetchStartDate = isOverview ? '1970-01-01' : startDate;
+        const fetchEndDate = isOverview ? '2099-12-31' : endDate;
+        const all = await getTransactionsByDateRange(userId, fetchStartDate, fetchEndDate);
+        txs = all.filter(t => t.category_name === (item.category_name || item.name) && t.type === (item.type || type));
       } else if (reportType === 'summaryByPayee' || reportType === 'payees') {
-        const all = reportType === 'payees' ?
-          await getTransactionsByDateRange(userId, '1970-01-01', '2099-12-31') :
-          await getTransactionsByDateRange(userId, startDate, endDate);
-        txs = all.filter(t => (t.payee_name === (item.payee_name || item.name)) && t.type === type);
-      } else if (reportType === 'categories') {
-        const all = await getTransactionsByDateRange(userId, '1970-01-01', '2099-12-31');
-        txs = all.filter(t => (t.category_name === (item.category_name || item.name)) && t.type === type);
+        const fetchStartDate = isOverview ? '1970-01-01' : startDate;
+        const fetchEndDate = isOverview ? '2099-12-31' : endDate;
+        const all = await getTransactionsByDateRange(userId, fetchStartDate, fetchEndDate);
+        txs = all.filter(t => (t.payee_name === (item.payee_name || item.name)) && t.type === (item.type || type));
       } else if (reportType === 'subscriptionAndBills') {
         const all = await getTransactionsByDateRange(userId, startDate, endDate);
         txs = all.filter(t => t.category_name === item.category_name);
@@ -229,17 +207,17 @@ export default function ReportView({ route, navigation }: any) {
   const sortedData = useMemo(() => {
     let filtered = data;
     if (searchQuery.trim()) {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         (item.name || item.category_name || item.payee_name || '')
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
       );
     }
-    
+
     return [...filtered].sort((a, b) => {
       let valA = sortKey === 'name' ? (a.name || a.category_name || '') : (a.amount || a.totalAmount || 0);
       let valB = sortKey === 'name' ? (b.name || b.category_name || '') : (b.amount || b.totalAmount || 0);
-      
+
       if (typeof valA === 'string' && typeof valB === 'string') {
         return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
       }
@@ -252,64 +230,166 @@ export default function ReportView({ route, navigation }: any) {
   }, [sortedData]);
 
   const renderMonthPicker = () => (
-    <Modal visible={showMonthPicker} transparent animationType="fade">
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        onPress={() => setShowMonthPicker(false)}
+    <BottomSheet
+      visible={showMonthPicker}
+      onClose={() => setShowMonthPicker(false)}
+      title="Select Month"
+    >
+      <View style={{ marginTop: 10 }}>
+        {months.map((m, i) => {
+          const isActive = i === month;
+          return (
+            <TouchableOpacity
+              key={m}
+              style={[styles.pickerItemRow, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                setMonth(i);
+                setShowMonthPicker(false);
+              }}
+            >
+              <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>{m}</Text>
+              {isActive && <Icon name="check" size={20} color={colors.primary} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </BottomSheet>
+  );
+
+  const renderYearPicker = () => (
+    <BottomSheet
+      visible={showYearPicker}
+      onClose={() => setShowYearPicker(false)}
+      title="Select Year"
+    >
+      <View style={{ marginTop: 10 }}>
+        {years.map((y) => {
+          const isActive = y === year;
+          return (
+            <TouchableOpacity
+              key={y}
+              style={[styles.pickerItemRow, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                setYear(y);
+                setShowYearPicker(false);
+              }}
+            >
+              <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>{y}</Text>
+              {isActive && <Icon name="check" size={20} color={colors.primary} />}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </BottomSheet>
+  );
+
+  const renderSortPicker = () => {
+    const sortOptions = [
+      { label: 'Amount (High to Low)', key: 'amount', order: 'desc' },
+      { label: 'Amount (Low to High)', key: 'amount', order: 'asc' },
+      { label: 'Name (A-Z)', key: 'name', order: 'asc' },
+      { label: 'Name (Z-A)', key: 'name', order: 'desc' },
+    ];
+
+    return (
+      <BottomSheet
+        visible={showSortPicker}
+        onClose={() => setShowSortPicker(false)}
+        title="Sort By"
       >
-        <View style={[styles.pickerContainer, { backgroundColor: colors.card }]}>
-          <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Month</Text>
-          <ScrollView>
-            {months.map((m, i) => (
+        <View style={{ marginTop: 10 }}>
+          {sortOptions.map((opt) => {
+            const isActive = sortKey === opt.key && sortOrder === opt.order;
+            return (
               <TouchableOpacity
-                key={m}
-                style={styles.pickerItem}
+                key={opt.label}
+                style={[styles.pickerItemRow, { borderBottomColor: colors.border }]}
                 onPress={() => {
-                  setMonth(i);
-                  setShowMonthPicker(false);
+                  setSortKey(opt.key as any);
+                  setSortOrder(opt.order as any);
+                  setShowSortPicker(false);
                 }}
               >
-                <Text style={[styles.pickerText, { color: i === month ? colors.primary : colors.text }]}>{m}</Text>
+                <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>{opt.label}</Text>
+                {isActive && <Icon name="check" size={20} color={colors.primary} />}
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            );
+          })}
         </View>
-      </TouchableOpacity>
-    </Modal>
+      </BottomSheet>
+    );
+  };
+
+  const renderDrillDownBottomSheet = () => (
+    <BottomSheet
+      visible={showDrillDown}
+      onClose={() => setShowDrillDown(false)}
+      title={drillDownTitle}
+      isFullScreen
+    >
+      <View style={{ flex: 1 }}>
+        <FlatList
+          data={drillDownData}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => <TransactionCard transaction={item} />}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', marginTop: 60 }}>
+              <Icon name="receipt-long" size={48} color={colors.border} />
+              <Text style={{ textAlign: 'center', marginTop: 12, color: colors.textSecondary }}>No transactions found</Text>
+            </View>
+          }
+        />
+      </View>
+    </BottomSheet>
   );
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{displayTitle}</Text>
+        </TouchableOpacity>
+      ),
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ paddingRight: 12, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <Icon name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+      ),
+      headerRight: reportType === 'monthlyLivingCosts' ? () => (
+        <TouchableOpacity
+          onPress={() => { loadAllCategories(); setShowConfig(true); }}
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <Icon name="settings" size={24} color={colors.text} />
+        </TouchableOpacity>
+      ) : undefined
+    });
+  }, [navigation, reportType, colors.text, displayTitle]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text, flex: 1, textAlign: 'center' }]}>{displayTitle}</Text>
-        {reportType === 'monthlyLivingCosts' ? (
-          <TouchableOpacity onPress={() => { loadAllCategories(); setShowConfig(true); }} style={styles.configButton}>
-            <Icon name="settings" size={24} color={colors.primary} />
-          </TouchableOpacity>
-        ) : (
-          <View style={{ width: 32 }} />
-        )}
-      </View>
 
       <View style={styles.selectors}>
         {showTypeToggle && (
-          <View style={[styles.typeToggle, { backgroundColor: isDark ? '#1f1f1f' : '#f0f0f0' }]}>
-            <TouchableOpacity
-              style={[styles.typeBtn, type === 'Expense' && { backgroundColor: colors.card }]}
-              onPress={() => setType('Expense')}
-            >
-              <Text style={[styles.typeBtnText, { color: type === 'Expense' ? colors.danger : colors.textSecondary }]}>Expense</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.typeBtn, type === 'Income' && { backgroundColor: colors.card }]}
-              onPress={() => setType('Income')}
-            >
-              <Text style={[styles.typeBtnText, { color: type === 'Income' ? colors.success : colors.textSecondary }]}>Income</Text>
-            </TouchableOpacity>
-          </View>
+          <SegmentedControl
+            options={[
+              { label: 'Expense', value: 'Expense', activeColor: colors.danger },
+              { label: 'Income', value: 'Income', activeColor: colors.success }
+            ]}
+            selectedValue={type}
+            onValueChange={(val) => setType(val)}
+            variant="medium"
+            containerStyle={{ marginBottom: 12 }}
+          />
         )}
 
         <View style={styles.dateSelectors}>
@@ -336,41 +416,19 @@ export default function ReportView({ route, navigation }: any) {
 
       {(reportType === 'payees' || reportType === 'categories') && (
         <View style={styles.searchContainer}>
-          <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Icon name="search" size={20} color={colors.textSecondary} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder={`Search ${reportType === 'payees' ? 'payees' : 'categories'}...`}
-              placeholderTextColor={colors.textSecondary}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
+              placeholder={`Search ${reportType === 'payees' ? 'payees' : 'categories'}...`}
+              size="medium"
+              containerStyle={{ flex: 1 }}
             />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Icon name="close" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
-          <View style={styles.sortControls}>
-            <TouchableOpacity 
-              style={[styles.sortBtn, sortKey === 'name' && { borderColor: colors.primary }]}
-              onPress={() => {
-                if (sortKey === 'name') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                else { setSortKey('name'); setSortOrder('asc'); }
-              }}
+            <TouchableOpacity
+              style={[styles.sortTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setShowSortPicker(true)}
             >
-              <Text style={[styles.sortBtnText, { color: sortKey === 'name' ? colors.primary : colors.textSecondary }]}>Name</Text>
-              {sortKey === 'name' && <Icon name={sortOrder === 'asc' ? 'arrow-upward' : 'arrow-downward'} size={14} color={colors.primary} />}
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.sortBtn, sortKey === 'amount' && { borderColor: colors.primary }]}
-              onPress={() => {
-                if (sortKey === 'amount') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                else { setSortKey('amount'); setSortOrder('desc'); }
-              }}
-            >
-              <Text style={[styles.sortBtnText, { color: sortKey === 'amount' ? colors.primary : colors.textSecondary }]}>Amount</Text>
-              {sortKey === 'amount' && <Icon name={sortOrder === 'asc' ? 'arrow-upward' : 'arrow-downward'} size={14} color={colors.primary} />}
+              <Icon name="sort" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -422,7 +480,7 @@ export default function ReportView({ route, navigation }: any) {
       ) : (
         <View style={styles.summaryBanner}>
           <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>TOTAL</Text>
-          <Text style={[styles.summaryAmount, { color: type === 'Income' ? colors.success : colors.danger }]}>
+          <Text style={[styles.summaryAmount, { color: (data[0]?.type || type) === 'Income' ? colors.success : colors.danger }]}>
             ₹{totalAmount.toLocaleString()}
           </Text>
         </View>
@@ -431,13 +489,25 @@ export default function ReportView({ route, navigation }: any) {
       {loading ? (
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView
+          ref={scrollRef}
+            style={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
           {sortedData.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Icon name="search-off" size={64} color={colors.border} />
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 {searchQuery.trim() ? 'No matching results found' : 'No data found for this period'}
               </Text>
+                {reportType === 'monthlyLivingCosts' && !searchQuery.trim() && (
+                  <TouchableOpacity
+                    style={[styles.configPrompt, { backgroundColor: colors.primary }]}
+                    onPress={() => { loadAllCategories(); setShowConfig(true); }}
+                  >
+                    <Text style={styles.configPromptText}>Select Living Cost Categories</Text>
+                  </TouchableOpacity>
+                )}
             </View>
           ) : (
             !isSummary && sortedData.map((item, idx) => (
@@ -482,58 +552,25 @@ export default function ReportView({ route, navigation }: any) {
       )}
 
       {renderMonthPicker()}
-
-      {/* Year Picker Modal */}
-      <Modal visible={showYearPicker} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          onPress={() => setShowYearPicker(false)}
-        >
-          <View style={[styles.pickerContainer, { backgroundColor: colors.card }]}>
-            <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Year</Text>
-            {years.map((y) => (
-              <TouchableOpacity
-                key={y}
-                style={styles.pickerItem}
-                onPress={() => {
-                  setYear(y);
-                  setShowYearPicker(false);
-                }}
-              >
-                <Text style={[styles.pickerText, { color: y === year ? colors.primary : colors.text }]}>{y}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      {renderYearPicker()}
+      {renderSortPicker()}
+      {renderDrillDownBottomSheet()}
 
       {/* Living Cost Config Modal */}
-      <Modal visible={showConfig} animationType="slide">
-          <View style={[styles.fullModal, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-            <View style={styles.header}>
-              <TouchableOpacity onPress={() => setShowConfig(false)} style={styles.backButton}>
-                <Icon name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: colors.text, flex: 1, textAlign: 'center' }]}>Configure Living Costs</Text>
-              <View style={{ width: 32 }} />
-            </View>
-
+      <BottomSheet
+        visible={showConfig}
+        onClose={() => setShowConfig(false)}
+        title="Configure Living Costs"
+        isFullScreen
+      >
+        <View style={{ flex: 1 }}>
             <View style={styles.searchContainer}>
-              <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Icon name="search" size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={[styles.searchInput, { color: colors.text }]}
-                  placeholder="Search categories..."
-                  placeholderTextColor={colors.textSecondary}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery !== '' && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Icon name="cancel" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                )}
-              </View>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search categories..."
+              size="medium"
+            />
             </View>
 
             <FlatList
@@ -564,64 +601,18 @@ export default function ReportView({ route, navigation }: any) {
                   )}
                 </TouchableOpacity>
               )}
-              contentContainerStyle={{ padding: 12, paddingBottom: insets.bottom + 20 }}
+              contentContainerStyle={{ padding: 12, paddingBottom: insets.bottom + 40 }}
               columnWrapperStyle={{ justifyContent: 'flex-start', gap: 8 }}
             />
-          </View>
-      </Modal>
-
-      {/* Drill Down Modal */}
-      <Modal visible={showDrillDown} animationType="slide">
-        <View style={[styles.fullModal, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => setShowDrillDown(false)} style={styles.backButton}>
-              <Icon name="close" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.text, flex: 1, textAlign: 'center' }]}>{drillDownTitle}</Text>
-            <View style={{ width: 32 }} />
-          </View>
-          <FlatList
-            data={drillDownData}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => <TransactionCard transaction={item} />}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
-            ListEmptyComponent={
-              <Text style={{ textAlign: 'center', marginTop: 40, color: colors.textSecondary }}>No transactions found</Text>
-            }
-          />
         </View>
-      </Modal>
+      </BottomSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-    justifyContent: 'space-between'
-  },
-  backButton: { padding: 4 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  configButton: { padding: 4 },
-  selectors: { paddingHorizontal: 16, marginBottom: 16 },
-  typeToggle: {
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 12
-  },
-  typeBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 10
-  },
-  typeBtnText: { fontSize: 14, fontWeight: '700' },
+  selectors: { paddingHorizontal: 16, marginBottom: 16, paddingTop: 12 },
   dateSelectors: { flexDirection: 'row', gap: 12 },
   selectorBtn: {
     flex: 1,
@@ -631,7 +622,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
-    borderWidth: 1
+    borderWidth: 1,
+    borderColor: 'transparent'
   },
   summaryBanner: {
     paddingHorizontal: 20,
@@ -643,10 +635,6 @@ const styles = StyleSheet.create({
   summaryGrid: {
     paddingHorizontal: 20,
     paddingVertical: 24,
-    gap: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
     gap: 16,
   },
   summaryBox: {
@@ -693,16 +681,25 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', borderRadius: 3 },
   progressPercent: { fontSize: 12, fontWeight: '600', width: 35 },
   emptyContainer: { alignItems: 'center', marginTop: 80 },
-  emptyText: { marginTop: 16, fontSize: 16 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center'
+  emptyText: { marginTop: 16, fontSize: 16, textAlign: 'center' },
+  configPrompt: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
   },
-  pickerContainer: { width: width * 0.8, maxHeight: 400, borderRadius: 20, padding: 20 },
-  pickerTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
-  pickerItem: { paddingVertical: 12, alignItems: 'center' },
+  configPromptText: {
+    color: 'white',
+    fontWeight: '700',
+  },
+  pickerItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   pickerText: { fontSize: 16, fontWeight: '500' },
   fullModal: { flex: 1 },
   configItem: {
@@ -717,39 +714,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  sortTrigger: {
+    width: 48,
+    height: 48,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    height: 40,
-    padding: 0,
-  },
-  sortControls: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  sortBtn: {
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'transparent'
-  },
-  sortBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginRight: 4,
+    marginLeft: 8,
   },
   configGridItem: {
     width: (width - 40) / 3,

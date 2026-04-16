@@ -14,6 +14,7 @@ export interface Transaction {
   type: string;
   user_id: string;
   product_link?: string | null;
+  tid: number;
   sync_status?: number;
   created_at?: string;
   updated_at?: string;
@@ -59,6 +60,17 @@ export interface Payee {
   logo: string;
   user_id: string;
   sync_status?: number;
+}
+
+export interface QuickTransaction {
+  id: string;
+  name: string;
+  type: string;
+  amount?: number;
+  category_id?: string;
+  payee_id?: string;
+  description?: string;
+  user_id: string;
 }
 
 // Supabase session shape minimum

@@ -12,9 +12,17 @@ interface TransactionCardProps {
   onDelete?: (tx: Transaction) => void;
   onFilterCategory?: (catId: string) => void;
   onFilterPayee?: (payeeId: string | null) => void;
+  compact?: boolean;
 }
 
-export const TransactionCard = React.memo(({ transaction, onEdit, onDelete, onFilterCategory, onFilterPayee }: TransactionCardProps) => {
+export const TransactionCard = React.memo(({ 
+  transaction, 
+  onEdit, 
+  onDelete, 
+  onFilterCategory, 
+  onFilterPayee,
+  compact = false
+}: TransactionCardProps) => {
   const { colors } = useTheme();
   const swipeableRef = useRef<Swipeable>(null);
   const isIncome = transaction.type === 'Income';
@@ -53,29 +61,45 @@ export const TransactionCard = React.memo(({ transaction, onEdit, onDelete, onFi
   );
 
   const cardContent = (
-    <View style={[styles.card, { backgroundColor: colors.card }]}>
+    <View style={[
+      styles.card, 
+      { backgroundColor: colors.card },
+      compact && { padding: 12, marginVertical: 4, borderRadius: 12, marginHorizontal: 0 }
+    ]}>
       <View style={styles.mainRow}>
         <TouchableOpacity 
-          style={[styles.iconContainer, { backgroundColor: colors.background }]}
+          style={[
+            styles.iconContainer, 
+            { backgroundColor: colors.background },
+            compact && { width: 36, height: 36, borderRadius: 18 }
+          ]}
           onPress={() => onFilterCategory?.(transaction.category_id!)}
           activeOpacity={0.7}
         >
           <Icon 
             name={(transaction.category_app_icon || 'receipt') as any} 
-            size={24} 
+            size={compact ? 20 : 24} 
             color={isIncome ? colors.success : colors.primary} 
           />
         </TouchableOpacity>
 
         <View style={styles.middleSection}>
-          <Text style={[styles.categoryName, { color: colors.text }]}>
+          <Text style={[
+            styles.categoryName, 
+            { color: colors.text },
+            compact && { fontSize: 14, marginBottom: 2 }
+          ]}>
             {transaction.category_name}
           </Text>
           
           {transaction.description && (
             <Text 
-              style={[styles.description, { color: colors.textSecondary }]} 
-              numberOfLines={2} 
+              style={[
+                styles.description, 
+                { color: colors.textSecondary },
+                compact && { fontSize: 13, lineHeight: 16, marginBottom: 2 }
+              ]} 
+              numberOfLines={compact ? 1 : 2} 
               ellipsizeMode="tail"
             >
               {transaction.description}
@@ -102,12 +126,16 @@ export const TransactionCard = React.memo(({ transaction, onEdit, onDelete, onFi
           )}
 
           <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
-            {format(new Date(transaction.transaction_timestamp), 'PPp')}
+            {format(new Date(transaction.transaction_timestamp), compact ? 'dd MMM, p' : 'PPp')}
           </Text>
         </View>
 
         <View style={styles.rightSection}>
-          <Text style={[styles.amount, { color: isIncome ? colors.success : colors.danger }]}>
+          <Text style={[
+            styles.amount, 
+            { color: isIncome ? colors.success : colors.danger },
+            compact && { fontSize: 15 }
+          ]}>
             {isIncome ? '+' : '-'} ₹{transaction.amount.toLocaleString()}
           </Text>
           

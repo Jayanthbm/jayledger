@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getTransactionsByDate } from '../db/queries';
@@ -7,12 +7,10 @@ import { Transaction } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
 
 export default function DailyLimitDetailScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation();
   const [data, setData] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,12 +40,6 @@ export default function DailyLimitDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Today's Activity</Text>
-      </View>
 
       <View style={[styles.statsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>Total Spent Today</Text>
@@ -77,17 +69,6 @@ export default function DailyLimitDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    marginRight: 16,
   },
   headerTitle: {
     fontSize: 20,

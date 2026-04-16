@@ -1,14 +1,16 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, TextInput, Keyboard, ActivityIndicator, Alert, Image } from 'react-native';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, TextInput, Keyboard, ActivityIndicator, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { getDb } from '../db/database';
-import { runFullSync } from '../services/syncService';
+import { syncGoals } from '../services/syncService';
 import { insertGoal, deleteGoalAsync } from '../db/queries';
 import { Goal } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { getRelativeTime } from '../utils/dateUtils';
+import { BottomSheet } from '../components/BottomSheet';
 
 const generateUUID = () => {
   let dt = new Date().getTime();
@@ -30,7 +32,12 @@ export default function GoalsScreen() {
   const [data, setData] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSynced, setLastSynced] = useState<number | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const listRef = useRef<FlatList>(null);
+
+  const scrollToTop = useCallback(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
 
   // Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +50,8 @@ export default function GoalsScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [sortAsc, setSortAsc] = useState(true);
+  const [sortBy, setSortBy] = useState<'name' | 'progress' | 'amount'>('name');
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [targetDeleteId, setTargetDeleteId] = useState<string | null>(null);
 
@@ -57,8 +66,28 @@ export default function GoalsScreen() {
     );
     setData(rows);
     try {
-      const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
-      if (last) setLastSynced(parseInt(last, 10));
+      const last = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
+      if (last) {
+        setLastSyncTime(getRelativeTime(parseInt(last)));
+      }
+
+      if (rows.length === 0) {
+        const alreadyChecked = await AsyncStorage.getItem(`@initial_goals_sync_checked_${user.id}`);
+        if (!alreadyChecked) {
+          setIsSyncing(true);
+          await syncGoals(user.id);
+          await AsyncStorage.setItem(`@initial_goals_sync_checked_${user.id}`, 'true');
+          const lastUpdated = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
+          if (lastUpdated) {
+            setLastSyncTime(getRelativeTime(parseInt(lastUpdated)));
+          }
+          const updatedRows = await db.getAllAsync<Goal>(
+            `SELECT * FROM goals WHERE user_id = '${user.id}' ORDER BY name ASC`
+          );
+          setData(updatedRows);
+          setIsSyncing(false);
+        }
+      }
     } catch (e) {}
   }, [user?.id]);
 
@@ -73,14 +102,6 @@ export default function GoalsScreen() {
     loadData();
   }, [loadData]);
 
-  const getRelativeTime = (timestamp: number) => {
-    const mins = Math.round((Date.now() - timestamp) / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.round(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.round(hours / 24)}d ago`;
-  };
 
   const resetForm = () => {
     setEditingGoal(null);
@@ -132,8 +153,8 @@ export default function GoalsScreen() {
     resetForm();
     setIsSaving(false);
 
-    // Trigger background sync (non-blocking)
-    runFullSync(user.id).catch(err => console.error("Goal sync failed", err));
+    // Trigger background sync (non-blocking) - Use syncGoals instead of full sync
+    syncGoals(user.id).catch(err => console.error("Goal sync failed", err));
   };
 
   const handleDelete = async () => {
@@ -146,7 +167,7 @@ export default function GoalsScreen() {
     resetForm();
 
     await deleteGoalAsync(id, user.id);
-    runFullSync(user.id).catch(err => console.error("Goal sync failed", err));
+    syncGoals(user.id).catch(err => console.error("Goal sync failed", err));
   };
 
   const confirmDelete = (id: string) => {
@@ -157,11 +178,20 @@ export default function GoalsScreen() {
   const sortedData = useMemo(() => {
     let result = [...data];
     result.sort((a, b) => {
-      const cmp = a.name.localeCompare(b.name);
+      let cmp = 0;
+      if (sortBy === 'name') {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortBy === 'progress') {
+        const progA = a.goal_amount ? (a.current_amount / a.goal_amount) : 0;
+        const progB = b.goal_amount ? (b.current_amount / b.goal_amount) : 0;
+        cmp = progA - progB;
+      } else if (sortBy === 'amount') {
+        cmp = a.goal_amount - b.goal_amount;
+      }
       return sortAsc ? cmp : -cmp;
     });
     return result;
-  }, [data, sortAsc]);
+  }, [data, sortAsc, sortBy]);
 
   const renderItem = ({ item }: { item: Goal }) => {
     const rawProgress = item.goal_amount ? (item.current_amount / item.goal_amount) * 100 : 0;
@@ -170,13 +200,13 @@ export default function GoalsScreen() {
     const remaining = Math.max(item.goal_amount - item.current_amount, 0);
 
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
          style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
          activeOpacity={0.7}
          onPress={() => handleOpenGoal(item)}
       >
         <View style={styles.topRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             {item.logo && item.logo.startsWith('http') ? (
               <Image source={{ uri: item.logo }} style={styles.goalLogo} />
             ) : (
@@ -184,15 +214,7 @@ export default function GoalsScreen() {
                  <Text style={{ fontSize: 16 }}>🎯</Text>
               </View>
             )}
-            <Text style={[styles.title, { color: colors.text, flexShrink: 1 }]} numberOfLines={2}>{item.name}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleOpenGoal(item); }} style={{ padding: 4, marginRight: 8 }}>
-              <MaterialIcons name="edit" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={(e) => { e.stopPropagation(); confirmDelete(item.id); }} style={{ padding: 4 }}>
-              <MaterialIcons name="delete-outline" size={22} color="#ef4444" />
-            </TouchableOpacity>
+            <Text style={[styles.title, { color: colors.text, flex: 1 }]} numberOfLines={1}>{item.name}</Text>
           </View>
         </View>
 
@@ -220,44 +242,68 @@ export default function GoalsScreen() {
   const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setIsSyncing(true);
-    await runFullSync(user.id, true);
+    await syncGoals(user.id);
+    const last = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
+    if (last) {
+      setLastSyncTime(getRelativeTime(parseInt(last)));
+    }
     await loadData();
     setIsSyncing(false);
   }, [user?.id, loadData]);
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Goals</Text>
+          {lastSyncTime ? (
+            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
+          ) : null}
+        </TouchableOpacity>
+      ),
+      headerTitleAlign: 'left',
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          onPress={handleManualSync}
+          disabled={isSyncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+           {isSyncing ? (
+             <ActivityIndicator size="small" color={colors.primary} />
+           ) : (
+             <MaterialIcons name="refresh" size={24} color={colors.text} />
+           )}
+        </TouchableOpacity>
+      )
+    });
+  }, [navigation, handleManualSync, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-      {/* Header Actions */}
-      <View style={styles.headerTools}>
-        <View style={[styles.syncBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-           <MaterialIcons name="history" size={14} color={colors.textSecondary} style={{marginRight: 6}}/>
-           <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '500' }}>
-             {isSyncing ? 'Syncing...' : (lastSynced ? `Synced ${getRelativeTime(lastSynced)}` : 'Not synced yet')}
-           </Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 'auto' }]} 
-          onPress={handleManualSync}
-          disabled={isSyncing}
+      <View style={styles.sortContainer}>
+        <TouchableOpacity
+          style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setIsSortModalOpen(true)}
         >
-           {isSyncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={20} color={colors.text} />}
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]} 
-          onPress={() => setSortAsc(!sortAsc)}
-        >
-           <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
+          <MaterialIcons name="sort" size={18} color={colors.primary} />
+          <Text style={[styles.sortButtonText, { color: colors.text }]}>
+            Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)} ({sortAsc ? 'Asc' : 'Desc'})
+          </Text>
+          <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
-
       <FlatList
+        ref={listRef}
         data={sortedData}
         keyExtractor={item => item.id}
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', marginTop: 40 }}>
              <MaterialIcons name="flag" size={48} color={colors.border} />
@@ -267,36 +313,25 @@ export default function GoalsScreen() {
         }
       />
 
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: colors.primary }]} 
-        onPress={() => handleOpenGoal()} 
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.primary }]}
+        onPress={() => handleOpenGoal()}
         activeOpacity={0.8}
       >
         <MaterialIcons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
-      <Modal visible={isModalOpen} transparent animationType="slide" onRequestClose={resetForm}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={resetForm} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-               <Text style={[styles.sheetTitle, { color: colors.text, marginBottom: 0 }]}>
-                 {editingGoal ? 'Edit Goal' : 'Add New Goal'}
-               </Text>
-               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                 {editingGoal && (
-                   <TouchableOpacity onPress={() => confirmDelete(editingGoal.id)} style={{ padding: 8 }}>
-                     <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
-                   </TouchableOpacity>
-                 )}
-                 <TouchableOpacity onPress={resetForm} style={{ padding: 8, marginLeft: 4 }}>
-                   <MaterialIcons name="close" size={24} color={colors.text} />
-                 </TouchableOpacity>
-               </View>
-            </View>
-
+      <BottomSheet
+        visible={isModalOpen}
+        onClose={resetForm}
+        title={editingGoal ? 'Edit Goal' : 'Add New Goal'}
+        headerRight={editingGoal ? (
+          <TouchableOpacity onPress={() => confirmDelete(editingGoal.id)} style={{ padding: 8 }}>
+            <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
+          </TouchableOpacity>
+        ) : undefined}
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.formRow}>
                <View style={{ flex: 1 }}>
                  <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Image URL (Logo)</Text>
@@ -325,29 +360,62 @@ export default function GoalsScreen() {
             <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!name.trim() || isSaving) ? 0.5 : 1 }]} onPress={handleSave} disabled={!name.trim() || isSaving}>
               {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>{editingGoal ? 'Save Changes' : 'Create Goal'}</Text>}
             </TouchableOpacity>
-          </View>
         </KeyboardAvoidingView>
-      </Modal>
+      </BottomSheet>
 
-      {/* Delete Confirmation Modal */}
-      <Modal visible={isDeleteModalOpen} transparent animationType="slide" onRequestClose={() => setIsDeleteModalOpen(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={() => setIsDeleteModalOpen(false)} />
-          <View style={[styles.bottomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text, textAlign: 'center', marginBottom: 12 }]}>Delete Goal</Text>
-            <Text style={[styles.sheetMessage, { color: colors.textSecondary, textAlign: 'center', marginBottom: 32, fontSize: 15, lineHeight: 22 }]}>Are you perfectly sure you want to delete this Goal? This action cannot be undone.</Text>
-            
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: colors.danger, padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 }]} onPress={handleDelete}>
-              <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Delete</Text>
+      <BottomSheet
+        visible={isSortModalOpen}
+        onClose={() => setIsSortModalOpen(false)}
+        title="Sort Goals"
+      >
+        <View style={{ marginTop: 10 }}>
+          {[
+            { label: 'Name', value: 'name' },
+            { label: 'Progress', value: 'progress' },
+            { label: 'Target Amount', value: 'amount' }
+          ].map((item: any) => (
+            <TouchableOpacity
+              key={item.value}
+              style={[styles.sortOption, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                if (sortBy === item.value) {
+                  setSortAsc(!sortAsc);
+                } else {
+                  setSortBy(item.value as any);
+                  setSortAsc(true);
+                }
+                setIsSortModalOpen(false);
+              }}
+            >
+              <Text style={[styles.sortOptionText, { color: sortBy === item.value ? colors.primary : colors.text }]}>
+                {item.label}
+              </Text>
+              {sortBy === item.value && (
+                <MaterialIcons
+                  name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+                  size={20}
+                  color={colors.primary}
+                />
+              )}
             </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.sheetButton, { backgroundColor: 'transparent', padding: 16, borderRadius: 12, alignItems: 'center' }]} onPress={() => setIsDeleteModalOpen(false)}>
-              <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: 'bold' }}>Keep Goal</Text>
-            </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      </Modal>
+      </BottomSheet>
+
+      <BottomSheet
+        visible={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Goal"
+      >
+        <View>
+          <Text style={[styles.sheetMessage, { color: colors.textSecondary, textAlign: 'center', marginBottom: 32, fontSize: 15, lineHeight: 22 }]}>Are you perfectly sure you want to delete this Goal? This action cannot be undone.</Text>
+
+          <TouchableOpacity style={[styles.sheetButton, { backgroundColor: colors.danger, padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 }]} onPress={handleDelete}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Yes, Delete</Text>
+          </TouchableOpacity>
+
+        </View>
+      </BottomSheet>
 
     </View>
   );
@@ -355,16 +423,42 @@ export default function GoalsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  headerTools: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 12 },
-  
-  syncBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-
+  sortContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+  },
+  sortButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  sortOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sortOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   card: { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 16, fontWeight: 'bold' },
   amount: { fontSize: 16, fontWeight: 'bold' },
-  
+
   goalLogo: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
   goalLogoFallback: { width: 32, height: 32, borderRadius: 16, marginRight: 10, justifyContent: 'center', alignItems: 'center' },
 
@@ -377,27 +471,23 @@ const styles = StyleSheet.create({
   percentLabel: { fontSize: 13, fontWeight: '800' },
   remainingLabel: { fontSize: 12, fontWeight: '600' },
 
-  fab: { 
-    position: 'absolute', 
-    right: 16, 
-    bottom: 16, 
-    width: 56, 
-    height: 56, 
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 16,
+    width: 56,
+    height: 56,
     borderRadius: 16, // M3 style (more square, rounded corners)
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    elevation: 8, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 4 
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4
   },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalDismiss: { flex: 1 },
-  bottomSheet: { padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40, borderTopWidth: 1 },
-  sheetHandle: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-  sheetTitle: { fontSize: 22, fontWeight: 'bold' },
+
   sheetMessage: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   sheetButton: { padding: 18, borderRadius: 12, alignItems: 'center' },
 

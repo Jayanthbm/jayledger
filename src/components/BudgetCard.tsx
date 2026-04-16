@@ -10,7 +10,10 @@ export interface BudgetCardProps {
   endDateText: string;   // e.g., "Apr 30"
   isCurrentMonth: boolean;
   daysRemaining?: number;
+  todayProgress?: number; // percentage of month elapsed
+  daysInMonth?: number;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 export const BudgetCard = ({ 
@@ -21,7 +24,10 @@ export const BudgetCard = ({
   endDateText, 
   isCurrentMonth, 
   daysRemaining,
-  onPress 
+  todayProgress,
+  daysInMonth = 30,
+  onPress,
+  onLongPress
 }: BudgetCardProps) => {
   const { colors } = useTheme();
   
@@ -50,6 +56,7 @@ export const BudgetCard = ({
     <TouchableOpacity 
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
       onPress={onPress}
+      onLongPress={onLongPress}
       activeOpacity={0.7}
     >
       <View style={styles.header}>
@@ -61,6 +68,21 @@ export const BudgetCard = ({
 
       <View style={styles.progressContainer}>
         <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+          {/* Day Markers (Divisions) */}
+          {isCurrentMonth && (
+            <View style={StyleSheet.absoluteFill}>
+              {Array.from({ length: daysInMonth }).map((_, i) => (
+                <View 
+                  key={i} 
+                  style={[
+                    styles.dayMarker, 
+                    { left: `${(i / daysInMonth) * 100}%`, backgroundColor: colors.background + '40' }
+                  ]} 
+                />
+              ))}
+            </View>
+          )}
+
           <View 
             style={[
               styles.progressFill, 
@@ -70,6 +92,16 @@ export const BudgetCard = ({
               }
             ]} 
           />
+
+          {/* Today Indicator Line */}
+          {isCurrentMonth && todayProgress !== undefined && (
+            <View 
+              style={[
+                styles.todayIndicator, 
+                { left: `${todayProgress}%`, backgroundColor: colors.text }
+              ]} 
+            />
+          )}
         </View>
         <View style={styles.dateRow}>
           <Text style={[styles.dateText, { color: colors.textSecondary }]}>{startDateText}</Text>
@@ -162,5 +194,16 @@ const styles = StyleSheet.create({
   adviceText: {
     fontSize: 15,
     fontWeight: '700',
+  },
+  dayMarker: {
+    position: 'absolute',
+    width: 1,
+    height: '100%',
+  },
+  todayIndicator: {
+    position: 'absolute',
+    width: 2,
+    height: '100%',
+    zIndex: 10,
   },
 });

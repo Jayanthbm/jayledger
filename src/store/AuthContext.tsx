@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setLoading(false);
       if(session?.user?.id) {
-         runFullSync(session.user.id).catch(err => console.log('Sync err on boot:', err));
+         console.log('[Auth] User logged in, skipping boot sync to allow Dashboard to handle logic.');
       }
     }).catch(err => {
       clearTimeout(timeout);

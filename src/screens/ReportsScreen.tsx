@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Dimensions 
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../store/AuthContext';
+import { syncTransactions } from '../services/syncService';
+import { ActivityIndicator } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2;
@@ -75,9 +78,45 @@ const reportsList = [
 ];
 
 export default function ReportsScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const { session } = useAuth();
   const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const scrollToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <TouchableOpacity 
+          activeOpacity={0.7} 
+          onPress={scrollToTop}
+          style={{ alignItems: 'flex-start' }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Reports</Text>
+        </TouchableOpacity>
+      ),
+      headerTitleAlign: 'left',
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleManualSync}
+          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          disabled={isSyncing}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Icon name="refresh" size={24} color={colors.text} />
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isSyncing, colors.text, colors.primary]);
 
   useEffect(() => {
     loadViewMode();
@@ -104,12 +143,24 @@ export default function ReportsScreen() {
     }
   };
 
+  const handleManualSync = async () => {
+    if (!session?.user?.id || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      await syncTransactions(session.user.id, true);
+    } catch (e) {
+      console.error("Manual sync error:", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.headerText, { color: colors.textSecondary }]}>Choose a report to view</Text>
-        <TouchableOpacity 
-          style={[styles.toggleBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
+        <TouchableOpacity
+          style={[styles.toggleBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={toggleViewMode}
           activeOpacity={0.7}
         >
@@ -119,40 +170,41 @@ export default function ReportsScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-      <ScrollView 
-        style={styles.container} 
+      <ScrollView
+        ref={scrollRef}
+        style={styles.container}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
         <View style={viewMode === 'grid' ? styles.grid : styles.list}>
           {reportsList.map((item, idx) => (
-            <TouchableOpacity 
-              key={idx} 
+            <TouchableOpacity
+              key={idx}
               style={[
-                viewMode === 'grid' ? styles.card : styles.listItem, 
+                viewMode === 'grid' ? styles.card : styles.listItem,
                 { backgroundColor: colors.card, borderColor: colors.border }
               ]}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('ReportDetail', { 
-                reportType: item.view, 
-                title: item.title 
+              onPress={() => navigation.navigate('ReportDetail', {
+                reportType: item.view,
+                title: item.title
               })}
             >
               <View style={[
-                viewMode === 'grid' ? styles.iconBox : styles.listIconBox, 
+                viewMode === 'grid' ? styles.iconBox : styles.listIconBox,
                 { backgroundColor: item.color + '20' }
               ]}>
                 <Icon name={item.icon as any} size={viewMode === 'grid' ? 28 : 22} color={item.color} />
               </View>
               <View style={viewMode === 'grid' ? null : styles.listContent}>
                 <Text style={[
-                  viewMode === 'grid' ? styles.cardTitle : styles.listTitle, 
+                  viewMode === 'grid' ? styles.cardTitle : styles.listTitle,
                   { color: colors.text }
                 ]} numberOfLines={1}>
                   {item.title}
                 </Text>
                 <Text style={[
-                  viewMode === 'grid' ? styles.cardDesc : styles.listDesc, 
+                  viewMode === 'grid' ? styles.cardDesc : styles.listDesc,
                   { color: colors.textSecondary }
                 ]} numberOfLines={1}>
                   {item.description}
@@ -175,7 +227,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   grid: {
     flexDirection: 'row',
