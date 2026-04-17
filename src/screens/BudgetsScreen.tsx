@@ -2,12 +2,13 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, ScrollView, TextInput, Platform } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getBudgets, getBudgetSpending, getTransactionsByDateRange, getMinTransactionYear, addBudget, updateBudget, deleteBudget, getCategories } from '../db/queries';
+import { getBudgets, getBudgetSpending, getTransactionsByDateRange, getMinTransactionDate, addBudget, updateBudget, deleteBudget, getCategories } from '../db/queries';
+import { YearMonthSelector } from '../components/YearMonthSelector';
 import { BottomSheet } from '../components/BottomSheet';
 import { Budget, Transaction, Category } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { format, startOfMonth, endOfMonth, isSameMonth, differenceInDays, getYear, getMonth, getDaysInMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isSameMonth, differenceInDays, getYear, getMonth, getDaysInMonth, addMonths, subMonths, isAfter, isBefore } from 'date-fns';
 import { BudgetCard } from '../components/BudgetCard';
 import { TransactionCard } from '../components/TransactionCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,10 +21,6 @@ interface EnrichedBudget extends Budget {
   spent: number;
 }
 
-const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
 
 const currentYearNum = new Date().getFullYear();
 const currentMonthNum = new Date().getMonth();
@@ -35,8 +32,9 @@ export default function BudgetsScreen() {
   const insets = useSafeAreaInsets();
 
   const [data, setData] = useState<EnrichedBudget[]>([]);
-  const [years, setYears] = useState<string[]>([currentYearNum.toString()]);
   const [loading, setLoading] = useState(true);
+  const [minDate, setMinDate] = useState<Date>(new Date(currentYearNum, 0, 1));
+  const maxDate = useMemo(() => endOfMonth(new Date()), []);
   const [refreshing, setRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
@@ -46,7 +44,8 @@ export default function BudgetsScreen() {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
 
-  const [sortMode, setSortMode] = useState<'name' | 'amount' | 'spent' | 'remaining'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'amount' | 'spent' | 'remaining'>('name');
+  const [sortAsc, setSortAsc] = useState(true);
   const [showSortModal, setShowSortModal] = useState(false);
 
   // Add/Edit State
@@ -112,8 +111,6 @@ export default function BudgetsScreen() {
   }, [navigation, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime, handleManualSync]);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const [showYearPicker, setShowYearPicker] = useState(false);
 
   // Drill down state
   const [showDrillDown, setShowDrillDown] = useState(false);
@@ -157,11 +154,13 @@ export default function BudgetsScreen() {
       }));
 
       const sorted = [...enriched].sort((a, b) => {
-        if (sortMode === 'name') return a.name.localeCompare(b.name);
-        if (sortMode === 'amount') return b.amount - a.amount;
-        if (sortMode === 'spent') return b.spent - a.spent;
-        if (sortMode === 'remaining') return (b.amount - b.spent) - (a.amount - a.spent);
-        return 0;
+        let cmp = 0;
+        if (sortBy === 'name') cmp = a.name.localeCompare(b.name);
+        else if (sortBy === 'amount') cmp = a.amount - b.amount;
+        else if (sortBy === 'spent') cmp = a.spent - b.spent;
+        else if (sortBy === 'remaining') cmp = (a.amount - a.spent) - (b.amount - b.spent);
+        
+        return sortAsc ? cmp : -cmp;
       });
 
       setData(sorted);
@@ -194,20 +193,36 @@ export default function BudgetsScreen() {
           setIsSyncing(false);
         }
       }
-
-      // Dynamic Years
-      const minYear = await getMinTransactionYear(session.user.id);
-      const generatedYears = [];
-      for (let y = currentYearNum; y >= minYear; y--) {
-        generatedYears.push(y.toString());
-      }
-      setYears(generatedYears);
     } catch (e) {
       console.error("Load Budgets Error:", e);
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, startDateStr, endDateStr]);
+  }, [session?.user?.id, startDateStr, endDateStr, sortBy, sortAsc]);
+
+  useEffect(() => {
+    const fetchMinDate = async () => {
+      if (session?.user?.id) {
+        const d = await getMinTransactionDate(session.user.id);
+        if (d) setMinDate(new Date(d));
+      }
+    };
+    fetchMinDate();
+  }, [session?.user?.id]);
+
+  const handlePrev = () => {
+    const prev = subMonths(selectedDate, 1);
+    if (!isBefore(endOfMonth(prev), startOfMonth(minDate))) {
+      setSelectedDate(prev);
+    }
+  };
+
+  const handleNext = () => {
+    const next = addMonths(selectedDate, 1);
+    if (!isAfter(startOfMonth(next), endOfMonth(maxDate))) {
+      setSelectedDate(next);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -280,36 +295,69 @@ export default function BudgetsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Date Selector Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.dateSelectors}>
-          <TouchableOpacity
-            style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
-            onPress={() => setShowYearPicker(true)}
-          >
-            <Text style={[styles.selectorText, { color: colors.text }]}>
-              {getYear(selectedDate)}
-            </Text>
-            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+        <View style={styles.headerControls}>
+          <View style={styles.periodNavigation}>
+            <TouchableOpacity 
+              style={styles.navArrow}
+              onPress={handlePrev} 
+              disabled={isBefore(endOfMonth(subMonths(selectedDate, 1)), startOfMonth(minDate))}
+            >
+              <MaterialIcons 
+                name="chevron-left" 
+                size={28} 
+                color={isBefore(endOfMonth(subMonths(selectedDate, 1)), startOfMonth(minDate)) ? colors.border : colors.text} 
+              />
+            </TouchableOpacity>
+            <View style={styles.selectorWrapper}>
+              <YearMonthSelector
+                year={getYear(selectedDate).toString()}
+                month={getMonth(selectedDate)}
+                onYearChange={(y) => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setFullYear(parseInt(y));
+                  setSelectedDate(newDate);
+                }}
+                onMonthChange={(m) => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setMonth(m);
+                  setSelectedDate(newDate);
+                }}
+              />
+            </View>
+            <TouchableOpacity 
+              style={styles.navArrow}
+              onPress={handleNext} 
+              disabled={isAfter(startOfMonth(addMonths(selectedDate, 1)), endOfMonth(maxDate))}
+            >
+              <MaterialIcons 
+                name="chevron-right" 
+                size={28} 
+                color={isAfter(startOfMonth(addMonths(selectedDate, 1)), endOfMonth(maxDate)) ? colors.border : colors.text} 
+              />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
-            style={[styles.selectorBtn, { backgroundColor: colors.background, borderColor: colors.border }]}
-            onPress={() => setShowMonthPicker(true)}
+            style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowSortModal(true)}
           >
-            <Text style={[styles.selectorText, { color: colors.text }]}>
-              {months[getMonth(selectedDate)]}
-            </Text>
-            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <MaterialIcons name="sort" size={18} color={colors.primary} />
+              <MaterialIcons 
+                name={sortAsc ? "arrow-upward" : "arrow-downward"} 
+                size={14} 
+                color={colors.primary} 
+              />
+            </View>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[styles.sortBtn, { backgroundColor: colors.primary + '15' }]}
-          onPress={() => setShowSortModal(true)}
-        >
-          <MaterialIcons name="sort" size={20} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={styles.captionRow}>
+          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
+            Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.toolsRow}>
@@ -346,22 +394,36 @@ export default function BudgetsScreen() {
         onClose={() => setShowSortModal(false)}
         title="Sort Budgets"
       >
-        <View>
-          {(['name', 'amount', 'spent', 'remaining'] as const).map((mode) => (
-            <TouchableOpacity
-              key={mode}
-              style={styles.sortItem}
-              onPress={() => {
-                setSortMode(mode);
-                setShowSortModal(false);
-              }}
-            >
-              <Text style={[styles.sortBtnText, { color: sortMode === mode ? colors.primary : colors.text }]}>
-                {mode.charAt(0).toUpperCase() + mode.slice(1)}
-              </Text>
-              {sortMode === mode && <MaterialIcons name="check" size={20} color={colors.primary} />}
-            </TouchableOpacity>
-          ))}
+        <View style={{ marginTop: 10 }}>
+          {(['name', 'amount', 'spent', 'remaining'] as const).map((mode) => {
+            const isActive = sortBy === mode;
+            return (
+              <TouchableOpacity
+                key={mode}
+                style={[styles.pickerItemRow, { borderBottomColor: colors.border }]}
+                onPress={() => {
+                  if (isActive) {
+                    setSortAsc(!sortAsc);
+                  } else {
+                    setSortBy(mode);
+                    setSortAsc(mode === 'name'); // Default Asc for name, Desc for others
+                  }
+                  setShowSortModal(false);
+                }}
+              >
+                <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </Text>
+                {isActive && (
+                  <MaterialIcons 
+                    name={sortAsc ? "arrow-upward" : "arrow-downward"} 
+                    size={20} 
+                    color={colors.primary} 
+                  />
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </BottomSheet>
 
@@ -482,57 +544,6 @@ export default function BudgetsScreen() {
         </View>
       </BottomSheet>
 
-      {/* Month Picker Bottom Sheet */}
-      <BottomSheet
-        visible={showMonthPicker}
-        onClose={() => setShowMonthPicker(false)}
-        title="Select Month"
-      >
-        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
-          {months.map((m, i) => {
-            const isFuture = getYear(selectedDate) === currentYearNum && i > currentMonthNum;
-            return (
-              <TouchableOpacity
-                key={m}
-                style={[styles.pickerItem, isFuture && { opacity: 0.3 }]}
-                disabled={isFuture}
-                onPress={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setMonth(i);
-                  setSelectedDate(newDate);
-                  setShowMonthPicker(false);
-                }}
-              >
-                <Text style={[styles.pickerText, { color: i === getMonth(selectedDate) ? colors.primary : colors.text }]}>{m}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </BottomSheet>
-
-      {/* Year Picker Bottom Sheet */}
-      <BottomSheet
-        visible={showYearPicker}
-        onClose={() => setShowYearPicker(false)}
-        title="Select Year"
-      >
-        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
-          {years.map((y) => (
-            <TouchableOpacity
-              key={y}
-              style={styles.pickerItem}
-              onPress={() => {
-                const newDate = new Date(selectedDate);
-                newDate.setFullYear(parseInt(y, 10));
-                setSelectedDate(newDate);
-                setShowYearPicker(false);
-              }}
-            >
-              <Text style={[styles.pickerText, { color: y === getYear(selectedDate).toString() ? colors.primary : colors.text }]}>{y}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </BottomSheet>
 
 
       {/* Delete Confirm Bottom Sheet */}
@@ -577,12 +588,9 @@ export default function BudgetsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 12,
-    paddingHorizontal: 8,
     borderBottomWidth: 1,
+    paddingHorizontal: 16,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -590,32 +598,46 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     borderWidth: 1.5,
   },
-  dateSelectorRow: {
-    display: 'none',
-  },
-  dateSelectors: {
+  headerControls: {
     flexDirection: 'row',
-    gap: 12,
-    flex: 1,
-    paddingHorizontal: 8,
-  },
-  selectorBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
+    justifyContent: 'space-between',
+  },
+  periodNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  navArrow: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectorWrapper: {
+    width: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectorText: {
     fontSize: 14,
     fontWeight: '700',
   },
-  sortBtn: {
-    padding: 10,
+  sortButton: {
+    width: 64,
+    height: 44,
     borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captionRow: {
+    marginTop: 2,
+    alignItems: 'flex-end',
+  },
+  sortCaption: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   addBtn: {
     flexDirection: 'row',
@@ -685,16 +707,6 @@ const styles = StyleSheet.create({
   deleteBtnIcon: {
     padding: 10,
   },
-  pickerItem: {
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  pickerText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
   inputGroup: {
     marginBottom: 20,
   },
@@ -737,15 +749,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  sortItem: {
+  pickerItemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  sortBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
+  pickerText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   deleteSubText: {
     fontSize: 14,

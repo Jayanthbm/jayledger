@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getTransactionsByDate } from '../db/queries';
+import { getTransactionsByDate, getMinTransactionDate } from '../db/queries';
 import { Transaction } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { getMinTransactionDate } from '../db/queries';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isAfter, isBefore, getDaysInMonth } from 'date-fns';
-import { BottomSheet } from '../components/BottomSheet';
+import { YearMonthSelector } from '../components/YearMonthSelector';
 
 export default function CalendarViewScreen() {
-  const { colors, } = useTheme();
+  const { colors } = useTheme();
   const { session } = useAuth();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -20,26 +19,12 @@ export default function CalendarViewScreen() {
   const [loading, setLoading] = useState(false);
   const [minDate, setMinDate] = useState<Date>(new Date());
   const [maxDate] = useState<Date>(endOfMonth(new Date()));
-  const [showPicker, setShowPicker] = useState(false);
-
-  const years = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const minYear = minDate.getFullYear();
-    const arr = [];
-    for (let y = currentYear; y >= minYear; y--) arr.push(y);
-    return arr;
-  }, [minDate]);
-
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
 
   useEffect(() => {
     const fetchMinDate = async () => {
       if (session?.user?.id) {
         const d = await getMinTransactionDate(session.user.id);
-        setMinDate(new Date(d));
+        if (d) setMinDate(new Date(d));
       }
     };
     fetchMinDate();
@@ -114,10 +99,12 @@ export default function CalendarViewScreen() {
           <TouchableOpacity onPress={handlePrevMonth} disabled={isBefore(endOfMonth(subMonths(currentMonth, 1)), startOfMonth(minDate))}>
             <MaterialIcons name="chevron-left" size={28} color={isBefore(endOfMonth(subMonths(currentMonth, 1)), startOfMonth(minDate)) ? colors.border : colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowPicker(true)} style={styles.monthSelector}>
-            <Text style={[styles.monthText, { color: colors.text }]}>{format(currentMonth, 'MMMM yyyy')}</Text>
-            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <YearMonthSelector
+            year={currentMonth.getFullYear().toString()}
+            month={currentMonth.getMonth()}
+            onYearChange={(y) => updatePeriod(parseInt(y), currentMonth.getMonth())}
+            onMonthChange={(m) => updatePeriod(currentMonth.getFullYear(), m)}
+          />
           <TouchableOpacity onPress={handleNextMonth} disabled={isAfter(startOfMonth(addMonths(currentMonth, 1)), endOfMonth(maxDate))}>
             <MaterialIcons name="chevron-right" size={28} color={isAfter(startOfMonth(addMonths(currentMonth, 1)), endOfMonth(maxDate)) ? colors.border : colors.text} />
           </TouchableOpacity>
@@ -127,7 +114,6 @@ export default function CalendarViewScreen() {
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
             <Text key={d} style={[styles.dayLabel, { color: colors.textSecondary }]}>{d}</Text>
           ))}
-          {/* Padding for first day of month if needed? Simple grid for now */}
           {daysInMonth.map(day => {
             const isSelected = isSameDay(day, selectedDate);
             return (
@@ -180,77 +166,12 @@ export default function CalendarViewScreen() {
           }
         />
       )}
-
-      {/* Month/Year Picker Modal (Bottom Sheet) */}
-      <BottomSheet
-        visible={showPicker}
-        onClose={() => setShowPicker(false)}
-        title="Select Period"
-      >
-        <View>
-            <View style={styles.pickerColumns}>
-              {/* YEAR COLUMN (LEFT) */}
-              <View style={styles.pickerColumn}>
-                 <Text style={[styles.columnLabel, { color: colors.textSecondary }]}>YEAR</Text>
-                 <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
-                    {years.map(y => {
-                      const isSelected = currentMonth.getFullYear() === y;
-                      return (
-                        <TouchableOpacity
-                          key={y}
-                          onPress={() => {
-                            updatePeriod(y, currentMonth.getMonth());
-                          }}
-                          style={[styles.pickerItem, isSelected && { backgroundColor: colors.primary + '15' }]}
-                        >
-                          <Text style={[styles.pickerItemText, { color: isSelected ? colors.primary : colors.text }]}>{y}</Text>
-                          {isSelected && <MaterialIcons name="check" size={16} color={colors.primary} />}
-                        </TouchableOpacity>
-                      );
-                    })}
-                 </ScrollView>
-              </View>
-
-              {/* MONTH COLUMN (RIGHT) */}
-              <View style={[styles.pickerColumn, { borderLeftWidth: 1, borderLeftColor: colors.border + '30' }]}>
-                 <Text style={[styles.columnLabel, { color: colors.textSecondary }]}>MONTH</Text>
-                 <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
-                   {months.map((m, i) => {
-                     const date = new Date(currentMonth.getFullYear(), i, 1);
-                     const disabled = isBefore(endOfMonth(date), startOfMonth(minDate)) || isAfter(startOfMonth(date), endOfMonth(maxDate));
-                     const isSelected = currentMonth.getMonth() === i;
-                     return (
-                       <TouchableOpacity
-                         key={m}
-                         disabled={disabled}
-                         onPress={() => {
-                           updatePeriod(currentMonth.getFullYear(), i);
-                         }}
-                         style={[styles.pickerItem, isSelected && { backgroundColor: colors.primary + '15' }]}
-                       >
-                         <Text style={[styles.pickerItemText, { color: disabled ? colors.border : isSelected ? colors.primary : colors.text }]}>{m}</Text>
-                         {isSelected && <MaterialIcons name="check" size={16} color={colors.primary} />}
-                       </TouchableOpacity>
-                     );
-                   })}
-                 </ScrollView>
-              </View>
-            </View>
-
-            <TouchableOpacity style={[styles.doneBtn, { backgroundColor: colors.primary }]} onPress={() => setShowPicker(false)}>
-              <Text style={styles.doneBtnText}>Confirm Selection</Text>
-            </TouchableOpacity>
-        </View>
-      </BottomSheet>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   calendarCard: {
     margin: 16,
     padding: 16,
@@ -262,18 +183,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-  },
-  monthText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  monthSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
   },
   daysGrid: {
     flexDirection: 'row',
@@ -297,32 +206,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  daySummary: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  summaryDate: {
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  summaryAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  listContent: {
-    paddingBottom: 40,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  emptyText: {
-    fontSize: 15,
-    marginTop: 12,
-  },
   todayBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -337,57 +220,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalDismiss: {
-    flex: 1,
-  },
-  pickerColumns: {
+  daySummary: {
     flexDirection: 'row',
-    height: 250,
-    marginBottom: 20,
-  },
-  pickerColumn: {
-    flex: 1,
-    paddingHorizontal: 8,
-  },
-  columnLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    marginBottom: 16,
-    letterSpacing: 1,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-  },
-  columnScroll: {
-    flex: 1,
-  },
-  pickerItem: {
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 4,
-    gap: 8,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
-  pickerItemText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  doneBtn: {
-    paddingVertical: 16,
-    borderRadius: 24,
-    alignItems: 'center',
-    marginTop: 'auto',
-  },
-  doneBtnText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '800',
-  },
+  summaryDate: { fontSize: 15, fontWeight: 'bold' },
+  summaryAmount: { fontSize: 16, fontWeight: 'bold' },
+  listContent: { paddingBottom: 40 },
+  emptyContainer: { alignItems: 'center', marginTop: 40 },
+  emptyText: { fontSize: 15, marginTop: 12 },
 });

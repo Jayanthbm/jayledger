@@ -286,17 +286,31 @@ export default function GoalsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-      <View style={styles.sortContainer}>
-        <TouchableOpacity
-          style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => setIsSortModalOpen(true)}
-        >
-          <MaterialIcons name="sort" size={18} color={colors.primary} />
-          <Text style={[styles.sortButtonText, { color: colors.text }]}>
-            Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)} ({sortAsc ? 'Asc' : 'Desc'})
+      <View style={styles.header}>
+        <View style={styles.headerControls}>
+          <View style={styles.titleWrapper}>
+            <Text style={[styles.title, { color: colors.text }]}>Savings Goals</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setIsSortModalOpen(true)}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <MaterialIcons name="sort" size={18} color={colors.primary} />
+              <MaterialIcons 
+                name={sortAsc ? "arrow-upward" : "arrow-downward"} 
+                size={14} 
+                color={colors.primary} 
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.captionRow}>
+          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
+            Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
           </Text>
-          <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </View>
       </View>
       <FlatList
         ref={listRef}
@@ -423,25 +437,36 @@ export default function GoalsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  sortContainer: {
+  header: {
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    borderBottomWidth: 1,
   },
-  sortButton: {
+  headerControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+  },
+  titleWrapper: {
+    flex: 1,
+  },
+  sortButton: {
+    width: 64,
+    height: 44,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sortButtonText: {
-    fontSize: 12,
+  captionRow: {
+    marginTop: 2,
+    alignItems: 'flex-end',
+  },
+  sortCaption: {
+    fontSize: 10,
     fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   sortOption: {
     flexDirection: 'row',

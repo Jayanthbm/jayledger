@@ -247,27 +247,41 @@ export default function PayeesScreen() {
 
       {/* Header Tools */}
       <View style={styles.headerTools}>
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search payees..."
-          size="medium"
-          containerStyle={{ marginBottom: 16 }}
-        />
+        <View style={styles.headerControls}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search payees..."
+            size="medium"
+            containerStyle={{ flex: 1 }}
+          />
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setSortAsc(!sortAsc)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <MaterialIcons name="sort" size={18} color={colors.primary} />
+                <MaterialIcons 
+                  name={sortAsc ? "arrow-upward" : "arrow-downward"} 
+                  size={14} 
+                  color={colors.primary} 
+                />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={toggleViewMode}
+            >
+              <MaterialIcons name={viewMode === 'list' ? "grid-view" : "view-list"} size={22} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setSortAsc(!sortAsc)}
-          >
-            <MaterialIcons name={sortAsc ? "sort-by-alpha" : "sort"} size={20} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border, marginLeft: 8 }]}
-            onPress={toggleViewMode}
-          >
-            <MaterialIcons name={viewMode === 'list' ? "grid-view" : "view-list"} size={20} color={colors.text} />
-          </TouchableOpacity>
+        <View style={styles.captionRow}>
+          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
+            Sorted by Name
+          </Text>
         </View>
       </View>
 
@@ -360,8 +374,42 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
 
   headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
-  actionRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
-  iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  headerControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    gap: 8,
+  },
+  sortButton: {
+    width: 64,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconBtn: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  captionRow: {
+    marginTop: 4,
+    alignItems: 'flex-end',
+  },
+  sortCaption: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 
   listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 },
   gridWrapper: { justifyContent: 'flex-start' },

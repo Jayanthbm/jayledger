@@ -160,7 +160,10 @@ export default function TransactionsScreen() {
   const listRef = useRef<any>(null);
 
   const scrollToTop = useCallback(() => {
-    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    if (listRef.current) {
+      listRef.current.scrollToOffset({ offset: 0, animated: true });
+      // If already at top, try to scroll slightly then back, or just rely on standard behavior
+    }
   }, []);
 
   // Stats Breakdown State
@@ -442,6 +445,14 @@ export default function TransactionsScreen() {
     }
   };
 
+  const clearFilters = useCallback(() => {
+    setSearch('');
+    setSelectedCats([]);
+    setSelectedPayees([]);
+    setStartDate(null);
+    setEndDate(null);
+  }, []);
+
   const renderItem = useCallback(({ item }: { item: Transaction }) => {
     return (
       <TransactionCard
@@ -526,7 +537,7 @@ export default function TransactionsScreen() {
       </View>
 
       {/* Filter Stats Display */}
-      {(selectedCats.length > 0 || selectedPayees.length > 0) && (
+      {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
         <View style={styles.statsRow}>
           <TouchableOpacity
             style={[styles.statsPill, { backgroundColor: colors.card, borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40' }]}
@@ -576,8 +587,18 @@ export default function TransactionsScreen() {
         onEndReachedThreshold={0.5}
         ListEmptyComponent={loading ? <ActivityIndicator style={{marginTop: 40}} color={colors.primary} /> : (
             <View style={styles.emptyContainer}>
-                <Icon name="search-off" size={64} color={colors.border} />
-                <Text style={{color: colors.textSecondary, marginTop: 12}}>No transactions found</Text>
+            <View style={[styles.emptyIconBox, { backgroundColor: colors.border + '15' }]}>
+              <Icon name="search-off" size={48} color={colors.border} />
+            </View>
+            <Text style={[styles.emptyHeader, { color: colors.text }]}>No transactions found</Text>
+            <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Try adjusting your filters or search terms</Text>
+
+            <TouchableOpacity
+              style={[styles.clearFilterBtn, { backgroundColor: colors.primary }]}
+              onPress={clearFilters}
+            >
+              <Text style={styles.clearFilterBtnText}>Clear All Filters</Text>
+            </TouchableOpacity>
             </View>
         )}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -845,6 +866,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 1,
+    paddingHorizontal: 10,
+  },
+  emptyIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  emptyHeader: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  emptySub: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  clearFilterBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  clearFilterBtnText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   cancelDeleteText: {
     fontSize: 16,
     fontWeight: '600',
@@ -915,5 +976,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 4,
   },
-  emptyContainer: { flex: 1, alignItems: 'center', marginTop: 100 }
 });
