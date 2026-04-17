@@ -15,6 +15,7 @@ const mockTransactions: Transaction[] = [
     type: 'Expense',
     payee_id: null,
     user_id: 'u1',
+    tid: 1,
   },
   {
     id: '2',
@@ -26,6 +27,7 @@ const mockTransactions: Transaction[] = [
     type: 'Expense',
     payee_id: null,
     user_id: 'u1',
+    tid: 2,
   },
   {
     id: '3',
@@ -37,6 +39,7 @@ const mockTransactions: Transaction[] = [
     type: 'Income',
     payee_id: null,
     user_id: 'u1',
+    tid: 3,
   },
 ];
 

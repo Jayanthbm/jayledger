@@ -78,24 +78,27 @@ export const Toast = ({ visible, message, type, onHide }: ToastProps) => {
 
   if (!visible) return null;
 
+  const backgroundColor = getBackgroundColor();
+  const themedStyles = {
+    container: {
+      transform: [{ translateY }],
+      opacity,
+      backgroundColor: isDark ? '#1e1e1e' : '#fff',
+      shadowColor: '#000',
+      borderColor: backgroundColor + '40',
+    },
+    content: { backgroundColor: backgroundColor + '10' },
+    iconContainer: { backgroundColor },
+    message: { color: isDark ? '#fff' : '#333' },
+  };
+
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ translateY }],
-          opacity,
-          backgroundColor: isDark ? '#1e1e1e' : '#fff',
-          shadowColor: '#000',
-          borderColor: getBackgroundColor() + '40',
-        },
-      ]}
-    >
-      <View style={[styles.content, { backgroundColor: getBackgroundColor() + '10' }]}>
-        <View style={[styles.iconContainer, { backgroundColor: getBackgroundColor() }]}>
+    <Animated.View style={[styles.container, themedStyles.container]}>
+      <View style={[styles.content, themedStyles.content]}>
+        <View style={[styles.iconContainer, themedStyles.iconContainer]}>
           <Icon name={getIcon()} size={20} color="#fff" />
         </View>
-        <Text style={[styles.message, { color: isDark ? '#fff' : '#333' }]} numberOfLines={2}>
+        <Text style={[styles.message, themedStyles.message]} numberOfLines={2}>
           {message}
         </Text>
         <TouchableOpacity onPress={onHide} style={styles.closeBtn}>

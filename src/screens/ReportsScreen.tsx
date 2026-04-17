@@ -7,6 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../store/AuthContext';
 import { syncTransactions } from '../services/syncService';
 import { ActivityIndicator } from 'react-native';
+import { common } from '../styles/common';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2;
@@ -73,7 +75,7 @@ const reportsList = [
 export default function ReportsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<AppNavigation>();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isSyncing, setIsSyncing] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -111,16 +113,16 @@ export default function ReportsScreen() {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={scrollToTop}
-          style={styles.headerTitleContainer}
+          style={common.headerTitleContainer}
         >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Reports</Text>
+          <Text style={[common.navHeaderTitle, { color: colors.text }]}>Reports</Text>
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
-          style={styles.headerRightBtn}
+          style={common.headerRightBtn}
           disabled={isSyncing}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
@@ -152,7 +154,7 @@ export default function ReportsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[common.flex1, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.headerText, { color: colors.textSecondary }]}>
           Choose a report to view
@@ -174,7 +176,7 @@ export default function ReportsScreen() {
       </View>
       <ScrollView
         ref={scrollRef}
-        style={styles.container}
+        style={common.flex1}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
@@ -238,9 +240,6 @@ export default function ReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     padding: 16,
     paddingBottom: 20,
@@ -335,17 +334,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
-  },
-  headerTitleContainer: {
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  headerRightBtn: {
-    paddingRight: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

@@ -1,12 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { format } from 'date-fns';
@@ -34,11 +27,13 @@ import {
   calculatePayDayInfo,
   DashboardMetrics,
 } from '../services/dashboardService';
+import { common } from '../styles/common';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<any>(); // useNavigation often requires complex typing
+  const navigation = useNavigation<AppNavigation>(); // useNavigation often requires complex typing
 
   const [loading, setLoading] = useState(true);
   const loadingLock = useRef(false);
@@ -190,11 +185,11 @@ export default function DashboardScreen() {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={scrollToTop}
-            style={styles.headerTitleContainer}
+            style={common.headerTitleContainer}
           >
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Dashboard</Text>
+            <Text style={[common.navHeaderTitle, { color: colors.text }]}>Dashboard</Text>
             {lastSyncTime ? (
-              <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              <Text style={[common.navHeaderSubtitle, { color: colors.textSecondary }]}>
                 Synced: {lastSyncTime}
               </Text>
             ) : null}
@@ -204,7 +199,7 @@ export default function DashboardScreen() {
         headerRight: () => (
           <TouchableOpacity
             onPress={handleManualSync}
-            style={styles.headerRightBtn}
+            style={common.headerRightBtn}
             disabled={isSyncing}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
@@ -243,7 +238,7 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -252,7 +247,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       ref={scrollRef}
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[common.screenPadding16, { backgroundColor: colors.background }]}
       showsVerticalScrollIndicator={false}
     >
       <DashboardDailyLimit
@@ -326,23 +321,3 @@ export default function DashboardScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerTitleContainer: {
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    fontSize: 10,
-  },
-  headerRightBtn: {
-    paddingRight: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

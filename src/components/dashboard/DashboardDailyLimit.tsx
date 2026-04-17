@@ -1,8 +1,10 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DashboardCard } from './DashboardCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { common } from '../../styles/common';
+import type { AppNavigation } from '../../navigation/navigationTypes';
 
 interface DashboardDailyLimitProps {
   dailyLimitCalc: {
@@ -10,8 +12,8 @@ interface DashboardDailyLimitProps {
     spentToday: number;
     remainingToday: number;
   };
-  navigation: any;
-  colors: any;
+  navigation: AppNavigation;
+  colors: ThemeColors;
 }
 
 export const DashboardDailyLimit = React.memo(

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { useTheme } from '../../store/ThemeContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -30,7 +30,7 @@ export const BudgetSortModal: React.FC<BudgetSortModalProps> = ({
           return (
             <TouchableOpacity
               key={mode}
-              style={[styles.pickerItemRow, { borderBottomColor: colors.border }]}
+              style={[common.pickerItemRowBetween, { borderBottomColor: colors.border }]}
               onPress={() => {
                 if (isActive) {
                   onSortChange(mode, !sortAsc);
@@ -41,7 +41,9 @@ export const BudgetSortModal: React.FC<BudgetSortModalProps> = ({
                 onClose();
               }}
             >
-              <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>
+              <Text
+                style={[common.pickerTextSemi, { color: isActive ? colors.primary : colors.text }]}
+              >
                 {mode.charAt(0).toUpperCase() + mode.slice(1)}
               </Text>
               {isActive && (
@@ -59,17 +61,3 @@ export const BudgetSortModal: React.FC<BudgetSortModalProps> = ({
   );
 };
 BudgetSortModal.displayName = 'BudgetSortModal';
-
-const styles = StyleSheet.create({
-  pickerItemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  pickerText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

@@ -3,14 +3,15 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 export const SettingsButton = () => {
-  const navigation = useNavigation<any>(); // useNavigation often requires complex typing, leaving as any or using NavigationProp
+  const navigation = useNavigation<AppNavigation>();
   const { colors, isDark } = useTheme();
 
   return (
     <TouchableOpacity
-      onPress={() => navigation.navigate('Settings' as never)}
+      onPress={() => navigation.navigate('Settings')}
       style={[
         styles.container,
         isDark ? styles.containerDark : styles.containerLight,

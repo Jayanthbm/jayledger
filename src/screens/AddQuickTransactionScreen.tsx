@@ -28,7 +28,7 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
-import { Category, Payee, QuickTransaction } from '../models/types';
+import { Category, MaterialIconName, Payee, QuickTransaction } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { common } from '../styles/common';
 
@@ -36,6 +36,8 @@ const formatIconName = (name: string) => {
   if (!name) return 'category';
   return name.replace('-outline', '').replace('circle', 'radio-button-unchecked');
 };
+
+type ModalPickerItem = Category | Payee | { id: 'none'; name: 'None' };
 
 export default function AddQuickTransactionScreen() {
   const { colors } = useTheme();
@@ -143,10 +145,8 @@ export default function AddQuickTransactionScreen() {
 
   const renderModal = (modalType: 'Category' | 'Payee') => {
     const rawData = modalType === 'Category' ? categories.filter((c) => c.type === type) : payees;
-    const displayData =
-      modalType === 'Payee'
-        ? ([{ id: 'none', name: 'None' }, ...rawData] as any[])
-        : (rawData as any[]);
+    const displayData: ModalPickerItem[] =
+      modalType === 'Payee' ? [{ id: 'none', name: 'None' }, ...rawData] : rawData;
     const filteredData = displayData.filter((item) =>
       item.name.toLowerCase().includes(modalSearch.toLowerCase()),
     );
@@ -175,7 +175,7 @@ export default function AddQuickTransactionScreen() {
             keyExtractor={(item) => item.id}
             numColumns={4}
             contentContainerStyle={styles.modalContent}
-            renderItem={({ item }: { item: Category | Payee }) => {
+            renderItem={({ item }: { item: ModalPickerItem }) => {
               const isSelected =
                 (modalType === 'Category' ? selectedCategory?.id : selectedPayee?.id) === item.id;
               return (
@@ -290,7 +290,7 @@ export default function AddQuickTransactionScreen() {
               />
 
               <View style={styles.row}>
-                <View style={[styles.flex1, { marginRight: 8 }]}>
+                <View style={[styles.flex1, common.mr8]}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
                   <TouchableOpacity
                     style={[
@@ -301,7 +301,9 @@ export default function AddQuickTransactionScreen() {
                     onPress={() => setShowModal('Category')}
                   >
                     <Icon
-                      name={formatIconName(selectedCategory?.app_icon || 'category') as any}
+                      name={
+                        formatIconName(selectedCategory?.app_icon || 'category') as MaterialIconName
+                      }
                       size={20}
                       color={selectedCategory ? colors.primary : colors.textSecondary}
                     />
@@ -315,7 +317,7 @@ export default function AddQuickTransactionScreen() {
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <View style={[styles.flex1, { marginLeft: 8 }]}>
+                <View style={[styles.flex1, common.ml8]}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>Payee</Text>
                   <TouchableOpacity
                     style={[

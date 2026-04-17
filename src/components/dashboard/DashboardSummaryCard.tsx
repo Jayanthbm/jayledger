@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -11,7 +12,7 @@ interface DashboardSummaryCardProps {
   prevIncome?: number;
   prevExpense?: number;
   onPress: () => void;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const DashboardSummaryCard = React.memo(

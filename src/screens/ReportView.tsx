@@ -13,8 +13,9 @@ import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { endOfMonth } from 'date-fns';
-import { Transaction, Category } from '../models/types';
+import { Transaction, Category, ReportItem } from '../models/types';
 import { getCategories, toggleCategoryLivingCost, getMinTransactionDate } from '../db/queries';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { fetchReportData, handleReportDrillDown, sortReportData } from '../services/reportService';
 
@@ -28,18 +29,22 @@ import { ReportDrillDownModal } from '../components/reports/ReportDrillDownModal
 import { ReportConfigModal } from '../components/reports/ReportConfigModal';
 import { SearchBar } from '../components/SearchBar';
 import { common } from '../styles/common';
+import { RootStackParamList } from '../navigation/navigationTypes';
 
 const { width } = Dimensions.get('window');
 const currentYear = new Date().getFullYear();
 
-export default function ReportView({ route, navigation }: any) {
-  const { reportType, title } = route.params;
+type ReportViewProps = NativeStackScreenProps<RootStackParamList, 'ReportDetail'>;
+
+export default function ReportView({ route, navigation }: ReportViewProps) {
+  const reportType = String(route.params?.reportType ?? '');
+  const title = route.params?.title ?? 'Report';
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
 
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<ReportItem[]>([]);
   const [type, setType] = useState<'Expense' | 'Income'>('Expense');
   const [month, setMonth] = useState(new Date().getMonth());
   const [year, setYear] = useState(currentYear.toString());
@@ -115,7 +120,7 @@ export default function ReportView({ route, navigation }: any) {
     }
   }, [session, reportType, monthStr, year, type]);
 
-  const handleDrillDown = async (item: any) => {
+  const handleDrillDown = async (item: ReportItem) => {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
@@ -128,7 +133,7 @@ export default function ReportView({ route, navigation }: any) {
         year,
       );
       setDrillDownData(txs);
-      setDrillDownTitle(item.category_name || item.payee_name || item.name);
+      setDrillDownTitle(item.category_name || item.payee_name || item.name || 'Transactions');
       setShowDrillDown(true);
     } catch (e) {
       console.error('Drilldown error:', e);
@@ -191,9 +196,9 @@ export default function ReportView({ route, navigation }: any) {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={scrollToTop}
-          style={styles.headerTitleContainer}
+          style={common.headerTitleContainer}
         >
-          <Text style={[styles.headerTitleText, { color: colors.text }]}>{displayTitle}</Text>
+          <Text style={[common.navHeaderTitle, { color: colors.text }]}>{displayTitle}</Text>
         </TouchableOpacity>
       ),
       headerLeft: () => (
@@ -219,7 +224,7 @@ export default function ReportView({ route, navigation }: any) {
   }, [navigation, reportType, colors.text, displayTitle, scrollToTop]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[common.flex1, { backgroundColor: colors.background }]}>
       <ReportSelectors
         type={type}
         setType={setType}
@@ -238,7 +243,7 @@ export default function ReportView({ route, navigation }: any) {
 
       {(reportType === 'payees' || reportType === 'categories') && (
         <View style={styles.searchContainer}>
-          <View style={styles.headerControls}>
+          <View style={common.headerControls}>
             <SearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -248,7 +253,7 @@ export default function ReportView({ route, navigation }: any) {
             />
             <TouchableOpacity
               style={[
-                styles.sortButton,
+                common.sortButton,
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
               onPress={() => setShowSortPicker(true)}
@@ -263,7 +268,7 @@ export default function ReportView({ route, navigation }: any) {
               </View>
             </TouchableOpacity>
           </View>
-          <View style={styles.captionRow}>
+          <View style={common.captionRowT2}>
             <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
               Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
             </Text>
@@ -351,27 +356,14 @@ export default function ReportView({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   content: { flex: 1, paddingHorizontal: 16 },
   searchContainer: { paddingHorizontal: 16, paddingBottom: 16 },
-  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  sortButton: {
-    width: 64,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captionRow: { marginTop: 2, alignItems: 'flex-end' },
   sortCaption: {
     fontSize: 9,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  headerTitleContainer: { alignItems: 'flex-start' },
-  headerTitleText: { fontSize: 17, fontWeight: '700' },
   headerLeftContainer: { paddingRight: 12, justifyContent: 'center', alignItems: 'center' },
   headerRightContainer: { paddingRight: 16 },
   loader: { marginTop: 40 },

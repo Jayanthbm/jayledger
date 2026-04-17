@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { format } from 'date-fns';
@@ -5,7 +6,7 @@ import { format } from 'date-fns';
 interface TransactionSectionHeaderProps {
   date: string;
   total: number;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const TransactionSectionHeader = React.memo(

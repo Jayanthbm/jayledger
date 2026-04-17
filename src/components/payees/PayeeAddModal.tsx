@@ -1,7 +1,7 @@
+import type { ThemeColors } from '../../models/types';
 import React, { useState } from 'react';
 import {
   Text,
-  StyleSheet,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
@@ -10,12 +10,13 @@ import {
   Keyboard,
 } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
+import { common } from '../../styles/common';
 
 interface PayeeAddModalProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (name: string, logo: string) => Promise<void>;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
@@ -47,10 +48,10 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
   return (
     <BottomSheet visible={visible} onClose={onClose} title="Add New Payee">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Payee Name</Text>
+        <Text style={[common.inputLabel, { color: colors.textSecondary }]}>Payee Name</Text>
         <TextInput
           style={[
-            styles.inputField,
+            common.inputField50,
             { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
           ]}
           placeholder="e.g. Starbucks, Amazon"
@@ -60,12 +61,12 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
           autoFocus={visible}
         />
 
-        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 16 }]}>
+        <Text style={[common.inputLabel, common.mt16, { color: colors.textSecondary }]}>
           Logo URL (Optional)
         </Text>
         <TextInput
           style={[
-            styles.inputField,
+            common.inputField50,
             { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
           ]}
           placeholder="https://..."
@@ -78,8 +79,9 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
 
         <TouchableOpacity
           style={[
-            styles.saveButton,
-            { backgroundColor: colors.primary, opacity: !name.trim() || isSaving ? 0.5 : 1 },
+            common.saveButton54R12Mt32,
+            { backgroundColor: colors.primary },
+            (!name.trim() || isSaving) && common.disabledButton,
           ]}
           onPress={handleSave}
           disabled={!name.trim() || isSaving}
@@ -87,23 +89,10 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
           {isSaving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>Save Payee</Text>
+            <Text style={common.saveButtonText}>Save Payee</Text>
           )}
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </BottomSheet>
   );
 };
-
-const styles = StyleSheet.create({
-  inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
-  inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-  saveButton: {
-    height: 54,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-});

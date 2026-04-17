@@ -1,14 +1,14 @@
+import type { MaterialIconName, ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { ThemeColors } from '../../models/types';
 
 interface DashboardCardProps {
   children: React.ReactNode;
   colors: ThemeColors;
   title?: string;
   subtitle?: string;
-  icon?: string;
+  icon?: MaterialIconName;
   onPress?: () => void;
   isMain?: boolean;
   style?: ViewStyle;
@@ -42,7 +42,7 @@ export const DashboardCard = ({
       {(title || icon) && (
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-            {icon && <MaterialIcons name={icon as any} size={20} color={colors.primary} />}
+            {icon && <MaterialIcons name={icon} size={20} color={colors.primary} />}
             <View>
               {title && (
                 <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{title}</Text>

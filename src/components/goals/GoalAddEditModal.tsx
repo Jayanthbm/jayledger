@@ -89,12 +89,12 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.formRow}>
           <View style={common.flex1}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+            <Text style={[common.inputLabelCompact, { color: colors.textSecondary }]}>
               Image URL (Logo)
             </Text>
             <TextInput
               style={[
-                styles.inputField,
+                common.inputField50,
                 {
                   backgroundColor: colors.background,
                   color: colors.text,
@@ -112,10 +112,12 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
 
         <View style={styles.formRow}>
           <View style={common.flex1}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Goal Name</Text>
+            <Text style={[common.inputLabelCompact, { color: colors.textSecondary }]}>
+              Goal Name
+            </Text>
             <TextInput
               style={[
-                styles.inputField,
+                common.inputField50,
                 {
                   backgroundColor: colors.background,
                   color: colors.text,
@@ -131,13 +133,13 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
         </View>
 
         <View style={styles.formRow}>
-          <View style={[styles.flexHalf, styles.marginRight12]}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+          <View style={[common.flex0_5, common.mr12]}>
+            <Text style={[common.inputLabelCompact, { color: colors.textSecondary }]}>
               Target Goal Amount
             </Text>
             <TextInput
               style={[
-                styles.inputField,
+                common.inputField50,
                 {
                   backgroundColor: colors.background,
                   color: colors.text,
@@ -152,12 +154,12 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
             />
           </View>
           <View style={common.flex0_5}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+            <Text style={[common.inputLabelCompact, { color: colors.textSecondary }]}>
               Currently Saved
             </Text>
             <TextInput
               style={[
-                styles.inputField,
+                common.inputField50,
                 {
                   backgroundColor: colors.background,
                   color: colors.text,
@@ -175,9 +177,9 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
 
         <TouchableOpacity
           style={[
-            styles.saveButton,
+            common.saveButton54R12Mt16,
             { backgroundColor: colors.primary },
-            (!name.trim() || isSaving) && styles.disabledButton,
+            (!name.trim() || isSaving) && common.disabledButton,
           ]}
           onPress={handleSave}
           disabled={!name.trim() || isSaving}
@@ -185,7 +187,7 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
           {isSaving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>
+            <Text style={common.saveButtonText}>
               {editingGoal ? 'Save Changes' : 'Create Goal'}
             </Text>
           )}
@@ -198,18 +200,5 @@ GoalAddEditModal.displayName = 'GoalAddEditModal';
 
 const styles = StyleSheet.create({
   formRow: { flexDirection: 'row', marginBottom: 16 },
-  inputLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginLeft: 4 },
-  inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-  saveButton: {
-    height: 54,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   deleteButton: { padding: 8 },
-  flexHalf: { flex: 0.5 },
-  marginRight12: { marginRight: 12 },
-  disabledButton: { opacity: 0.5 },
 });

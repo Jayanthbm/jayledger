@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Payee } from '../../models/types';
@@ -5,7 +6,7 @@ import { Payee } from '../../models/types';
 interface PayeeCardProps {
   item: Payee;
   viewMode: 'list' | 'grid';
-  colors: any;
+  colors: ThemeColors;
   onPress: (item: Payee) => void;
 }
 

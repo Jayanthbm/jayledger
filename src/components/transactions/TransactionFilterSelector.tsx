@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
-import { Category, Payee, ThemeColors } from '../../models/types';
+import { Category, MaterialIconName, Payee, ThemeColors } from '../../models/types';
 import { formatIconName } from '../../services/transactionService';
 import { common } from '../../styles/common';
 
@@ -86,7 +86,7 @@ export const TransactionFilterSelector = React.memo(
                       formatIconName(
                         (item as Category).app_icon ||
                           (type === 'Category' ? 'category' : 'person'),
-                      ) as any
+                      ) as MaterialIconName
                     }
                     size={24}
                     color={isSelected ? 'white' : colors.textSecondary}

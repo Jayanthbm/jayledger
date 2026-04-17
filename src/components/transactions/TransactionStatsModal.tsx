@@ -1,14 +1,16 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { common } from '../../styles/common';
+import type { MonthlyStatsBreakdown } from '../../models/types';
 
 interface TransactionStatsModalProps {
   visible: boolean;
   onClose: () => void;
-  statsBreakdown: any[];
+  statsBreakdown: MonthlyStatsBreakdown[];
   loadingStats: boolean;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const TransactionStatsModal = React.memo(
@@ -23,10 +25,9 @@ export const TransactionStatsModal = React.memo(
               key={s.month}
               style={[
                 styles.statItem,
-                {
-                  borderBottomWidth: idx === statsBreakdown.length - 1 ? 0 : 1,
-                  borderColor: colors.border,
-                },
+                styles.statItemBordered,
+                idx === statsBreakdown.length - 1 && styles.statItemLast,
+                { borderColor: colors.border },
               ]}
             >
               <Text style={[styles.statMonth, { color: colors.text }]}>{s.month}</Text>
@@ -34,9 +35,9 @@ export const TransactionStatsModal = React.memo(
                 <Text
                   style={[
                     styles.statsValue,
+                    styles.statsValueLarge,
                     {
                       color: s.income - s.expense >= 0 ? colors.success : colors.danger,
-                      fontSize: 18,
                     },
                   ]}
                 >
@@ -59,6 +60,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
   },
+  statItemBordered: {
+    borderBottomWidth: 1,
+  },
+  statItemLast: {
+    borderBottomWidth: 0,
+  },
   statMonth: {
     fontSize: 16,
     fontWeight: '700',
@@ -66,5 +73,8 @@ const styles = StyleSheet.create({
   statsValue: {
     fontSize: 14,
     fontWeight: '800',
+  },
+  statsValueLarge: {
+    fontSize: 18,
   },
 });

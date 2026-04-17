@@ -42,6 +42,14 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
     categories: [],
     logo: 'account-balance-wallet',
   });
+  const themedStyles = React.useMemo(
+    () => ({
+      inactiveChip: { backgroundColor: colors.background, borderColor: colors.border },
+      selectedChipText: { color: '#fff' },
+      chipText: { color: colors.textSecondary },
+    }),
+    [colors.background, colors.border, colors.textSecondary],
+  );
 
   useEffect(() => {
     if (visible) {
@@ -138,15 +146,13 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
                     }}
                     style={[
                       styles.catChip,
-                      isSelected
-                        ? styles.catChipActive
-                        : { backgroundColor: colors.background, borderColor: colors.border },
+                      isSelected ? styles.catChipActive : themedStyles.inactiveChip,
                     ]}
                   >
                     <Text
                       style={[
                         styles.catChipText,
-                        { color: isSelected ? '#fff' : colors.textSecondary },
+                        isSelected ? themedStyles.selectedChipText : themedStyles.chipText,
                       ]}
                     >
                       {cat.name}

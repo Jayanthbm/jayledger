@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,13 @@ import {
 } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { Transaction, Category, Payee, QuickTransaction } from '../models/types';
+import {
+  Transaction,
+  Category,
+  Payee,
+  QuickTransaction,
+  MonthlyStatsBreakdown,
+} from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,7 +25,7 @@ import { SearchBar } from '../components/SearchBar';
 import { deleteTransactionAsync, getQuickTransactions } from '../db/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, FlashListRef } from '@shopify/flash-list';
 import {
   fetchTransactions,
   fetchTransactionFilterData,
@@ -33,11 +39,8 @@ import { TransactionStatsModal } from '../components/transactions/TransactionSta
 import { TransactionSectionHeader } from '../components/transactions/TransactionSectionHeader';
 import { syncTransactions, needsTransactionSync } from '../services/syncService';
 import { FloatingActionButton } from '../components/FloatingActionButton';
-import { RootStackParamList } from '../navigation/navigationTypes';
-import { ReportItem } from '../models/types';
+import { MainTabParamList, RootStackParamList } from '../navigation/navigationTypes';
 import { common } from '../styles/common';
-
-const TypedFlashList = FlashList as any;
 
 export default function TransactionsScreen() {
   const { colors } = useTheme();
@@ -50,7 +53,7 @@ export default function TransactionsScreen() {
   const [stickyHeaderIndices, setStickyHeaderIndices] = useState<number[]>([]);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [totalFiltered, setTotalFiltered] = useState(0);
-  const listRef = useRef<any>(null);
+  const listRef = useRef<FlashListRef<FlashListItem> | null>(null);
 
   const scrollToTop = useCallback(() => {
     if (listRef.current) {
@@ -59,7 +62,7 @@ export default function TransactionsScreen() {
   }, []);
 
   const [showStatsModal, setShowStatsModal] = useState(false);
-  const [statsBreakdown, setStatsBreakdown] = useState<ReportItem[]>([]);
+  const [statsBreakdown, setStatsBreakdown] = useState<MonthlyStatsBreakdown[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
 
   const [search, setSearch] = useState('');
@@ -80,7 +83,7 @@ export default function TransactionsScreen() {
   const [quickTransactions, setQuickTransactions] = useState<QuickTransaction[]>([]);
   const [showQuickModal, setShowQuickModal] = useState(false);
 
-  const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Transactions'>>();
   const params = route.params;
 
   const loadFilterData = useCallback(async () => {
@@ -171,11 +174,11 @@ export default function TransactionsScreen() {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={scrollToTop}
-          style={styles.headerTitleContainer}
+          style={common.headerTitleContainer}
         >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Transactions</Text>
+          <Text style={[common.navHeaderTitle, { color: colors.text }]}>Transactions</Text>
           {lastSyncTime ? (
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            <Text style={[common.navHeaderSubtitle, { color: colors.textSecondary }]}>
               Synced: {lastSyncTime}
             </Text>
           ) : null}
@@ -185,7 +188,7 @@ export default function TransactionsScreen() {
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
-          style={styles.headerRightBtn}
+          style={common.headerRightBtn}
           disabled={isSyncing}
         >
           {isSyncing ? (
@@ -295,9 +298,22 @@ export default function TransactionsScreen() {
     setStartDate(null);
     setEndDate(null);
   }, []);
+  const themedStyles = useMemo(
+    () => ({
+      selectedFilterChip: {
+        backgroundColor: colors.primary + '15',
+        borderColor: colors.primary,
+      },
+      inactiveFilterChip: {
+        backgroundColor: 'transparent',
+        borderColor: colors.border,
+      },
+    }),
+    [colors.border, colors.primary],
+  );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[common.flex1, { backgroundColor: colors.background }]}>
       <View style={styles.searchContainer}>
         <SearchBar
           value={search}
@@ -313,10 +329,9 @@ export default function TransactionsScreen() {
           <View
             style={[
               styles.filterChip,
-              {
-                backgroundColor: selectedCats.length > 0 ? colors.primary + '15' : 'transparent',
-                borderColor: selectedCats.length > 0 ? colors.primary : colors.border,
-              },
+              selectedCats.length > 0
+                ? themedStyles.selectedFilterChip
+                : themedStyles.inactiveFilterChip,
             ]}
           >
             <TouchableOpacity
@@ -353,10 +368,9 @@ export default function TransactionsScreen() {
           <View
             style={[
               styles.filterChip,
-              {
-                backgroundColor: selectedPayees.length > 0 ? colors.primary + '15' : 'transparent',
-                borderColor: selectedPayees.length > 0 ? colors.primary : colors.border,
-              },
+              selectedPayees.length > 0
+                ? themedStyles.selectedFilterChip
+                : themedStyles.inactiveFilterChip,
             ]}
           >
             <TouchableOpacity
@@ -420,7 +434,7 @@ export default function TransactionsScreen() {
         </View>
       )}
 
-      <TypedFlashList
+      <FlashList
         ref={listRef}
         data={listData}
         keyExtractor={(item: FlashListItem) =>
@@ -442,7 +456,6 @@ export default function TransactionsScreen() {
         }}
         getItemType={(item: FlashListItem) => item.itemType}
         stickyHeaderIndices={stickyHeaderIndices}
-        estimatedItemSize={80}
         ListEmptyComponent={
           loading ? (
             <ActivityIndicator style={styles.emptyLoader} color={colors.primary} />
@@ -546,7 +559,6 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   searchContainer: { padding: 16, paddingBottom: 8 },
   filterRow: {
     flexDirection: 'row',
@@ -603,21 +615,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
     borderWidth: 1.5,
-  },
-  headerTitleContainer: {
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    fontSize: 10,
-  },
-  headerRightBtn: {
-    paddingRight: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   row: {
     flexDirection: 'row',

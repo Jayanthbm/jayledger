@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { common } from '../../styles/common';
@@ -5,21 +6,13 @@ import { DashboardCard } from './DashboardCard';
 
 interface DashboardNetWorthProps {
   netWorth: number;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const DashboardNetWorth = React.memo(({ netWorth, colors }: DashboardNetWorthProps) => {
   return (
     <DashboardCard colors={colors} title="NET WORTH" icon="stars" style={common.mb40}>
-      <Text
-        style={[
-          styles.rowValue,
-          {
-            color: netWorth >= 0 ? colors.success : colors.danger,
-            fontSize: 32,
-          },
-        ]}
-      >
+      <Text style={[styles.rowValue, { color: netWorth >= 0 ? colors.success : colors.danger }]}>
         ₹{netWorth.toLocaleString()}
       </Text>
       <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>ALL TIME BALANCE</Text>

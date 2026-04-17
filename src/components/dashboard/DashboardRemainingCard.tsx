@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DashboardCard } from './DashboardCard';
@@ -5,7 +6,7 @@ import { DashboardCard } from './DashboardCard';
 interface DashboardRemainingProps {
   monthIncome: number;
   monthExpense: number;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const DashboardRemainingCard = React.memo(

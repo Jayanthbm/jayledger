@@ -27,6 +27,10 @@ export const BudgetDrillDownModal: React.FC<BudgetDrillDownModalProps> = ({
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const dynamicStyles = React.useMemo(
+    () => ({ paddingBottom: insets.bottom + 40 }),
+    [insets.bottom],
+  );
 
   return (
     <BottomSheet visible={visible} onClose={onClose} title={title} subtitle={subtitle} isFullScreen>
@@ -38,7 +42,7 @@ export const BudgetDrillDownModal: React.FC<BudgetDrillDownModalProps> = ({
             data={transactions}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <TransactionCard transaction={item} />}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+            contentContainerStyle={dynamicStyles}
             ListEmptyComponent={
               <View style={styles.emptyDrill}>
                 <MaterialIcons name="search-off" size={64} color={colors.border} />
@@ -60,9 +64,6 @@ const styles = StyleSheet.create({
     marginTop: 80,
     alignItems: 'center',
     paddingHorizontal: 40,
-  },
-  spinnerMt: {
-    marginTop: 40,
   },
   emptyText: {
     textAlign: 'center',

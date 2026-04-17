@@ -13,6 +13,13 @@ interface GoalSortModalProps {
   onSortChange: (mode: 'name' | 'progress' | 'amount', asc: boolean) => void;
 }
 
+type GoalSortMode = GoalSortModalProps['sortBy'];
+const sortOptions: Array<{ label: string; value: GoalSortMode }> = [
+  { label: 'Name', value: 'name' },
+  { label: 'Progress', value: 'progress' },
+  { label: 'Target Amount', value: 'amount' },
+];
+
 export const GoalSortModal: React.FC<GoalSortModalProps> = ({
   visible,
   onClose,
@@ -25,11 +32,7 @@ export const GoalSortModal: React.FC<GoalSortModalProps> = ({
   return (
     <BottomSheet visible={visible} onClose={onClose} title="Sort Goals">
       <View style={common.mt10}>
-        {[
-          { label: 'Name', value: 'name' },
-          { label: 'Progress', value: 'progress' },
-          { label: 'Target Amount', value: 'amount' },
-        ].map((item: any) => {
+        {sortOptions.map((item) => {
           const isActive = sortBy === item.value;
           return (
             <TouchableOpacity

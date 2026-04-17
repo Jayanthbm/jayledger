@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { ThemeColors, ReportItem } from '../../models/types';
+import { MaterialIconName, ThemeColors, ReportItem } from '../../models/types';
 import { common } from '../../styles/common';
 
 interface ReportListItemProps {
@@ -21,6 +21,13 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
   colors,
   onPress,
 }) => {
+  const themedStyles = React.useMemo(
+    () => ({
+      progressBg: { backgroundColor: isDark ? '#333' : '#eee' },
+    }),
+    [isDark],
+  );
+
   return (
     <TouchableOpacity
       style={[styles.reportItem, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -30,7 +37,7 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
         <View style={styles.itemMain}>
           {(item.category_app_icon || item.app_icon) && (
             <Icon
-              name={(item.category_app_icon || item.app_icon) as any}
+              name={(item.category_app_icon || item.app_icon) as MaterialIconName}
               size={24}
               color={colors.primary}
               style={common.mr12}
@@ -50,7 +57,7 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
         </Text>
       </View>
       <View style={styles.progressContainer}>
-        <View style={[styles.progressBg, { backgroundColor: isDark ? '#333' : '#eee' }]}>
+        <View style={[styles.progressBg, themedStyles.progressBg]}>
           <View
             style={[
               styles.progressFill,

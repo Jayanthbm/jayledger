@@ -1,5 +1,6 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { common } from '../../styles/common';
@@ -10,7 +11,7 @@ interface ReportSortPickerProps {
   sortBy: 'name' | 'amount';
   sortAsc: boolean;
   onSortChange: (sortBy: 'name' | 'amount', sortAsc: boolean) => void;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
@@ -21,7 +22,7 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
   onSortChange,
   colors,
 }) => {
-  const sortOptions = [
+  const sortOptions: Array<{ label: string; value: 'name' | 'amount' }> = [
     { label: 'Name', value: 'name' },
     { label: 'Amount', value: 'amount' },
   ];
@@ -34,17 +35,17 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
           return (
             <TouchableOpacity
               key={opt.value}
-              style={[styles.pickerItemRow, { borderBottomColor: colors.border }]}
+              style={[common.pickerItemRowBetweenCompact, { borderBottomColor: colors.border }]}
               onPress={() => {
                 if (isActive) {
-                  onSortChange(opt.value as any, !sortAsc);
+                  onSortChange(opt.value, !sortAsc);
                 } else {
-                  onSortChange(opt.value as any, opt.value === 'name'); // Default Asc for name, Desc for amount
+                  onSortChange(opt.value, opt.value === 'name'); // Default Asc for name, Desc for amount
                 }
                 onClose();
               }}
             >
-              <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>
+              <Text style={[common.pickerText, { color: isActive ? colors.primary : colors.text }]}>
                 {opt.label}
               </Text>
               {isActive && (
@@ -61,15 +62,3 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
     </BottomSheet>
   );
 };
-
-const styles = StyleSheet.create({
-  pickerItemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  pickerText: { fontSize: 16, fontWeight: '500' },
-});

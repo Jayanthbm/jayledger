@@ -1,4 +1,5 @@
 import { Colors } from '../store/ThemeContext';
+import type MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export interface Transaction {
   id: string;
@@ -102,3 +103,10 @@ export interface ReportItem {
 }
 
 export type ThemeColors = typeof Colors.light;
+export type MaterialIconName = keyof typeof MaterialIcons.glyphMap;
+
+export interface MonthlyStatsBreakdown {
+  month: string;
+  income: number;
+  expense: number;
+}

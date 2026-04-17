@@ -25,7 +25,7 @@ import { getCategories, getPayees, insertOrUpdateTransaction } from '../db/queri
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { SearchBar } from '../components/SearchBar';
-import { Category, Payee, Transaction } from '../models/types';
+import { Category, MaterialIconName, Payee, Transaction } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { syncTransactions } from '../services/syncService';
 import { common } from '../styles/common';
@@ -261,7 +261,7 @@ export default function AddTransactionScreen() {
                         formatIconName(
                           (item as Category).app_icon ||
                             (modalType === 'Category' ? 'category' : 'person'),
-                        ) as any
+                        ) as MaterialIconName
                       }
                       size={24}
                       color={isSelected ? 'white' : iconColor}
@@ -419,7 +419,7 @@ export default function AddTransactionScreen() {
                       name={
                         formatIconName(
                           selectedCategory?.app_icon || selectedCategory?.icon || 'grid-view',
-                        ) as any
+                        ) as MaterialIconName
                       }
                       size={18}
                       color={currentIconColor}

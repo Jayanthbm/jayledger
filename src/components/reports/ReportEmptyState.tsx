@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -5,7 +6,7 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 interface ReportEmptyStateProps {
   searchQuery: string;
   reportType: string;
-  colors: any;
+  colors: ThemeColors;
   onClearFilters: () => void;
   onOpenConfig: () => void;
 }

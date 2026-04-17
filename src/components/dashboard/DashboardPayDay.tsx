@@ -1,7 +1,9 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DashboardCard } from './DashboardCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import type { AppNavigation } from '../../navigation/navigationTypes';
 
 interface DashboardPayDayProps {
   payDayInfo: {
@@ -11,8 +13,8 @@ interface DashboardPayDayProps {
     nextMonth: string;
   };
   isDark: boolean;
-  navigation: any;
-  colors: any;
+  navigation: AppNavigation;
+  colors: ThemeColors;
 }
 
 export const DashboardPayDay = React.memo(
@@ -27,7 +29,7 @@ export const DashboardPayDay = React.memo(
       >
         <View style={styles.rowBetween}>
           <View style={styles.payDayMain}>
-            <Text style={[styles.rowLabel, { color: colors.textSecondary, marginBottom: 12 }]}>
+            <Text style={[styles.rowLabel, styles.rowLabelSpaced, { color: colors.textSecondary }]}>
               {payDayInfo.nextMonth}
             </Text>
             <View style={styles.dotGrid}>
@@ -90,6 +92,7 @@ DashboardPayDay.displayName = 'DashboardPayDay';
 const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
+  rowLabelSpaced: { marginBottom: 12 },
   payDayMain: { flex: 1 },
   dotGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 100, gap: 5 },
   dot: { width: 8, height: 8, borderRadius: 4, marginBottom: 5 },

@@ -1,12 +1,13 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Category } from '../../models/types';
+import { Category, MaterialIconName } from '../../models/types';
 
 interface CategoryCardProps {
   item: Category;
   viewMode: 'list' | 'grid';
-  colors: any;
+  colors: ThemeColors;
   onPress: (item: Category) => void;
 }
 
@@ -32,7 +33,11 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ item, viewMode, colo
         ]}
       >
         {item.app_icon ? (
-          <MaterialIcons name={item.app_icon as any} size={isGrid ? 24 : 26} color={accentColor} />
+          <MaterialIcons
+            name={item.app_icon as MaterialIconName}
+            size={isGrid ? 24 : 26}
+            color={accentColor}
+          />
         ) : (
           <Text style={[styles.legacyIconFallback, isGrid && styles.legacyIconGrid]}>
             {item.icon || '🏷️'}

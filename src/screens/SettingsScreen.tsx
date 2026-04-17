@@ -20,6 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { resetAppData } from '../db/queries';
 import { getRelativeTime } from '../utils/dateUtils';
 import { BottomSheet } from '../components/BottomSheet';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 const SettingRow = ({
   icon,
@@ -68,7 +69,7 @@ export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const { session, signOut } = useAuth();
   const user = session?.user;
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<AppNavigation>();
   const { showToast } = useToast();
 
   const [notificationPref, setNotificationPref] = useState('None');

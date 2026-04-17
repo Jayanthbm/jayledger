@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -28,7 +29,7 @@ interface ReportSelectorsProps {
   showTypeToggle: boolean;
   showYearSelector: boolean;
   showMonthSelector: boolean;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const ReportSelectors: React.FC<ReportSelectorsProps> = ({

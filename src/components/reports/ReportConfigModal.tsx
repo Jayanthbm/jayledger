@@ -1,9 +1,10 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { Category } from '../../models/types';
+import { Category, MaterialIconName } from '../../models/types';
 import { common } from '../../styles/common';
 
 interface ReportConfigModalProps {
@@ -13,7 +14,7 @@ interface ReportConfigModalProps {
   setSearchQuery: (query: string) => void;
   allCategories: Category[];
   onToggleLivingCost: (catId: string, current: boolean) => void;
-  colors: any;
+  colors: ThemeColors;
   bottomInset: number;
   width: number;
 }
@@ -29,6 +30,11 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
   bottomInset,
   width,
 }) => {
+  const dynamicStyles = React.useMemo(
+    () => ({ padding: 12, paddingBottom: bottomInset + 40 }),
+    [bottomInset],
+  );
+
   return (
     <BottomSheet visible={visible} onClose={onClose} title="Configure Living Costs" isFullScreen>
       <View style={common.flex1}>
@@ -42,7 +48,7 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
         </View>
 
         <FlatList
-          data={allCategories.filter((c: any) =>
+          data={allCategories.filter((c) =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()),
           )}
           keyExtractor={(item) => item.id}
@@ -56,8 +62,8 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
                   width: (width - 40) / 3,
                   backgroundColor: colors.card,
                   borderColor: item.is_living_cost === 1 ? colors.primary : colors.border,
-                  borderWidth: item.is_living_cost === 1 ? 2 : 1,
                 },
+                item.is_living_cost === 1 && styles.configGridItemActive,
               ]}
               onPress={() => onToggleLivingCost(item.id, !!item.is_living_cost)}
             >
@@ -71,7 +77,7 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
                 ]}
               >
                 <Icon
-                  name={(item.app_icon || 'receipt') as any}
+                  name={(item.app_icon || 'receipt') as MaterialIconName}
                   size={24}
                   color={item.is_living_cost === 1 ? colors.primary : colors.textSecondary}
                 />
@@ -86,8 +92,8 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
               )}
             </TouchableOpacity>
           )}
-          contentContainerStyle={{ padding: 12, paddingBottom: bottomInset + 40 }}
-          columnWrapperStyle={{ justifyContent: 'flex-start', gap: 8 }}
+          contentContainerStyle={dynamicStyles}
+          columnWrapperStyle={styles.gridColumnWrapper}
         />
       </View>
     </BottomSheet>
@@ -106,6 +112,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
     position: 'relative',
+    borderWidth: 1,
+  },
+  configGridItemActive: {
+    borderWidth: 2,
   },
   gridIconBox: {
     width: 48,
@@ -131,5 +141,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'white',
+  },
+  gridColumnWrapper: {
+    justifyContent: 'flex-start',
+    gap: 8,
   },
 });

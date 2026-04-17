@@ -1,7 +1,7 @@
+import type { ThemeColors } from '../../models/types';
 import React, { useState } from 'react';
 import {
   Text,
-  StyleSheet,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
@@ -17,7 +17,7 @@ interface CategoryAddModalProps {
   visible: boolean;
   onClose: () => void;
   onAdd: (name: string, type: 'Expense' | 'Income', appIcon: string) => Promise<void>;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const CategoryAddModal: React.FC<CategoryAddModalProps> = ({
@@ -61,10 +61,10 @@ export const CategoryAddModal: React.FC<CategoryAddModalProps> = ({
           containerStyle={common.mb20}
         />
 
-        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Category Name</Text>
+        <Text style={[common.inputLabel, { color: colors.textSecondary }]}>Category Name</Text>
         <TextInput
           style={[
-            styles.inputField,
+            common.inputField50,
             { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
           ]}
           placeholder="e.g. Groceries"
@@ -73,12 +73,12 @@ export const CategoryAddModal: React.FC<CategoryAddModalProps> = ({
           onChangeText={setName}
         />
 
-        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 16 }]}>
+        <Text style={[common.inputLabel, common.mt16, { color: colors.textSecondary }]}>
           Material Icon Name (Optional)
         </Text>
         <TextInput
           style={[
-            styles.inputField,
+            common.inputField50,
             { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
           ]}
           placeholder="e.g. fastfood, flight"
@@ -90,8 +90,9 @@ export const CategoryAddModal: React.FC<CategoryAddModalProps> = ({
 
         <TouchableOpacity
           style={[
-            styles.saveButton,
-            { backgroundColor: colors.primary, opacity: !name.trim() || isSaving ? 0.5 : 1 },
+            common.saveButton54R12Mt32,
+            { backgroundColor: colors.primary },
+            (!name.trim() || isSaving) && common.disabledButton,
           ]}
           onPress={handleSave}
           disabled={!name.trim() || isSaving}
@@ -99,23 +100,10 @@ export const CategoryAddModal: React.FC<CategoryAddModalProps> = ({
           {isSaving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>Save Category</Text>
+            <Text style={common.saveButtonText}>Save Category</Text>
           )}
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </BottomSheet>
   );
 };
-
-const styles = StyleSheet.create({
-  inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
-  inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-  saveButton: {
-    height: 54,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-});

@@ -54,7 +54,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
       <View
         style={[
           styles.progressWrapper,
-          { backgroundColor: colors.border, marginTop: 12, marginBottom: 8 },
+          styles.progressWrapperSpaced,
+          { backgroundColor: colors.border },
         ]}
       >
         <View
@@ -93,10 +94,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   titleFlex: {
     flex: 1,
     fontSize: 16,
@@ -122,6 +119,10 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     overflow: 'hidden',
+  },
+  progressWrapperSpaced: {
+    marginTop: 12,
+    marginBottom: 8,
   },
   progressFill: {
     height: '100%',

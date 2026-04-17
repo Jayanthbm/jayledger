@@ -16,14 +16,23 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FloatingActionButton } from '../components/FloatingActionButton';
+import { common } from '../styles/common';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<AppNavigation>();
 
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
+  const dynamicStyles = React.useMemo(
+    () => ({
+      listContent: { paddingBottom: insets.bottom + 80 },
+      fab: { bottom: insets.bottom + 16 },
+    }),
+    [insets.bottom],
+  );
 
   const scrollToTop = useCallback(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -35,9 +44,9 @@ export default function QuickTransactionsScreen() {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={scrollToTop}
-          style={styles.headerTitleContainer}
+          style={common.headerTitleContainer}
         >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Quick Transactions</Text>
+          <Text style={[common.navHeaderTitle, { color: colors.text }]}>Quick Transactions</Text>
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
@@ -114,20 +123,20 @@ export default function QuickTransactionsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[common.flex1, { backgroundColor: colors.background }]}>
       <FlatList
         ref={listRef}
         data={data}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 80 }]}
+        contentContainerStyle={[common.listContent16, dynamicStyles.listContent]}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Icon name="bolt" size={64} color={colors.border} />
@@ -144,7 +153,7 @@ export default function QuickTransactionsScreen() {
         onPress={() => navigation.navigate('AddQuickTransaction')}
         iconName="add"
         backgroundColor={colors.primary}
-        style={{ bottom: insets.bottom + 16 }}
+        style={dynamicStyles.fab}
         iconSize={30}
       />
 
@@ -175,9 +184,6 @@ export default function QuickTransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  list: { padding: 16 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -207,13 +213,6 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 20, fontWeight: '800', marginTop: 16 },
   emptySub: { fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 22 },
-  headerTitleContainer: {
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
   sheetInner: {
     paddingBottom: 10,
   },

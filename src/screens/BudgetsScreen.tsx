@@ -50,13 +50,14 @@ import { BudgetDrillDownModal } from '../components/budgets/BudgetDrillDownModal
 import { BudgetAddEditModal } from '../components/budgets/BudgetAddEditModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 const currentYearNum = new Date().getFullYear();
 
 export default function BudgetsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<AppNavigation>();
   const { showToast } = useToast();
 
   const [data, setData] = useState<EnrichedBudget[]>([]);
@@ -166,7 +167,7 @@ export default function BudgetsScreen() {
     } finally {
       setIsSyncing(false);
     }
-  }, [session?.user?.id, isSyncing, loadData, showToast]);
+  }, [session, isSyncing, loadData, showToast]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -174,11 +175,11 @@ export default function BudgetsScreen() {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={scrollToTop}
-          style={styles.headerTitleContainer}
+          style={common.headerTitleContainer}
         >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Budgets</Text>
+          <Text style={[common.navHeaderTitle, { color: colors.text }]}>Budgets</Text>
           {lastSyncTime ? (
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            <Text style={[common.navHeaderSubtitle, { color: colors.textSecondary }]}>
               Synced: {lastSyncTime}
             </Text>
           ) : null}
@@ -188,7 +189,7 @@ export default function BudgetsScreen() {
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
-          style={styles.headerRightBtn}
+          style={common.headerRightBtn}
           disabled={isSyncing}
         >
           {isSyncing ? (
@@ -266,7 +267,7 @@ export default function BudgetsScreen() {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[common.flex1, { backgroundColor: colors.background }]}>
       <BudgetHeader
         selectedDate={selectedDate}
         minDate={minDate}
@@ -291,7 +292,7 @@ export default function BudgetsScreen() {
       </View>
 
       {loading && data.length === 0 ? (
-        <View style={styles.loadingContainer}>
+        <View style={common.flexCenter}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
@@ -395,7 +396,6 @@ export default function BudgetsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   toolsRow: {
     padding: 16,
     flexDirection: 'row',
@@ -411,11 +411,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   emptyContainer: {
     marginTop: 100,
     alignItems: 'center',
@@ -425,21 +420,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 16,
     fontWeight: '600',
-  },
-  headerTitleContainer: {
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    fontSize: 10,
-  },
-  headerRightBtn: {
-    paddingRight: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   fab: {
     bottom: Platform.OS === 'ios' ? 40 : 24,

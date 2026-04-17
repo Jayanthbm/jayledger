@@ -28,12 +28,13 @@ import { GoalDeleteModal } from '../components/goals/GoalDeleteModal';
 import { GoalAddEditModal } from '../components/goals/GoalAddEditModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<AppNavigation>();
   const { showToast } = useToast();
 
   const [data, setData] = useState<Goal[]>([]);
@@ -128,11 +129,11 @@ export default function GoalsScreen() {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={scrollToTop}
-          style={styles.headerTitleContainer}
+          style={common.headerTitleContainer}
         >
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Goals</Text>
+          <Text style={[common.navHeaderTitle, { color: colors.text }]}>Goals</Text>
           {lastSyncTime ? (
-            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            <Text style={[common.navHeaderSubtitle, { color: colors.textSecondary }]}>
               Synced: {lastSyncTime}
             </Text>
           ) : null}
@@ -142,7 +143,7 @@ export default function GoalsScreen() {
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
-          style={styles.headerRightBtn}
+          style={common.headerRightBtn}
           disabled={isSyncing}
         >
           {isSyncing ? (
@@ -169,15 +170,15 @@ export default function GoalsScreen() {
   }, [data, sortAsc, sortBy]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[common.flex1, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <View style={styles.headerControls}>
-          <View style={styles.titleWrapper}>
-            <Text style={[styles.title, { color: colors.text }]}>Savings Goals</Text>
+        <View style={common.flexRowSpaceBetween}>
+          <View style={common.flex1}>
+            <Text style={[common.title16Bold, { color: colors.text }]}>Savings Goals</Text>
           </View>
           <TouchableOpacity
             style={[
-              styles.sortButton,
+              common.sortButton,
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
             onPress={() => setIsSortModalOpen(true)}
@@ -193,8 +194,8 @@ export default function GoalsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.captionRow}>
-          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
+        <View style={common.captionRowT2}>
+          <Text style={[common.sortCaption, { color: colors.textSecondary }]}>
             Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
           </Text>
         </View>
@@ -213,11 +214,13 @@ export default function GoalsScreen() {
             }}
           />
         )}
-        contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
+        contentContainerStyle={common.listContent16T4B40}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <MaterialIcons name="flag" size={48} color={colors.border} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Goals Found</Text>
+            <Text style={[common.emptyText16Centered, { color: colors.textSecondary }]}>
+              No Goals Found
+            </Text>
           </View>
         }
       />
@@ -284,59 +287,13 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   header: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
   },
-  headerControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  titleWrapper: { flex: 1 },
-  sortButton: {
-    width: 64,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captionRow: {
-    marginTop: 2,
-    alignItems: 'flex-end',
-  },
-  sortCaption: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  title: { fontSize: 16, fontWeight: 'bold' },
-  headerTitleContainer: {
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    fontSize: 10,
-  },
-  headerRightBtn: {
-    paddingRight: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   emptyContainer: {
     alignItems: 'center',
     marginTop: 40,
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 12,
-    fontSize: 16,
   },
 });

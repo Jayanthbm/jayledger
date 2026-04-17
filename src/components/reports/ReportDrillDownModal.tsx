@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
@@ -11,7 +12,7 @@ interface ReportDrillDownModalProps {
   onClose: () => void;
   title: string;
   data: Transaction[];
-  colors: any;
+  colors: ThemeColors;
   bottomInset: number;
 }
 
@@ -22,26 +23,30 @@ export const ReportDrillDownModal: React.FC<ReportDrillDownModalProps> = ({
   data,
   colors,
   bottomInset,
-}) => (
-  <BottomSheet visible={visible} onClose={onClose} title={title} isFullScreen>
-    <View style={common.flex1}>
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <TransactionCard transaction={item} />}
-        contentContainerStyle={{ paddingBottom: bottomInset + 40 }}
-        ListEmptyComponent={
-          <View style={common.alignCenterMt60}>
-            <Icon name="receipt-long" size={48} color={colors.border} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              No transactions found
-            </Text>
-          </View>
-        }
-      />
-    </View>
-  </BottomSheet>
-);
+}) => {
+  const dynamicStyles = React.useMemo(() => ({ paddingBottom: bottomInset + 40 }), [bottomInset]);
+
+  return (
+    <BottomSheet visible={visible} onClose={onClose} title={title} isFullScreen>
+      <View style={common.flex1}>
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <TransactionCard transaction={item} />}
+          contentContainerStyle={dynamicStyles}
+          ListEmptyComponent={
+            <View style={common.alignCenterMt60}>
+              <Icon name="receipt-long" size={48} color={colors.border} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No transactions found
+              </Text>
+            </View>
+          }
+        />
+      </View>
+    </BottomSheet>
+  );
+};
 
 const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', marginTop: 12 },

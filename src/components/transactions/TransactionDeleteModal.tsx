@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -9,7 +10,7 @@ interface TransactionDeleteModalProps {
   transaction: Transaction | null;
   onCancel: () => void;
   onConfirm: () => void;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const TransactionDeleteModal = React.memo(

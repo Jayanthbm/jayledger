@@ -38,6 +38,18 @@ export const BottomSheet = ({
 }: BottomSheetProps) => {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const themedStyles = React.useMemo(
+    () => ({
+      closeButton: { backgroundColor: isDark ? colors.border : '#eee' },
+      fullModal: { backgroundColor: colors.background, paddingTop: insets.top },
+      modalContent: {
+        backgroundColor: colors.card,
+        borderColor: colors.border,
+        paddingBottom: insets.bottom + 20,
+      },
+    }),
+    [colors.background, colors.border, colors.card, insets.bottom, insets.top, isDark],
+  );
 
   const renderHeader = () => (
     <View style={styles.modalHeader}>
@@ -45,7 +57,7 @@ export const BottomSheet = ({
         {showCloseButton && (
           <TouchableOpacity
             onPress={onClose}
-            style={[styles.closeBtn, { backgroundColor: isDark ? colors.border : '#eee' }]}
+            style={[styles.closeBtn, themedStyles.closeButton]}
             activeOpacity={0.7}
           >
             <Icon name="close" size={24} color={colors.text} />
@@ -71,9 +83,7 @@ export const BottomSheet = ({
   if (isFullScreen) {
     return (
       <Modal visible={visible} animationType="slide" statusBarTranslucent onRequestClose={onClose}>
-        <View
-          style={[styles.fullModal, { backgroundColor: colors.background, paddingTop: insets.top }]}
-        >
+        <View style={[styles.fullModal, themedStyles.fullModal]}>
           <View style={styles.fullHeaderContainer}>{renderHeader()}</View>
           <View style={styles.flex1}>{children}</View>
         </View>
@@ -95,17 +105,7 @@ export const BottomSheet = ({
       >
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={onClose} />
-          <View
-            style={[
-              styles.modalContent,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                paddingBottom: insets.bottom + 20,
-              },
-              containerStyle,
-            ]}
-          >
+          <View style={[styles.modalContent, themedStyles.modalContent, containerStyle]}>
             {renderHeader()}
             {children}
           </View>

@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-  FlatList,
-} from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, FlatList } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { Category } from '../models/types';
@@ -28,13 +21,14 @@ import { CategoryCard } from '../components/categories/CategoryCard';
 import { CategoryAddModal } from '../components/categories/CategoryAddModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
+import { AppNavigation } from '../navigation/navigationTypes';
 
 export default function CategoriesScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<AppNavigation>();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,15 +100,15 @@ export default function CategoriesScreen() {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={scrollToTop}
-            style={styles.headerTitleContainer}
+            style={common.headerTitleContainer}
           >
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Categories</Text>
+            <Text style={[common.navHeaderTitle, { color: colors.text }]}>Categories</Text>
           </TouchableOpacity>
         ),
         headerTitleAlign: 'left',
         headerRight: () => (
           <TouchableOpacity
-            style={styles.headerRightBtn}
+            style={common.headerRightBtn}
             onPress={handleManualSync}
             disabled={syncing}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
@@ -157,15 +151,15 @@ export default function CategoriesScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.headerTools}>
+    <View style={[common.flex1, { backgroundColor: colors.background }]}>
+      <View style={common.headerTools}>
         <SegmentedControl
           options={[
             { label: 'Expense', value: 'Expense', activeColor: colors.danger },
@@ -177,7 +171,7 @@ export default function CategoriesScreen() {
           containerStyle={common.mb16}
         />
 
-        <View style={styles.headerControls}>
+        <View style={common.headerControls}>
           <SearchBar
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -185,10 +179,10 @@ export default function CategoriesScreen() {
             size="medium"
             containerStyle={common.flex1}
           />
-          <View style={styles.actionRow}>
+          <View style={common.actionRow}>
             <TouchableOpacity
               style={[
-                styles.sortButton,
+                common.sortButton,
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
               onPress={() => setSortAsc(!sortAsc)}
@@ -203,7 +197,10 @@ export default function CategoriesScreen() {
               </View>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[
+                common.iconButton44,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
               onPress={toggleViewMode}
             >
               <MaterialIcons
@@ -215,26 +212,26 @@ export default function CategoriesScreen() {
           </View>
         </View>
 
-        <View style={styles.captionRow}>
-          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
+        <View style={common.captionRow}>
+          <Text style={[common.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
         </View>
       </View>
 
       {filteredData.length === 0 ? (
-        <View style={styles.emptyCentered}>
+        <View style={common.emptyCenterPaddedMt60}>
           <MaterialIcons name="storefront" size={64} color={colors.border} />
-          <Text style={[styles.emptyHeader, { color: colors.textSecondary }]}>
+          <Text style={[common.emptyTitle20Bold, { color: colors.textSecondary }]}>
             {searchQuery ? 'No Categories Found' : `No ${activeTab} Categories`}
           </Text>
-          <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+          <Text style={[common.emptySub14Centered, { color: colors.textSecondary }]}>
             {searchQuery ? `Nothing matches "${searchQuery}".` : 'Add your first category!'}
           </Text>
           {searchQuery && (
             <TouchableOpacity
-              style={[styles.clearSearchBtn, { borderColor: colors.border }]}
+              style={[common.clearOutlineButton, { borderColor: colors.border }]}
               onPress={() => setSearchQuery('')}
             >
-              <Text style={[styles.clearSearchText, { color: colors.primary }]}>Clear Search</Text>
+              <Text style={[common.textBold600, { color: colors.primary }]}>Clear Search</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -258,8 +255,8 @@ export default function CategoriesScreen() {
               }
             />
           )}
-          contentContainerStyle={styles.listContent}
-          columnWrapperStyle={viewMode === 'grid' ? styles.gridWrapper : undefined}
+          contentContainerStyle={common.listContent16T4B120}
+          columnWrapperStyle={viewMode === 'grid' ? common.justifyStart : undefined}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -279,62 +276,3 @@ export default function CategoriesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyCentered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    marginTop: 60,
-  },
-  headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
-  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sortButton: {
-    width: 64,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captionRow: { marginTop: 4, alignItems: 'flex-end' },
-  sortCaption: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 },
-  gridWrapper: { justifyContent: 'flex-start' },
-  emptyHeader: { fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
-  emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  clearSearchBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderRadius: 20,
-    marginTop: 12,
-  },
-  clearSearchText: {
-    fontWeight: '600',
-  },
-  headerTitleContainer: {
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  headerRightBtn: {
-    paddingRight: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

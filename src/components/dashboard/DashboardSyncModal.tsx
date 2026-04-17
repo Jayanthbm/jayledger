@@ -1,3 +1,4 @@
+import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -10,7 +11,7 @@ interface DashboardSyncModalProps {
   syncError: string | null;
   syncStatus: string;
   onRetry: () => void;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const DashboardSyncModal = React.memo(
@@ -49,7 +50,7 @@ export const DashboardSyncModal = React.memo(
               </View>
             ) : (
               <View style={styles.stepsContainer}>
-                <View style={[styles.syncIconContainer, { alignSelf: 'center' }]}>
+                <View style={[styles.syncIconContainer, styles.syncIconCentered]}>
                   <MaterialIcons name="cloud-sync" size={60} color={colors.primary} />
                 </View>
                 {steps.map((step) => {
@@ -121,6 +122,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+  },
+  syncIconCentered: {
+    alignSelf: 'center',
   },
   syncProgressContainer: {
     width: '100%',
