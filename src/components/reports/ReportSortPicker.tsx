@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import Icon from '@expo/vector-icons/MaterialIcons';
+import { common } from '../../styles/common';
 
 interface ReportSortPickerProps {
   visible: boolean;
@@ -18,7 +19,7 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
   sortBy,
   sortAsc,
   onSortChange,
-  colors
+  colors,
 }) => {
   const sortOptions = [
     { label: 'Name', value: 'name' },
@@ -26,12 +27,8 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
   ];
 
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="Sort Results"
-    >
-      <View style={{ marginTop: 10 }}>
+    <BottomSheet visible={visible} onClose={onClose} title="Sort Results">
+      <View style={common.mt10}>
         {sortOptions.map((opt) => {
           const isActive = sortBy === opt.value;
           return (
@@ -47,12 +44,14 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
                 onClose();
               }}
             >
-              <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>{opt.label}</Text>
+              <Text style={[styles.pickerText, { color: isActive ? colors.primary : colors.text }]}>
+                {opt.label}
+              </Text>
               {isActive && (
-                <Icon 
-                  name={sortAsc ? "arrow-upward" : "arrow-downward"} 
-                  size={20} 
-                  color={colors.primary} 
+                <Icon
+                  name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+                  size={20}
+                  color={colors.primary}
                 />
               )}
             </TouchableOpacity>

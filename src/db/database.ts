@@ -7,26 +7,26 @@ let dbInstance: SQLite.SQLiteDatabase | null = null;
 export const getDb = () => {
   try {
     if (!dbInstance) {
-      console.log("[DB] Opening database sync...");
+      console.log('[DB] Opening database sync...');
       dbInstance = SQLite.openDatabaseSync(DB_NAME);
-      console.log("[DB] Database opened successfully.");
+      console.log('[DB] Database opened successfully.');
     }
     return dbInstance;
   } catch (error) {
-    console.error("[DB] Failed to open database:", error);
+    console.error('[DB] Failed to open database:', error);
     throw error;
   }
 };
 
 export const initDB = async () => {
   const db = getDb();
-  console.log("[DB] Starting initDB migrations...");
-  
-  try {
-    console.log("[DB] Setting journal_mode = WAL...");
-    await db.execAsync("PRAGMA journal_mode = WAL;");
+  console.log('[DB] Starting initDB migrations...');
 
-    console.log("[DB] Creating tables...");
+  try {
+    console.log('[DB] Setting journal_mode = WAL...');
+    await db.execAsync('PRAGMA journal_mode = WAL;');
+
+    console.log('[DB] Creating tables...');
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY NOT NULL,
@@ -115,37 +115,41 @@ export const initDB = async () => {
       );
     `);
 
-    console.log("[DB] Running migrations...");
+    console.log('[DB] Running migrations...');
     const coreTables = ['transactions', 'goals', 'budgets', 'categories', 'payees'];
     for (const table of coreTables) {
       try {
         await db.execAsync(`ALTER TABLE ${table} ADD COLUMN sync_status INTEGER DEFAULT 0;`);
-      } catch(e) {}
+      } catch {
+        // Column might already exist, ignoring error.
+      }
     }
 
     const migrations = [
-      "ALTER TABLE transactions ADD COLUMN category_app_icon TEXT;",
-      "ALTER TABLE transactions ADD COLUMN product_link TEXT;",
-      "ALTER TABLE transactions ADD COLUMN tid INTEGER DEFAULT 0;",
-      "ALTER TABLE transactions ADD COLUMN created_at TEXT;",
-      "ALTER TABLE transactions ADD COLUMN updated_at TEXT;",
-      "ALTER TABLE transactions ADD COLUMN deleted INTEGER DEFAULT 0;",
-      "ALTER TABLE categories ADD COLUMN icon TEXT;",
-      "ALTER TABLE categories ADD COLUMN app_icon TEXT;",
-      "ALTER TABLE categories ADD COLUMN user_id TEXT;",
-      "ALTER TABLE payees ADD COLUMN logo TEXT;",
-      "ALTER TABLE payees ADD COLUMN user_id TEXT;",
-      "ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;",
-      "ALTER TABLE budgets ADD COLUMN deleted INTEGER DEFAULT 0;"
+      'ALTER TABLE transactions ADD COLUMN category_app_icon TEXT;',
+      'ALTER TABLE transactions ADD COLUMN product_link TEXT;',
+      'ALTER TABLE transactions ADD COLUMN tid INTEGER DEFAULT 0;',
+      'ALTER TABLE transactions ADD COLUMN created_at TEXT;',
+      'ALTER TABLE transactions ADD COLUMN updated_at TEXT;',
+      'ALTER TABLE transactions ADD COLUMN deleted INTEGER DEFAULT 0;',
+      'ALTER TABLE categories ADD COLUMN icon TEXT;',
+      'ALTER TABLE categories ADD COLUMN app_icon TEXT;',
+      'ALTER TABLE categories ADD COLUMN user_id TEXT;',
+      'ALTER TABLE payees ADD COLUMN logo TEXT;',
+      'ALTER TABLE payees ADD COLUMN user_id TEXT;',
+      'ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;',
+      'ALTER TABLE budgets ADD COLUMN deleted INTEGER DEFAULT 0;',
     ];
 
     for (const m of migrations) {
       try {
         await db.execAsync(m);
-      } catch(e) {}
+      } catch {
+        // Migration might already be applied, continuing.
+      }
     }
 
-    console.log("[DB] Creating indexes...");
+    console.log('[DB] Creating indexes...');
     try {
       await db.execAsync(`
         CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
@@ -157,12 +161,12 @@ export const initDB = async () => {
         CREATE INDEX IF NOT EXISTS idx_transactions_tid ON transactions(tid);
       `);
     } catch (e) {
-      console.warn("[DB] Index creation warning:", e);
+      console.warn('[DB] Index creation warning:', e);
     }
 
-    console.log("[DB] initDB completed successfully.");
+    console.log('[DB] initDB completed successfully.');
   } catch (error) {
-    console.error("[DB] initDB critical error:", error);
+    console.error('[DB] initDB critical error:', error);
     throw error;
   }
 };

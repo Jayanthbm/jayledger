@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
-import { Category, Payee } from '../../models/types';
+import { Category, Payee, ThemeColors } from '../../models/types';
 import { formatIconName } from '../../services/transactionService';
+import { common } from '../../styles/common';
 
 interface TransactionFilterSelectorProps {
   type: 'Category' | 'Payee';
@@ -15,85 +16,108 @@ interface TransactionFilterSelectorProps {
   tempSelectedItems: string[];
   setTempSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
   onApply: (selected: string[]) => void;
-  colors: any;
+  colors: ThemeColors;
   modalSearch: string;
   setModalSearch: (text: string) => void;
 }
 
-export const TransactionFilterSelector = React.memo(({
-  type, visible, onClose, categories, payees,
-  tempSelectedItems, setTempSelectedItems,
-  onApply, colors, modalSearch, setModalSearch
-}: TransactionFilterSelectorProps) => {
-  const data = (type === 'Category' ? categories : payees).filter(item =>
-    item.name.toLowerCase().includes(modalSearch.toLowerCase())
-  );
+export const TransactionFilterSelector = React.memo(
+  ({
+    type,
+    visible,
+    onClose,
+    categories,
+    payees,
+    tempSelectedItems,
+    setTempSelectedItems,
+    onApply,
+    colors,
+    modalSearch,
+    setModalSearch,
+  }: TransactionFilterSelectorProps) => {
+    const data = (type === 'Category' ? categories : payees).filter((item) =>
+      item.name.toLowerCase().includes(modalSearch.toLowerCase()),
+    );
 
-  const toggleTempSelection = (id: string) => {
-    setTempSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
+    const toggleTempSelection = (id: string) => {
+      setTempSelectedItems((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      );
+    };
 
-  return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title={`Select ${type === 'Category' ? 'Categories' : 'Payees'}`}
-    >
-      <View style={{ paddingBottom: 16 }}>
-        <SearchBar
-          value={modalSearch}
-          onChangeText={setModalSearch}
-          placeholder={`Search ${type}...`}
-          size="medium"
-          onClear={() => setModalSearch('')}
-        />
-      </View>
-
-      <FlatList
-        data={data as any[]}
-        keyExtractor={item => item.id}
-        numColumns={4}
-        renderItem={({ item }) => {
-          const isSelected = tempSelectedItems.includes(item.id);
-          return (
-            <TouchableOpacity
-              style={styles.gridItem}
-              onPress={() => toggleTempSelection(item.id)}
-            >
-              <View style={[
-                styles.gridIconBox,
-                {
-                  backgroundColor: isSelected ? colors.primary : colors.background,
-                  borderColor: isSelected ? colors.primary : colors.border
-                }
-              ]}>
-                <Icon
-                  name={formatIconName((item as any).app_icon || (type === 'Category' ? 'category' : 'person')) as any}
-                  size={24}
-                  color={isSelected ? 'white' : colors.textSecondary}
-                />
-              </View>
-              <Text
-                style={[styles.gridLabel, { color: isSelected ? colors.primary : colors.textSecondary }]}
-                numberOfLines={1}
-              >
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
-
-      <TouchableOpacity
-        style={[styles.modalDone, { backgroundColor: colors.primary }]}
-        onPress={() => onApply(tempSelectedItems)}
+    return (
+      <BottomSheet
+        visible={visible}
+        onClose={onClose}
+        title={`Select ${type === 'Category' ? 'Categories' : 'Payees'}`}
       >
-        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Apply Filters</Text>
-      </TouchableOpacity>
-    </BottomSheet>
-  );
-});
+        <View style={common.pb16}>
+          <SearchBar
+            value={modalSearch}
+            onChangeText={setModalSearch}
+            placeholder={`Search ${type}...`}
+            size="medium"
+            onClear={() => setModalSearch('')}
+          />
+        </View>
+
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.id}
+          numColumns={4}
+          renderItem={({ item }: { item: Category | Payee }) => {
+            const isSelected = tempSelectedItems.includes(item.id);
+            return (
+              <TouchableOpacity
+                style={styles.gridItem}
+                onPress={() => toggleTempSelection(item.id)}
+              >
+                <View
+                  style={[
+                    styles.gridIconBox,
+                    {
+                      backgroundColor: isSelected ? colors.primary : colors.background,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <Icon
+                    name={
+                      formatIconName(
+                        (item as Category).app_icon ||
+                          (type === 'Category' ? 'category' : 'person'),
+                      ) as any
+                    }
+                    size={24}
+                    color={isSelected ? 'white' : colors.textSecondary}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.gridLabel,
+                    { color: isSelected ? colors.primary : colors.textSecondary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+          contentContainerStyle={common.pb20}
+        />
+
+        <TouchableOpacity
+          style={[styles.modalDone, { backgroundColor: colors.primary }]}
+          onPress={() => onApply(tempSelectedItems)}
+        >
+          <Text style={common.textWhiteBold16}>Apply Filters</Text>
+        </TouchableOpacity>
+      </BottomSheet>
+    );
+  },
+);
+TransactionFilterSelector.displayName = 'TransactionFilterSelector';
 
 const styles = StyleSheet.create({
   gridItem: {
@@ -125,6 +149,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 6
+    elevation: 6,
   },
 });

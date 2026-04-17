@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { useTheme } from '../../store/ThemeContext';
+import { useAuth } from '../../store/AuthContext';
 import { Budget, Category } from '../../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { format } from 'date-fns';
+import { common } from '../../styles/common';
 
 interface BudgetForm {
   name: string;
@@ -19,7 +21,7 @@ interface BudgetAddEditModalProps {
   onClose: () => void;
   editingBudget: Budget | null;
   allCategories: Category[];
-  onSave: (budgetData: any) => Promise<void>;
+  onSave: (budgetData: Omit<Budget, 'id'>) => Promise<void>;
   onDeleteRequest?: (id: string) => void;
 }
 
@@ -29,47 +31,52 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
   editingBudget,
   allCategories,
   onSave,
-  onDeleteRequest
+  onDeleteRequest,
 }) => {
   const { colors } = useTheme();
+  const { session } = useAuth();
   const [form, setForm] = useState<BudgetForm>({
     name: '',
     amount: '',
     interval: 'Monthly',
     categories: [],
-    logo: 'account-balance-wallet'
+    logo: 'account-balance-wallet',
   });
 
   useEffect(() => {
     if (visible) {
-      if (editingBudget) {
-        setForm({
-          name: editingBudget.name,
-          amount: editingBudget.amount.toString(),
-          interval: editingBudget.interval,
-          categories: JSON.parse(editingBudget.categories),
-          logo: editingBudget.logo
-        });
-      } else {
-        setForm({
-          name: '',
-          amount: '',
-          interval: 'Monthly',
-          categories: [],
-          logo: 'account-balance-wallet'
-        });
-      }
+      const timer = setTimeout(() => {
+        if (editingBudget) {
+          setForm({
+            name: editingBudget.name,
+            amount: editingBudget.amount.toString(),
+            interval: editingBudget.interval,
+            categories: JSON.parse(editingBudget.categories),
+            logo: editingBudget.logo,
+          });
+        } else {
+          setForm({
+            name: '',
+            amount: '',
+            interval: 'Monthly',
+            categories: [],
+            logo: 'account-balance-wallet',
+          });
+        }
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [visible, editingBudget]);
 
   const handleSave = () => {
     const budgetData = {
+      user_id: session?.user?.id || '',
       name: form.name,
       amount: parseFloat(form.amount) || 0,
       categories: JSON.stringify(form.categories),
       interval: form.interval,
       logo: form.logo,
-      start_date: editingBudget?.start_date || format(new Date(), 'yyyy-MM-dd')
+      start_date: editingBudget?.start_date || format(new Date(), 'yyyy-MM-dd'),
     };
     onSave(budgetData);
   };
@@ -79,20 +86,25 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
       visible={visible}
       onClose={onClose}
       title={editingBudget ? 'Edit Budget' : 'New Budget'}
-      headerRight={editingBudget && onDeleteRequest ? (
-        <TouchableOpacity onPress={() => onDeleteRequest(editingBudget.id)} style={styles.deleteBtnIcon}>
-          <MaterialIcons name="delete" size={24} color={colors.danger} />
-        </TouchableOpacity>
-      ) : undefined}
+      headerRight={
+        editingBudget && onDeleteRequest ? (
+          <TouchableOpacity
+            onPress={() => onDeleteRequest(editingBudget.id)}
+            style={styles.deleteBtnIcon}
+          >
+            <MaterialIcons name="delete" size={24} color={colors.danger} />
+          </TouchableOpacity>
+        ) : undefined
+      }
     >
       <View>
-        <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 500 }}>
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContainer}>
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>BUDGET NAME</Text>
             <TextInput
               style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
               value={form.name}
-              onChangeText={(t) => setForm(f => ({ ...f, name: t }))}
+              onChangeText={(t) => setForm((f) => ({ ...f, name: t }))}
               placeholder="e.g. Monthly Grocery"
               placeholderTextColor={colors.textSecondary + '80'}
             />
@@ -103,7 +115,7 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
             <TextInput
               style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
               value={form.amount}
-              onChangeText={(t) => setForm(f => ({ ...f, amount: t }))}
+              onChangeText={(t) => setForm((f) => ({ ...f, amount: t }))}
               placeholder="0.00"
               placeholderTextColor={colors.textSecondary + '80'}
               keyboardType="numeric"
@@ -113,21 +125,32 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>CATEGORIES</Text>
             <View style={styles.categoryGrid}>
-              {allCategories.map(cat => {
+              {allCategories.map((cat) => {
                 const isSelected = form.categories.includes(cat.id);
                 return (
                   <TouchableOpacity
                     key={cat.id}
                     onPress={() => {
-                      const newCats = isSelected ? form.categories.filter(id => id !== cat.id) : [...form.categories, cat.id];
-                      setForm(f => ({ ...f, categories: newCats }));
+                      const newCats = isSelected
+                        ? form.categories.filter((id) => id !== cat.id)
+                        : [...form.categories, cat.id];
+                      setForm((f) => ({ ...f, categories: newCats }));
                     }}
-                    style={[styles.catChip, {
-                      backgroundColor: isSelected ? colors.primary : colors.background,
-                      borderColor: isSelected ? colors.primary : colors.border
-                    }]}
+                    style={[
+                      styles.catChip,
+                      isSelected
+                        ? styles.catChipActive
+                        : { backgroundColor: colors.background, borderColor: colors.border },
+                    ]}
                   >
-                    <Text style={[styles.catChipText, { color: isSelected ? '#fff' : colors.textSecondary }]}>{cat.name}</Text>
+                    <Text
+                      style={[
+                        styles.catChipText,
+                        { color: isSelected ? '#fff' : colors.textSecondary },
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -141,11 +164,12 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
         >
           <Text style={styles.saveBtnText}>Save Budget</Text>
         </TouchableOpacity>
-        <View style={{ height: 40 }} />
+        <View style={common.h40} />
       </View>
     </BottomSheet>
   );
 };
+BudgetAddEditModal.displayName = 'BudgetAddEditModal';
 
 const styles = StyleSheet.create({
   deleteBtnIcon: {
@@ -192,5 +216,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  scrollContainer: {
+    maxHeight: 500,
+  },
+  catChipActive: {
+    backgroundColor: '#3b82f6', // primary
+    borderColor: '#3b82f6',
   },
 });

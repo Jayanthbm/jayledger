@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { useTheme } from '../../store/ThemeContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { common } from '../../styles/common';
 
 interface GoalSortModalProps {
   visible: boolean;
@@ -17,21 +18,17 @@ export const GoalSortModal: React.FC<GoalSortModalProps> = ({
   onClose,
   sortBy,
   sortAsc,
-  onSortChange
+  onSortChange,
 }) => {
   const { colors } = useTheme();
 
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="Sort Goals"
-    >
-      <View style={{ marginTop: 10 }}>
+    <BottomSheet visible={visible} onClose={onClose} title="Sort Goals">
+      <View style={common.mt10}>
         {[
           { label: 'Name', value: 'name' },
           { label: 'Progress', value: 'progress' },
-          { label: 'Target Amount', value: 'amount' }
+          { label: 'Target Amount', value: 'amount' },
         ].map((item: any) => {
           const isActive = sortBy === item.value;
           return (
@@ -47,7 +44,9 @@ export const GoalSortModal: React.FC<GoalSortModalProps> = ({
                 onClose();
               }}
             >
-              <Text style={[styles.sortOptionText, { color: isActive ? colors.primary : colors.text }]}>
+              <Text
+                style={[styles.sortOptionText, { color: isActive ? colors.primary : colors.text }]}
+              >
                 {item.label}
               </Text>
               {isActive && (
@@ -64,6 +63,7 @@ export const GoalSortModal: React.FC<GoalSortModalProps> = ({
     </BottomSheet>
   );
 };
+GoalSortModal.displayName = 'GoalSortModal';
 
 const styles = StyleSheet.create({
   sortOption: {

@@ -1,13 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { 
-  Animated, 
-  StyleSheet, 
-  Text, 
-  View, 
-  Dimensions, 
-  Platform,
-  TouchableOpacity
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Animated, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useTheme } from '../store/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,13 +13,11 @@ interface ToastProps {
   onHide: () => void;
 }
 
-const { width } = Dimensions.get('window');
-
 export const Toast = ({ visible, message, type, onHide }: ToastProps) => {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const translateY = useRef(new Animated.Value(-100)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [translateY] = useState(() => new Animated.Value(-100));
+  const [opacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (visible) {
@@ -62,35 +52,43 @@ export const Toast = ({ visible, message, type, onHide }: ToastProps) => {
 
   const getBackgroundColor = () => {
     switch (type) {
-      case 'success': return colors.success;
-      case 'error': return colors.danger;
-      case 'warning': return '#f59e0b'; // Amber 500
-      default: return colors.primary;
+      case 'success':
+        return colors.success;
+      case 'error':
+        return colors.danger;
+      case 'warning':
+        return '#f59e0b'; // Amber 500
+      default:
+        return colors.primary;
     }
   };
 
   const getIcon = () => {
     switch (type) {
-      case 'success': return 'check-circle';
-      case 'error': return 'error-outline';
-      case 'warning': return 'warning-amber';
-      default: return 'info-outline';
+      case 'success':
+        return 'check-circle';
+      case 'error':
+        return 'error-outline';
+      case 'warning':
+        return 'warning-amber';
+      default:
+        return 'info-outline';
     }
   };
 
   if (!visible) return null;
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        styles.container, 
-        { 
-          transform: [{ translateY }], 
+        styles.container,
+        {
+          transform: [{ translateY }],
           opacity,
           backgroundColor: isDark ? '#1e1e1e' : '#fff',
           shadowColor: '#000',
           borderColor: getBackgroundColor() + '40',
-        }
+        },
       ]}
     >
       <View style={[styles.content, { backgroundColor: getBackgroundColor() + '10' }]}>

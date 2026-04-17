@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { useTheme } from '../../store/ThemeContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { common } from '../../styles/common';
 
 interface BudgetSortModalProps {
   visible: boolean;
@@ -17,17 +18,13 @@ export const BudgetSortModal: React.FC<BudgetSortModalProps> = ({
   onClose,
   sortBy,
   sortAsc,
-  onSortChange
+  onSortChange,
 }) => {
   const { colors } = useTheme();
 
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="Sort Budgets"
-    >
-      <View style={{ marginTop: 10 }}>
+    <BottomSheet visible={visible} onClose={onClose} title="Sort Budgets">
+      <View style={common.mt10}>
         {(['name', 'amount', 'spent', 'remaining'] as const).map((mode) => {
           const isActive = sortBy === mode;
           return (
@@ -48,10 +45,10 @@ export const BudgetSortModal: React.FC<BudgetSortModalProps> = ({
                 {mode.charAt(0).toUpperCase() + mode.slice(1)}
               </Text>
               {isActive && (
-                <MaterialIcons 
-                  name={sortAsc ? "arrow-upward" : "arrow-downward"} 
-                  size={20} 
-                  color={colors.primary} 
+                <MaterialIcons
+                  name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+                  size={20}
+                  color={colors.primary}
                 />
               )}
             </TouchableOpacity>
@@ -61,6 +58,7 @@ export const BudgetSortModal: React.FC<BudgetSortModalProps> = ({
     </BottomSheet>
   );
 };
+BudgetSortModal.displayName = 'BudgetSortModal';
 
 const styles = StyleSheet.create({
   pickerItemRow: {

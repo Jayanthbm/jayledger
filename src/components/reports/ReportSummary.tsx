@@ -1,16 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
+import { ThemeColors, ReportItem } from '../../models/types';
 
 interface ReportSummaryProps {
   isSummary: boolean;
-  summaryMetrics: any;
+  summaryMetrics: {
+    income: number;
+    expense: number;
+    saved?: number;
+    spentPercent?: number;
+  } | null;
   totalAmount: number;
   type: string;
-  data: any[];
+  data: ReportItem[];
   searchQuery: string;
   sortedDataLength: number;
-  colors: any;
+  colors: ThemeColors;
 }
 
 export const ReportSummary: React.FC<ReportSummaryProps> = ({
@@ -26,25 +32,35 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
   if (isSummary && summaryMetrics) {
     return (
       <View style={styles.summaryGrid}>
-        <View style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
           <View style={[styles.summaryIconBox, { backgroundColor: colors.success + '15' }]}>
             <Icon name="trending-up" size={24} color={colors.success} />
           </View>
           <View style={styles.summaryTextColumn}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>INCOME</Text>
-            <Text style={[styles.summaryValue, { color: colors.success }]}>₹{summaryMetrics.income.toLocaleString()}</Text>
+            <Text style={[styles.summaryValue, { color: colors.success }]}>
+              ₹{summaryMetrics.income.toLocaleString()}
+            </Text>
           </View>
         </View>
-        <View style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
           <View style={[styles.summaryIconBox, { backgroundColor: colors.danger + '15' }]}>
             <Icon name="trending-down" size={24} color={colors.danger} />
           </View>
           <View style={styles.summaryTextColumn}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
-            <Text style={[styles.summaryValue, { color: colors.danger }]}>₹{summaryMetrics.expense.toLocaleString()}</Text>
+            <Text style={[styles.summaryValue, { color: colors.danger }]}>
+              ₹{summaryMetrics.expense.toLocaleString()}
+            </Text>
           </View>
         </View>
-        <View style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
           <View style={[styles.summaryIconBox, { backgroundColor: colors.primary + '15' }]}>
             <Icon name="account-balance-wallet" size={24} color={colors.primary} />
           </View>
@@ -55,7 +71,9 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
             </Text>
           </View>
         </View>
-        <View style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}
+        >
           <View style={[styles.summaryIconBox, { backgroundColor: colors.textSecondary + '15' }]}>
             <Icon name="pie-chart" size={24} color={colors.textSecondary} />
           </View>
@@ -74,7 +92,12 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
     return (
       <View style={styles.summaryBanner}>
         <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>TOTAL</Text>
-        <Text style={[styles.summaryAmount, { color: (data[0]?.type || type) === 'Income' ? colors.success : colors.danger }]}>
+        <Text
+          style={[
+            styles.summaryAmount,
+            { color: (data[0]?.type || type) === 'Income' ? colors.success : colors.danger },
+          ]}
+        >
           ₹{totalAmount.toLocaleString()}
         </Text>
       </View>
@@ -88,9 +111,15 @@ const styles = StyleSheet.create({
   summaryBanner: {
     paddingHorizontal: 20,
     paddingVertical: 24,
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  summaryLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: 8, opacity: 0.7 },
+  summaryLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    opacity: 0.7,
+  },
   summaryAmount: { fontSize: 36, fontWeight: '800' },
   summaryGrid: {
     paddingHorizontal: 20,

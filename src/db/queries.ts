@@ -4,7 +4,9 @@ import { Transaction, Category, Payee, Goal, Budget, QuickTransaction } from '..
 
 export const getCategories = async (userId: string) => {
   const db = getDb();
-  return db.getAllAsync<Category>(`SELECT * FROM categories WHERE user_id = '${userId}' ORDER BY type, name`);
+  return db.getAllAsync<Category>(
+    `SELECT * FROM categories WHERE user_id = '${userId}' ORDER BY type, name`,
+  );
 };
 
 export const getPayees = async (userId: string) => {
@@ -19,7 +21,7 @@ export const insertCategory = async (category: Category, syncStatus: number = 0)
   const appIcon = (category.app_icon || '').replace(/'/g, "''");
   await db.execAsync(
     `INSERT OR REPLACE INTO categories (id, name, type, icon, app_icon, user_id, is_living_cost, sync_status)
-     VALUES ('${category.id}', '${name}', '${category.type}', '${icon}', '${appIcon}', '${category.user_id}', ${category.is_living_cost || 0}, ${syncStatus})`
+     VALUES ('${category.id}', '${name}', '${category.type}', '${icon}', '${appIcon}', '${category.user_id}', ${category.is_living_cost || 0}, ${syncStatus})`,
   );
 };
 
@@ -29,7 +31,7 @@ export const insertPayee = async (payee: Payee, syncStatus: number = 0) => {
   const logo = (payee.logo || '').replace(/'/g, "''");
   await db.execAsync(
     `INSERT OR REPLACE INTO payees (id, name, logo, user_id, sync_status)
-     VALUES ('${payee.id}', '${name}', '${logo}', '${payee.user_id}', ${syncStatus})`
+     VALUES ('${payee.id}', '${name}', '${logo}', '${payee.user_id}', ${syncStatus})`,
   );
 };
 
@@ -39,7 +41,7 @@ export const insertGoal = async (goal: Goal, syncStatus: number = 0) => {
   const logo = (goal.logo || '').replace(/'/g, "''");
   await db.execAsync(
     `INSERT OR REPLACE INTO goals (id, name, logo, goal_amount, current_amount, user_id, sync_status)
-     VALUES ('${goal.id}', '${name}', '${logo}', ${goal.goal_amount}, ${goal.current_amount}, '${goal.user_id}', ${syncStatus})`
+     VALUES ('${goal.id}', '${name}', '${logo}', ${goal.goal_amount}, ${goal.current_amount}, '${goal.user_id}', ${syncStatus})`,
   );
 };
 
@@ -48,25 +50,36 @@ export const deleteGoalAsync = async (id: string, userId: string) => {
   await db.execAsync(`DELETE FROM goals WHERE id = '${id}' AND user_id = '${userId}'`);
 };
 
-export const getTransactionsByDateRange = async (userId: string, startDate: string, endDate: string) => {
+export const getTransactionsByDateRange = async (
+  userId: string,
+  startDate: string,
+  endDate: string,
+) => {
   const db = getDb();
   return db.getAllAsync<Transaction>(
     `SELECT * FROM transactions WHERE user_id = ? AND date >= ? AND date <= ? AND deleted = 0 ORDER BY transaction_timestamp DESC`,
-    [userId, startDate, endDate]
+    [userId, startDate, endDate],
   );
 };
 
-export const getIncomeExpenseSummary = async (userId: string, startDate: string, endDate: string) => {
+export const getIncomeExpenseSummary = async (
+  userId: string,
+  startDate: string,
+  endDate: string,
+) => {
   const db = getDb();
   return db.getAllAsync<{ type: string; totalAmount: number }>(
     `SELECT type, SUM(amount) as totalAmount FROM transactions WHERE user_id = ? AND date >= ? AND date <= ? AND deleted = 0 GROUP BY type`,
-    [userId, startDate, endDate]
+    [userId, startDate, endDate],
   );
 };
 
 export const getUnsyncedTransactions = async (userId: string) => {
   const db = getDb();
-  return db.getAllAsync<Transaction>(`SELECT * FROM transactions WHERE user_id = ? AND sync_status = 1 AND deleted = 0`, [userId]);
+  return db.getAllAsync<Transaction>(
+    `SELECT * FROM transactions WHERE user_id = ? AND sync_status = 1 AND deleted = 0`,
+    [userId],
+  );
 };
 
 export const updateTransactionSyncStatus = async (id: string, status: number) => {
@@ -104,8 +117,8 @@ export const insertOrUpdateTransaction = async (tx: Transaction, syncStatus: num
       syncStatus,
       tx.created_at || new Date().toISOString(),
       tx.updated_at || new Date().toISOString(),
-      0
-    ]
+      0,
+    ],
   );
 };
 
@@ -113,7 +126,7 @@ export const deleteTransactionAsync = async (id: string, userId: string) => {
   const db = getDb();
   await db.runAsync(
     `UPDATE transactions SET deleted = 1, sync_status = 1 WHERE id = ? AND user_id = ?`,
-    [id, userId]
+    [id, userId],
   );
 };
 
@@ -122,7 +135,7 @@ export const getNetWorth = async (userId: string) => {
   const db = getDb();
   const row = await db.getFirstAsync<{ amount: number }>(
     `SELECT SUM(CASE WHEN type = 'Income' THEN amount ELSE -amount END) as amount FROM transactions WHERE user_id = ? AND deleted = 0`,
-    [userId]
+    [userId],
   );
   return row?.amount || 0;
 };
@@ -131,7 +144,7 @@ export const getSpentToday = async (userId: string, todayDate: string) => {
   const db = getDb();
   const row = await db.getFirstAsync<{ amount: number }>(
     `SELECT SUM(amount) as amount FROM transactions WHERE user_id = ? AND type = 'Expense' AND date = ? AND deleted = 0`,
-    [userId, todayDate]
+    [userId, todayDate],
   );
   return row?.amount || 0;
 };
@@ -140,76 +153,100 @@ export const getTransactionsByDate = async (userId: string, date: string) => {
   const db = getDb();
   return db.getAllAsync<Transaction>(
     `SELECT * FROM transactions WHERE user_id = ? AND date = ? AND deleted = 0 ORDER BY transaction_timestamp DESC`,
-    [userId, date]
+    [userId, date],
   );
 };
-export const getTransactionsByCategoryForExpense = async (userId: string, startDate: string, endDate: string) => {
+export const getTransactionsByCategoryForExpense = async (
+  userId: string,
+  startDate: string,
+  endDate: string,
+) => {
   const db = getDb();
   return db.getAllAsync<{ category_name: string; totalAmount: number }>(
     `SELECT category_name, SUM(amount) as totalAmount FROM transactions
      WHERE user_id = ? AND type = 'Expense' AND date >= ? AND date <= ? AND deleted = 0
      GROUP BY category_name ORDER BY totalAmount DESC`,
-    [userId, startDate, endDate]
+    [userId, startDate, endDate],
   );
 };
 
 export const getMinTransactionYear = async (userId: string) => {
-    const db = getDb();
-    const result = await db.getFirstAsync<{ min_year: number | null }>(
-        `SELECT MIN(strftime('%Y', date)) as min_year FROM transactions WHERE user_id = ? AND deleted = 0`,
-        [userId]
-    );
-    return result?.min_year || new Date().getFullYear();
+  const db = getDb();
+  const result = await db.getFirstAsync<{ min_year: number | null }>(
+    `SELECT MIN(strftime('%Y', date)) as min_year FROM transactions WHERE user_id = ? AND deleted = 0`,
+    [userId],
+  );
+  return result?.min_year || new Date().getFullYear();
 };
 
 export const getMinTransactionDate = async (userId: string) => {
-    const db = getDb();
-    const result = await db.getFirstAsync<{ min_date: string | null }>(
-        `SELECT MIN(date) as min_date FROM transactions WHERE user_id = ? AND deleted = 0`,
-        [userId]
-    );
-    return result?.min_date || format(new Date(), 'yyyy-MM-dd');
+  const db = getDb();
+  const result = await db.getFirstAsync<{ min_date: string | null }>(
+    `SELECT MIN(date) as min_date FROM transactions WHERE user_id = ? AND deleted = 0`,
+    [userId],
+  );
+  return result?.min_date || format(new Date(), 'yyyy-MM-dd');
 };
 
 // QUICK TRANSACTIONS (Local Only)
 export const getQuickTransactions = async (userId: string) => {
-    const db = getDb();
-    return db.getAllAsync<QuickTransaction>(
-        `SELECT * FROM quick_transactions WHERE user_id = ? ORDER BY name ASC`,
-        [userId]
-    );
+  const db = getDb();
+  return db.getAllAsync<QuickTransaction>(
+    `SELECT * FROM quick_transactions WHERE user_id = ? ORDER BY name ASC`,
+    [userId],
+  );
 };
 
 export const insertQuickTransaction = async (qt: QuickTransaction) => {
-    const db = getDb();
-    return db.runAsync(
-        `INSERT INTO quick_transactions (id, name, type, amount, category_id, payee_id, description, user_id) 
+  const db = getDb();
+  return db.runAsync(
+    `INSERT INTO quick_transactions (id, name, type, amount, category_id, payee_id, description, user_id) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [qt.id, qt.name, qt.type, qt.amount || null, qt.category_id || null, qt.payee_id || null, qt.description || null, qt.user_id]
-    );
+    [
+      qt.id,
+      qt.name,
+      qt.type,
+      qt.amount || null,
+      qt.category_id || null,
+      qt.payee_id || null,
+      qt.description || null,
+      qt.user_id,
+    ],
+  );
 };
 
 export const updateQuickTransaction = async (qt: QuickTransaction) => {
-    const db = getDb();
-    return db.runAsync(
-        `UPDATE quick_transactions SET name = ?, type = ?, amount = ?, category_id = ?, payee_id = ?, description = ?
+  const db = getDb();
+  return db.runAsync(
+    `UPDATE quick_transactions SET name = ?, type = ?, amount = ?, category_id = ?, payee_id = ?, description = ?
          WHERE id = ? AND user_id = ?`,
-        [qt.name, qt.type, qt.amount || null, qt.category_id || null, qt.payee_id || null, qt.description || null, qt.id, qt.user_id]
-    );
+    [
+      qt.name,
+      qt.type,
+      qt.amount || null,
+      qt.category_id || null,
+      qt.payee_id || null,
+      qt.description || null,
+      qt.id,
+      qt.user_id,
+    ],
+  );
 };
 
 export const deleteQuickTransaction = async (id: string, userId: string) => {
-    const db = getDb();
-    return db.runAsync(
-        `DELETE FROM quick_transactions WHERE id = ? AND user_id = ?`,
-        [id, userId]
-    );
+  const db = getDb();
+  return db.runAsync(`DELETE FROM quick_transactions WHERE id = ? AND user_id = ?`, [id, userId]);
 };
 
 // Report Queries
 export const getReportMonthlyLivingCosts = async (userId: string, month: string, year: string) => {
   const db = getDb();
-  return db.getAllAsync<{ category_id: string; category_name: string; category_app_icon: string; amount: number }>(
+  return db.getAllAsync<{
+    category_id: string;
+    category_name: string;
+    category_app_icon: string;
+    amount: number;
+  }>(
     `SELECT category_id, category_name, category_app_icon, SUM(amount) as amount
      FROM transactions
      WHERE user_id = ? AND deleted = 0 AND type = 'Expense'
@@ -217,7 +254,7 @@ export const getReportMonthlyLivingCosts = async (userId: string, month: string,
        AND category_id IN (SELECT id FROM categories WHERE is_living_cost = 1 AND user_id = ?)
      GROUP BY category_name
      ORDER BY amount DESC`,
-    [userId, month, year, userId]
+    [userId, month, year, userId],
   );
 };
 
@@ -230,26 +267,46 @@ export const getReportSubscriptionBills = async (userId: string, month: string, 
        AND strftime('%m', date) = ? AND strftime('%Y', date) = ?
        AND category_name IN ('Subscription', 'Bills')
      GROUP BY category_name`,
-    [userId, month, year]
+    [userId, month, year],
   );
 };
 
-export const getReportSummaryByCategory = async (userId: string, type: string, month: string, year: string) => {
+export const getReportSummaryByCategory = async (
+  userId: string,
+  type: string,
+  month: string,
+  year: string,
+) => {
   const db = getDb();
-  return db.getAllAsync<{ category_id: string; category_name: string; category_app_icon: string; amount: number }>(
+  return db.getAllAsync<{
+    category_id: string;
+    category_name: string;
+    category_app_icon: string;
+    amount: number;
+  }>(
     `SELECT category_id, category_name, category_app_icon, SUM(amount) as amount
      FROM transactions
      WHERE user_id = ? AND deleted = 0 AND type = ?
        AND strftime('%m', date) = ? AND strftime('%Y', date) = ?
      GROUP BY category_name
      ORDER BY amount DESC`,
-    [userId, type, month, year]
+    [userId, type, month, year],
   );
 };
 
-export const getReportSummaryByPayee = async (userId: string, type: string, month: string, year: string) => {
+export const getReportSummaryByPayee = async (
+  userId: string,
+  type: string,
+  month: string,
+  year: string,
+) => {
   const db = getDb();
-  return db.getAllAsync<{ payee_id: string; payee_name: string; payee_logo: string; amount: number }>(
+  return db.getAllAsync<{
+    payee_id: string;
+    payee_name: string;
+    payee_logo: string;
+    amount: number;
+  }>(
     `SELECT payee_id, payee_name, payee_logo, SUM(amount) as amount
      FROM transactions
      WHERE user_id = ? AND deleted = 0 AND type = ?
@@ -257,7 +314,7 @@ export const getReportSummaryByPayee = async (userId: string, type: string, mont
        AND payee_id IS NOT NULL AND payee_id !='null'
      GROUP BY payee_name
      ORDER BY amount DESC`,
-    [userId, type, month, year]
+    [userId, type, month, year],
   );
 };
 
@@ -269,7 +326,7 @@ export const getReportMonthlySummary = async (userId: string, month: string, yea
      WHERE user_id = ? AND deleted = 0
        AND strftime('%m', date) = ? AND strftime('%Y', date) = ?
      GROUP BY type`,
-    [userId, month, year]
+    [userId, month, year],
   );
 };
 
@@ -281,7 +338,7 @@ export const getReportYearlySummary = async (userId: string, year: string) => {
      WHERE user_id = ? AND deleted = 0
        AND strftime('%Y', date) = ?
      GROUP BY type`,
-    [userId, year]
+    [userId, year],
   );
 };
 
@@ -293,10 +350,10 @@ export const getReportPayeesOverview = async (userId: string, type: string) => {
        AND payee_id IS NOT NULL AND payee_id !='null'
      GROUP BY payee_name 
      ORDER BY amount DESC`,
-    [userId, type]
+    [userId, type],
   );
 };
- 
+
 export const getReportCategoriesOverview = async (userId: string, type: string) => {
   const db = getDb();
   return db.getAllAsync<{ name: string; amount: number }>(
@@ -304,49 +361,58 @@ export const getReportCategoriesOverview = async (userId: string, type: string) 
      WHERE user_id = ? AND deleted = 0 AND type = ?
      GROUP BY category_name 
      ORDER BY amount DESC`,
-    [userId, type]
+    [userId, type],
   );
 };
 
 export const toggleCategoryLivingCost = async (categoryId: string, isLivingCost: boolean) => {
   const db = getDb();
-  await db.execAsync(`UPDATE categories SET is_living_cost = ${isLivingCost ? 1 : 0} WHERE id = '${categoryId}'`);
+  await db.execAsync(
+    `UPDATE categories SET is_living_cost = ${isLivingCost ? 1 : 0} WHERE id = '${categoryId}'`,
+  );
 };
 
 export const getBudgets = async (userId: string) => {
   const db = getDb();
-  return db.getAllAsync<Budget>(`SELECT * FROM budgets WHERE user_id = '${userId}' AND deleted = 0 ORDER BY name`);
+  return db.getAllAsync<Budget>(
+    `SELECT * FROM budgets WHERE user_id = '${userId}' AND deleted = 0 ORDER BY name`,
+  );
 };
 
 export const addBudget = async (budget: Omit<Budget, 'id'>) => {
-    const db = getDb();
-    const id = Math.random().toString(36).substr(2, 9);
-    await db.execAsync(
-        `INSERT INTO budgets (id, user_id, name, amount, categories, interval, logo, start_date, deleted, sync_status) 
-         VALUES ('${id}', '${budget.user_id}', '${budget.name.replace(/'/g, "''")}', ${budget.amount}, '${budget.categories}', '${budget.interval}', '${budget.logo}', '${budget.start_date}', 0, 0)`
-    );
-    return id;
+  const db = getDb();
+  const id = Math.random().toString(36).substr(2, 9);
+  await db.execAsync(
+    `INSERT INTO budgets (id, user_id, name, amount, categories, interval, logo, start_date, deleted, sync_status) 
+         VALUES ('${id}', '${budget.user_id}', '${budget.name.replace(/'/g, "''")}', ${budget.amount}, '${budget.categories}', '${budget.interval}', '${budget.logo}', '${budget.start_date}', 0, 0)`,
+  );
+  return id;
 };
 
 export const updateBudget = async (id: string, budget: Partial<Budget>) => {
-    const db = getDb();
-    let query = `UPDATE budgets SET sync_status = 0`;
-    if (budget.name) query += `, name = '${budget.name.replace(/'/g, "''")}'`;
-    if (budget.amount !== undefined) query += `, amount = ${budget.amount}`;
-    if (budget.categories) query += `, categories = '${budget.categories}'`;
-    if (budget.interval) query += `, interval = '${budget.interval}'`;
-    if (budget.logo) query += `, logo = '${budget.logo}'`;
-    if (budget.start_date) query += `, start_date = '${budget.start_date}'`;
-    query += ` WHERE id = '${id}'`;
-    await db.execAsync(query);
+  const db = getDb();
+  let query = `UPDATE budgets SET sync_status = 0`;
+  if (budget.name) query += `, name = '${budget.name.replace(/'/g, "''")}'`;
+  if (budget.amount !== undefined) query += `, amount = ${budget.amount}`;
+  if (budget.categories) query += `, categories = '${budget.categories}'`;
+  if (budget.interval) query += `, interval = '${budget.interval}'`;
+  if (budget.logo) query += `, logo = '${budget.logo}'`;
+  if (budget.start_date) query += `, start_date = '${budget.start_date}'`;
+  query += ` WHERE id = '${id}'`;
+  await db.execAsync(query);
 };
 
 export const deleteBudget = async (id: string) => {
-    const db = getDb();
-    await db.execAsync(`UPDATE budgets SET deleted = 1, sync_status = 0 WHERE id = '${id}'`);
+  const db = getDb();
+  await db.execAsync(`UPDATE budgets SET deleted = 1, sync_status = 0 WHERE id = '${id}'`);
 };
 
-export const getBudgetSpending = async (userId: string, categoryIds: string[], startDate: string, endDate: string) => {
+export const getBudgetSpending = async (
+  userId: string,
+  categoryIds: string[],
+  startDate: string,
+  endDate: string,
+) => {
   if (categoryIds.length === 0) return 0;
   const db = getDb();
   const placeholders = categoryIds.map(() => '?').join(',');
@@ -355,50 +421,56 @@ export const getBudgetSpending = async (userId: string, categoryIds: string[], s
      WHERE user_id = ? AND deleted = 0 AND type = 'Expense' 
      AND date >= ? AND date <= ? 
      AND category_id IN (${placeholders})`,
-    [userId, startDate, endDate, ...categoryIds]
+    [userId, startDate, endDate, ...categoryIds],
   );
   return row?.total || 0;
 };
 
-export const getMonthlyFilteredStats = async (userId: string, categoryIds: string[], payeeIds: string[], search: string) => {
-    const db = getDb();
-    const stats: { month: string, income: number, expense: number }[] = [];
-    
-    for (let i = 0; i < 5; i++) {
-        const d = subMonths(new Date(), i);
-        const start = format(startOfMonth(d), 'yyyy-MM-dd');
-        const end = format(endOfMonth(d), 'yyyy-MM-dd');
+export const getMonthlyFilteredStats = async (
+  userId: string,
+  categoryIds: string[],
+  payeeIds: string[],
+  search: string,
+) => {
+  const db = getDb();
+  const stats: { month: string; income: number; expense: number }[] = [];
 
-        let query = `SELECT type, SUM(amount) as total FROM transactions WHERE user_id = ? AND deleted = 0 AND date >= ? AND date <= ?`;
-        const params: any[] = [userId, start, end];
+  for (let i = 0; i < 5; i++) {
+    const d = subMonths(new Date(), i);
+    const start = format(startOfMonth(d), 'yyyy-MM-dd');
+    const end = format(endOfMonth(d), 'yyyy-MM-dd');
 
-        if (categoryIds.length > 0) {
-            const placeholders = categoryIds.map(() => '?').join(',');
-            query += ` AND category_id IN (${placeholders})`;
-            params.push(...categoryIds);
-        }
-        if (payeeIds.length > 0) {
-            const placeholders = payeeIds.map(() => '?').join(',');
-            query += ` AND payee_id IN (${placeholders})`;
-            params.push(...payeeIds);
-        }
-        if (search.trim()) {
-            const s = search.trim();
-            query += ` AND (description LIKE ? OR CAST(amount AS TEXT) LIKE ?)`;
-            params.push(`%${s}%`, `%${s}%`);
-        }
+    let query = `SELECT type, SUM(amount) as total FROM transactions WHERE user_id = ? AND deleted = 0 AND date >= ? AND date <= ?`;
+    const params: (string | number)[] = [userId, start, end];
 
-        query += ` GROUP BY type`;
-        
-        const rows = await db.getAllAsync<{ type: string, total: number }>(query, params);
-        let inc = 0, exp = 0;
-        rows.forEach(r => {
-            if (r.type === 'Income') inc = r.total;
-            else exp = r.total;
-        });
-        stats.push({ month: format(d, 'MMM yyyy'), income: inc, expense: exp });
+    if (categoryIds.length > 0) {
+      const placeholders = categoryIds.map(() => '?').join(',');
+      query += ` AND category_id IN (${placeholders})`;
+      params.push(...categoryIds);
     }
-    return stats;
+    if (payeeIds.length > 0) {
+      const placeholders = payeeIds.map(() => '?').join(',');
+      query += ` AND payee_id IN (${placeholders})`;
+      params.push(...payeeIds);
+    }
+    if (search.trim()) {
+      const s = search.trim();
+      query += ` AND (description LIKE ? OR CAST(amount AS TEXT) LIKE ?)`;
+      params.push(`%${s}%`, `%${s}%`);
+    }
+
+    query += ` GROUP BY type`;
+
+    const rows = await db.getAllAsync<{ type: string; total: number }>(query, params);
+    let inc = 0,
+      exp = 0;
+    rows.forEach((r) => {
+      if (r.type === 'Income') inc = r.total;
+      else exp = r.total;
+    });
+    stats.push({ month: format(d, 'MMM yyyy'), income: inc, expense: exp });
+  }
+  return stats;
 };
 
 export const resetAppData = async (userId: string) => {

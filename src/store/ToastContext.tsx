@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { View } from 'react-native';
 import { Toast, ToastType } from '../components/Toast';
 
 interface ToastContextType {
@@ -24,10 +23,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const showToast = useCallback((msg: string, t: ToastType = 'info') => {
-    // If already showing, hide first to re-trigger animation if possible, 
+    // If already showing, hide first to re-trigger animation if possible,
     // or just update message. Re-triggering is better for user feedback.
     setVisible(false);
-    
+
     setTimeout(() => {
       setMessage(msg);
       setType(t);
@@ -45,12 +44,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast, hideToast }}>
       {children}
-      <Toast 
-        visible={visible} 
-        message={message} 
-        type={type} 
-        onHide={hideToast} 
-      />
+      <Toast visible={visible} message={message} type={type} onHide={hideToast} />
     </ToastContext.Provider>
   );
 };

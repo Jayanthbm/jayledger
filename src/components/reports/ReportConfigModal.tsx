@@ -4,6 +4,7 @@ import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { Category } from '../../models/types';
+import { common } from '../../styles/common';
 
 interface ReportConfigModalProps {
   visible: boolean;
@@ -26,16 +27,11 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
   onToggleLivingCost,
   colors,
   bottomInset,
-  width
+  width,
 }) => {
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="Configure Living Costs"
-      isFullScreen
-    >
-      <View style={{ flex: 1 }}>
+    <BottomSheet visible={visible} onClose={onClose} title="Configure Living Costs" isFullScreen>
+      <View style={common.flex1}>
         <View style={styles.searchContainer}>
           <SearchBar
             value={searchQuery}
@@ -46,8 +42,10 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
         </View>
 
         <FlatList
-          data={allCategories.filter((c: any) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))}
-          keyExtractor={item => item.id}
+          data={allCategories.filter((c: any) =>
+            c.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          )}
+          keyExtractor={(item) => item.id}
           numColumns={3}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
@@ -58,15 +56,29 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
                   width: (width - 40) / 3,
                   backgroundColor: colors.card,
                   borderColor: item.is_living_cost === 1 ? colors.primary : colors.border,
-                  borderWidth: item.is_living_cost === 1 ? 2 : 1
-                }
+                  borderWidth: item.is_living_cost === 1 ? 2 : 1,
+                },
               ]}
               onPress={() => onToggleLivingCost(item.id, !!item.is_living_cost)}
             >
-              <View style={[styles.gridIconBox, { backgroundColor: (item.is_living_cost === 1 ? colors.primary : colors.textSecondary) + '20' }]}>
-                <Icon name={(item.app_icon || 'receipt') as any} size={24} color={item.is_living_cost === 1 ? colors.primary : colors.textSecondary} />
+              <View
+                style={[
+                  styles.gridIconBox,
+                  {
+                    backgroundColor:
+                      (item.is_living_cost === 1 ? colors.primary : colors.textSecondary) + '20',
+                  },
+                ]}
+              >
+                <Icon
+                  name={(item.app_icon || 'receipt') as any}
+                  size={24}
+                  color={item.is_living_cost === 1 ? colors.primary : colors.textSecondary}
+                />
               </View>
-              <Text style={[styles.gridConfigName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+              <Text style={[styles.gridConfigName, { color: colors.text }]} numberOfLines={1}>
+                {item.name}
+              </Text>
               {item.is_living_cost === 1 && (
                 <View style={[styles.checkBadge, { backgroundColor: colors.primary }]}>
                   <Icon name="check" size={12} color="white" />
@@ -119,5 +131,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'white',
-  }
+  },
 });

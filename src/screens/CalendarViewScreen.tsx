@@ -1,28 +1,34 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { Transaction } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
 import { YearMonthSelector } from '../components/YearMonthSelector';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
-  isSameDay, 
-  addMonths, 
-  subMonths, 
-  isAfter, 
-  isBefore 
+import {
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  addMonths,
+  subMonths,
+  isAfter,
+  isBefore,
 } from 'date-fns';
 
 import {
   fetchMinDate,
   fetchTransactionsForDate,
   calculateDailyNetTotal,
-  getNewDateForPeriod
+  getNewDateForPeriod,
 } from '../services/calendarService';
 
 // Modular Components
@@ -48,30 +54,36 @@ export default function CalendarViewScreen() {
       }
     };
     initMinDate();
-  }, [session?.user?.id]);
+  }, [session]);
 
   const daysInMonth = useMemo(() => {
     return eachDayOfInterval({
       start: startOfMonth(currentMonth),
-      end: endOfMonth(currentMonth)
+      end: endOfMonth(currentMonth),
     });
   }, [currentMonth]);
 
-  const loadData = useCallback(async (date: Date) => {
-    if (!session?.user?.id) return;
-    setLoading(true);
-    try {
-      const txs = await fetchTransactionsForDate(session.user.id, date);
-      setData(txs);
-    } catch (error) {
-      console.error("Error loading transactions for date:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.id]);
+  const loadData = useCallback(
+    async (date: Date) => {
+      if (!session?.user?.id) return;
+      setLoading(true);
+      try {
+        const txs = await fetchTransactionsForDate(session.user.id, date);
+        setData(txs);
+      } catch (error) {
+        console.error('Error loading transactions for date:', error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [session],
+  );
 
   useEffect(() => {
-    loadData(selectedDate);
+    const timer = setTimeout(() => {
+      loadData(selectedDate);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [selectedDate, loadData]);
 
   const updatePeriod = (year: number, month: number) => {
@@ -107,10 +119,16 @@ export default function CalendarViewScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View
+        style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      >
         <View style={styles.monthHeader}>
           <TouchableOpacity onPress={handlePrevMonth} disabled={prevDisabled}>
-            <MaterialIcons name="chevron-left" size={28} color={prevDisabled ? colors.border : colors.text} />
+            <MaterialIcons
+              name="chevron-left"
+              size={28}
+              color={prevDisabled ? colors.border : colors.text}
+            />
           </TouchableOpacity>
           <YearMonthSelector
             year={currentMonth.getFullYear().toString()}
@@ -119,7 +137,11 @@ export default function CalendarViewScreen() {
             onMonthChange={(m) => updatePeriod(currentMonth.getFullYear(), m)}
           />
           <TouchableOpacity onPress={handleNextMonth} disabled={nextDisabled}>
-            <MaterialIcons name="chevron-right" size={28} color={nextDisabled ? colors.border : colors.text} />
+            <MaterialIcons
+              name="chevron-right"
+              size={28}
+              color={nextDisabled ? colors.border : colors.text}
+            />
           </TouchableOpacity>
         </View>
 
@@ -131,34 +153,35 @@ export default function CalendarViewScreen() {
         />
 
         {!isSameDay(selectedDate, new Date()) && (
-          <TouchableOpacity 
-            style={[styles.todayBtn, { borderColor: colors.primary + '40', backgroundColor: colors.primary + '05' }]} 
+          <TouchableOpacity
+            style={[
+              styles.todayBtn,
+              { borderColor: colors.primary + '40', backgroundColor: colors.primary + '05' },
+            ]}
             onPress={goToToday}
           >
-             <MaterialIcons name="today" size={16} color={colors.primary} />
-             <Text style={[styles.todayBtnText, { color: colors.primary }]}>Go to Today</Text>
+            <MaterialIcons name="today" size={16} color={colors.primary} />
+            <Text style={[styles.todayBtnText, { color: colors.primary }]}>Go to Today</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <CalendarDaySummary
-        selectedDate={selectedDate}
-        totalForDay={totalForDay}
-        colors={colors}
-      />
+      <CalendarDaySummary selectedDate={selectedDate} totalForDay={totalForDay} colors={colors} />
 
       {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <FlatList
           data={data}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           renderItem={({ item }) => <TransactionCard transaction={item} />}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <MaterialIcons name="event-busy" size={64} color={colors.border} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No activity on this day</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No activity on this day
+              </Text>
             </View>
           }
         />
@@ -198,4 +221,7 @@ const styles = StyleSheet.create({
   listContent: { paddingBottom: 40 },
   emptyContainer: { alignItems: 'center', marginTop: 40 },
   emptyText: { fontSize: 15, marginTop: 12 },
+  loader: {
+    marginTop: 40,
+  },
 });

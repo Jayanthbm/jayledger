@@ -7,9 +7,9 @@ import {
   getReportYearlySummary,
   getReportPayeesOverview,
   getReportCategoriesOverview,
-  getTransactionsByDateRange
+  getTransactionsByDateRange,
 } from '../db/queries';
-import { Transaction } from '../models/types';
+import { Transaction, ReportItem } from '../models/types';
 import { format, endOfMonth } from 'date-fns';
 
 export const fetchReportData = async (
@@ -17,8 +17,8 @@ export const fetchReportData = async (
   reportType: string,
   type: 'Expense' | 'Income',
   monthStr: string,
-  year: string
-): Promise<any[]> => {
+  year: string,
+): Promise<ReportItem[]> => {
   switch (reportType) {
     case 'monthlyLivingCosts':
       return await getReportMonthlyLivingCosts(userId, monthStr, year);
@@ -44,13 +44,16 @@ export const fetchReportData = async (
 export const handleReportDrillDown = async (
   userId: string,
   reportType: string,
-  item: any,
+  item: ReportItem,
   type: 'Expense' | 'Income',
   monthStr: string,
-  year: string
+  year: string,
 ): Promise<Transaction[]> => {
   const startDate = `${year}-${monthStr}-01`;
-  const endDate = format(endOfMonth(new Date(parseInt(year), parseInt(monthStr) - 1)), 'yyyy-MM-dd');
+  const endDate = format(
+    endOfMonth(new Date(parseInt(year), parseInt(monthStr) - 1)),
+    'yyyy-MM-dd',
+  );
 
   const isOverview = reportType === 'payees' || reportType === 'categories';
   const fetchStartDate = isOverview ? '1970-01-01' : startDate;
@@ -58,36 +61,48 @@ export const handleReportDrillDown = async (
 
   if (['summaryByCategory', 'monthlyLivingCosts', 'categories'].includes(reportType)) {
     const all = await getTransactionsByDateRange(userId, fetchStartDate, fetchEndDate);
-    return all.filter((t: any) => t.category_name === (item.category_name || item.name) && t.type === (item.type || type));
+    return all.filter(
+      (t: Transaction) =>
+        t.category_name === (item.category_name || item.name) && t.type === (item.type || type),
+    );
   } else if (['summaryByPayee', 'payees'].includes(reportType)) {
     const all = await getTransactionsByDateRange(userId, fetchStartDate, fetchEndDate);
-    return all.filter((t: any) => (t.payee_name === (item.payee_name || item.name)) && t.type === (item.type || type));
+    return all.filter(
+      (t: Transaction) =>
+        t.payee_name === (item.payee_name || item.name) && t.type === (item.type || type),
+    );
   } else if (reportType === 'subscriptionAndBills') {
     const all = await getTransactionsByDateRange(userId, startDate, endDate);
-    return all.filter((t: any) => t.category_name === item.category_name);
+    return all.filter((t: Transaction) => t.category_name === item.category_name);
   }
-  
+
   return [];
 };
 
 export const sortReportData = (
-  data: any[],
+  data: ReportItem[],
   searchQuery: string,
   sortBy: 'name' | 'amount',
-  sortAsc: boolean
-): any[] => {
+  sortAsc: boolean,
+): ReportItem[] => {
   let filtered = data;
   if (searchQuery.trim()) {
-    filtered = filtered.filter(item =>
+    filtered = filtered.filter((item) =>
       (item.name || item.category_name || item.payee_name || '')
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()),
     );
   }
 
   return [...filtered].sort((a, b) => {
-    let valA = sortBy === 'name' ? (a.name || a.category_name || a.payee_name || '') : (a.amount || a.totalAmount || 0);
-    let valB = sortBy === 'name' ? (b.name || b.category_name || b.payee_name || '') : (b.amount || b.totalAmount || 0);
+    let valA =
+      sortBy === 'name'
+        ? a.name || a.category_name || a.payee_name || ''
+        : a.amount || a.totalAmount || 0;
+    let valB =
+      sortBy === 'name'
+        ? b.name || b.category_name || b.payee_name || ''
+        : b.amount || b.totalAmount || 0;
 
     let cmp = 0;
     if (typeof valA === 'string' && typeof valB === 'string') {

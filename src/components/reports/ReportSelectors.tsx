@@ -3,7 +3,17 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { SegmentedControl } from '../SegmentedControl';
 import { YearMonthSelector } from '../YearMonthSelector';
-import { isBefore, isAfter, endOfMonth, startOfMonth, subMonths, subYears, addMonths, addYears } from 'date-fns';
+import {
+  isBefore,
+  isAfter,
+  endOfMonth,
+  startOfMonth,
+  subMonths,
+  subYears,
+  addMonths,
+  addYears,
+} from 'date-fns';
+import { common } from '../../styles/common';
 
 interface ReportSelectorsProps {
   type: 'Expense' | 'Income';
@@ -39,7 +49,7 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
   const handlePrev = () => {
     const current = new Date(parseInt(year), month, 1);
     const prev = reportType === 'yearlySummary' ? subYears(current, 1) : subMonths(current, 1);
-    
+
     if (!isBefore(endOfMonth(prev), startOfMonth(minDate))) {
       setYear(prev.getFullYear().toString());
       setMonth(prev.getMonth());
@@ -49,20 +59,28 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
   const handleNext = () => {
     const current = new Date(parseInt(year), month, 1);
     const next = reportType === 'yearlySummary' ? addYears(current, 1) : addMonths(current, 1);
-    
+
     if (!isAfter(startOfMonth(next), endOfMonth(maxDate))) {
       setYear(next.getFullYear().toString());
       setMonth(next.getMonth());
     }
   };
 
-  const prevDisabled = reportType === 'yearlySummary' 
-    ? isBefore(endOfMonth(subYears(new Date(parseInt(year), month, 1), 1)), startOfMonth(minDate))
-    : isBefore(endOfMonth(subMonths(new Date(parseInt(year), month, 1), 1)), startOfMonth(minDate));
+  const prevDisabled =
+    reportType === 'yearlySummary'
+      ? isBefore(endOfMonth(subYears(new Date(parseInt(year), month, 1), 1)), startOfMonth(minDate))
+      : isBefore(
+          endOfMonth(subMonths(new Date(parseInt(year), month, 1), 1)),
+          startOfMonth(minDate),
+        );
 
-  const nextDisabled = reportType === 'yearlySummary'
-    ? isAfter(startOfMonth(addYears(new Date(parseInt(year), month, 1), 1)), endOfMonth(maxDate))
-    : isAfter(startOfMonth(addMonths(new Date(parseInt(year), month, 1), 1)), endOfMonth(maxDate));
+  const nextDisabled =
+    reportType === 'yearlySummary'
+      ? isAfter(startOfMonth(addYears(new Date(parseInt(year), month, 1), 1)), endOfMonth(maxDate))
+      : isAfter(
+          startOfMonth(addMonths(new Date(parseInt(year), month, 1), 1)),
+          endOfMonth(maxDate),
+        );
 
   return (
     <View style={styles.selectors}>
@@ -70,26 +88,22 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
         <SegmentedControl
           options={[
             { label: 'Expense', value: 'Expense', activeColor: colors.danger },
-            { label: 'Income', value: 'Income', activeColor: colors.success }
+            { label: 'Income', value: 'Income', activeColor: colors.success },
           ]}
           selectedValue={type}
           onValueChange={(val) => setType(val as 'Expense' | 'Income')}
           variant="medium"
-          containerStyle={{ marginBottom: 16 }}
+          containerStyle={common.mb16}
         />
       )}
 
       {showYearSelector && (
         <View style={styles.dateSelectorContainer}>
-          <TouchableOpacity 
-            style={styles.navArrow}
-            onPress={handlePrev} 
-            disabled={prevDisabled}
-          >
-            <Icon 
-              name="chevron-left" 
-              size={28} 
-              color={prevDisabled ? colors.border : colors.text} 
+          <TouchableOpacity style={styles.navArrow} onPress={handlePrev} disabled={prevDisabled}>
+            <Icon
+              name="chevron-left"
+              size={28}
+              color={prevDisabled ? colors.border : colors.text}
             />
           </TouchableOpacity>
           <View style={styles.selectorWrapper}>
@@ -101,15 +115,11 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
               showMonths={showMonthSelector}
             />
           </View>
-          <TouchableOpacity 
-            style={styles.navArrow}
-            onPress={handleNext} 
-            disabled={nextDisabled}
-          >
-            <Icon 
-              name="chevron-right" 
-              size={28} 
-              color={nextDisabled ? colors.border : colors.text} 
+          <TouchableOpacity style={styles.navArrow} onPress={handleNext} disabled={nextDisabled}>
+            <Icon
+              name="chevron-right"
+              size={28}
+              color={nextDisabled ? colors.border : colors.text}
             />
           </TouchableOpacity>
         </View>

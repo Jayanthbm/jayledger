@@ -1,21 +1,30 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Platform, TouchableOpacity, ActivityIndicator, DeviceEventEmitter } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  TouchableOpacity,
+  ActivityIndicator,
+  DeviceEventEmitter,
+} from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { Transaction, Category, Payee, QuickTransaction } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TransactionCard } from '../components/TransactionCard';
 import { SearchBar } from '../components/SearchBar';
 import { deleteTransactionAsync, getQuickTransactions } from '../db/queries';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
 import { FlashList } from '@shopify/flash-list';
-import { 
-  fetchTransactions, 
-  fetchTransactionFilterData, 
-  fetchStatsBreakdown, 
-  FlashListItem 
+import {
+  fetchTransactions,
+  fetchTransactionFilterData,
+  fetchStatsBreakdown,
+  FlashListItem,
 } from '../services/transactionService';
 import { TransactionFilterSelector } from '../components/transactions/TransactionFilterSelector';
 import { TransactionDeleteModal } from '../components/transactions/TransactionDeleteModal';
@@ -24,13 +33,16 @@ import { TransactionStatsModal } from '../components/transactions/TransactionSta
 import { TransactionSectionHeader } from '../components/transactions/TransactionSectionHeader';
 import { syncTransactions, needsTransactionSync } from '../services/syncService';
 import { FloatingActionButton } from '../components/FloatingActionButton';
+import { RootStackParamList } from '../navigation/navigationTypes';
+import { ReportItem } from '../models/types';
+import { common } from '../styles/common';
 
 const TypedFlashList = FlashList as any;
 
 export default function TransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -47,7 +59,7 @@ export default function TransactionsScreen() {
   }, []);
 
   const [showStatsModal, setShowStatsModal] = useState(false);
-  const [statsBreakdown, setStatsBreakdown] = useState<any[]>([]);
+  const [statsBreakdown, setStatsBreakdown] = useState<ReportItem[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
 
   const [search, setSearch] = useState('');
@@ -68,46 +80,55 @@ export default function TransactionsScreen() {
   const [quickTransactions, setQuickTransactions] = useState<QuickTransaction[]>([]);
   const [showQuickModal, setShowQuickModal] = useState(false);
 
-  const route = navigation.getState().routes[navigation.getState().index];
-  const params = route.params as any;
+  const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
+  const params = route.params;
 
   const loadFilterData = useCallback(async () => {
     if (!session?.user?.id) return;
     const { categories: cats, payees: p } = await fetchTransactionFilterData(session.user.id);
     setCategories(cats);
     setPayees(p);
-  }, [session?.user?.id]);
+  }, [session]);
 
   const loadData = useCallback(async () => {
     if (!session?.user?.id) {
       setLoading(false);
       return;
     }
-    
-    const { listData: data, stickyHeaderIndices: indices, totalFiltered: total } = await fetchTransactions({
+
+    const {
+      listData: data,
+      stickyHeaderIndices: indices,
+      totalFiltered: total,
+    } = await fetchTransactions({
       userId: session.user.id,
       search,
       selectedCats,
       selectedPayees,
       startDate,
-      endDate
+      endDate,
     });
 
     setListData(data);
     setStickyHeaderIndices(indices);
     setTotalFiltered(total);
     setLoading(false);
-  }, [session?.user?.id, search, selectedCats, selectedPayees, startDate, endDate]);
+  }, [session, search, selectedCats, selectedPayees, startDate, endDate]);
 
   const loadStatsBreakdown = async () => {
     if (!session?.user?.id) return;
     setLoadingStats(true);
     setShowStatsModal(true);
     try {
-      const stats = await fetchStatsBreakdown(session.user.id, selectedCats, selectedPayees, search);
+      const stats = await fetchStatsBreakdown(
+        session.user.id,
+        selectedCats,
+        selectedPayees,
+        search,
+      );
       setStatsBreakdown(stats);
     } catch (e) {
-      console.error("Error loading stats breakdown:", e);
+      console.error('Error loading stats breakdown:', e);
     } finally {
       setLoadingStats(false);
     }
@@ -122,38 +143,49 @@ export default function TransactionsScreen() {
       if (lastTxSync) setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
       loadData();
     } catch (e) {
-      console.error("Manual sync error:", e);
+      console.error('Manual sync error:', e);
     } finally {
       setIsSyncing(false);
     }
-  }, [session?.user?.id, isSyncing, loadData]);
+  }, [session, isSyncing, loadData]);
 
   useEffect(() => {
-    if (params?.initialSelectedCats) {
-      setSelectedCats(params.initialSelectedCats);
-      setSelectedPayees([]);
-    }
-    if (params?.initialSelectedPayees) {
-      setSelectedPayees(params.initialSelectedPayees);
-      setSelectedCats([]);
-    }
-    if (params?.initialStartDate) setStartDate(params.initialStartDate);
-    if (params?.initialEndDate) setEndDate(params.initialEndDate);
+    const timer = setTimeout(() => {
+      if (params?.initialSelectedCats) {
+        setSelectedCats(params.initialSelectedCats);
+        setSelectedPayees([]);
+      }
+      if (params?.initialSelectedPayees) {
+        setSelectedPayees(params.initialSelectedPayees);
+        setSelectedCats([]);
+      }
+      if (params?.initialStartDate) setStartDate(params.initialStartDate);
+      if (params?.initialEndDate) setEndDate(params.initialEndDate);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [params]);
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity activeOpacity={0.7} onPress={scrollToTop} style={{ alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Transactions</Text>
-          {lastSyncTime ? <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text> : null}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={scrollToTop}
+          style={styles.headerTitleContainer}
+        >
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Transactions</Text>
+          {lastSyncTime ? (
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              Synced: {lastSyncTime}
+            </Text>
+          ) : null}
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
-          style={{ paddingRight: 16, justifyContent: 'center', alignItems: 'center' }}
+          style={styles.headerRightBtn}
           disabled={isSyncing}
         >
           {isSyncing ? (
@@ -164,12 +196,22 @@ export default function TransactionsScreen() {
         </TouchableOpacity>
       ),
     });
-    
+
     const sub = DeviceEventEmitter.addListener('module_refreshed', (data: { module: string }) => {
       if (data.module === 'Transactions') loadData();
     });
     return () => sub.remove();
-  }, [navigation, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime, handleManualSync, loadData]);
+  }, [
+    navigation,
+    isSyncing,
+    colors.text,
+    colors.textSecondary,
+    colors.primary,
+    lastSyncTime,
+    handleManualSync,
+    loadData,
+    scrollToTop,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -183,23 +225,28 @@ export default function TransactionsScreen() {
           setIsSyncing(true);
           await syncTransactions(session.user.id, true);
           setIsSyncing(false);
-          const updatedLastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+          const updatedLastTxSync = await AsyncStorage.getItem(
+            `@last_sync_transactions_${session.user.id}`,
+          );
           if (updatedLastTxSync) setLastSyncTime(getRelativeTime(parseInt(updatedLastTxSync)));
           loadData();
         }
       };
 
-      loadData();
-      loadFilterData();
-      const loadQuick = async () => {
-        if (session?.user?.id) {
-          const qts = await getQuickTransactions(session.user.id);
-          setQuickTransactions(qts);
-        }
-      };
-      loadQuick();
-      initSync();
-    }, [session?.user?.id, loadData, loadFilterData])
+      const timer = setTimeout(() => {
+        loadData();
+        loadFilterData();
+        const loadQuick = async () => {
+          if (session?.user?.id) {
+            const qts = await getQuickTransactions(session.user.id);
+            setQuickTransactions(qts);
+          }
+        };
+        loadQuick();
+        initSync();
+      }, 0);
+      return () => clearTimeout(timer);
+    }, [session, loadData, loadFilterData]),
   );
 
   const handleDeleteTransaction = (tx: Transaction) => setDeleteConfirmTx(tx);
@@ -221,9 +268,13 @@ export default function TransactionsScreen() {
   }, [loadData]);
 
   useEffect(() => {
-    if (showFilterModal === 'Category') setTempSelectedCats([...selectedCats]);
-    else if (showFilterModal === 'Payee') setTempSelectedPayees([...selectedPayees]);
-  }, [showFilterModal, selectedCats, selectedPayees]);
+    if (!showFilterModal) {
+      const timer = setTimeout(() => {
+        setModalSearch('');
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [showFilterModal]);
 
   const handleFilterCategory = (catId: string) => {
     setSelectedCats([catId]);
@@ -258,17 +309,39 @@ export default function TransactionsScreen() {
       </View>
 
       <View style={styles.filterRow}>
-        <View style={{ flexDirection: 'row', gap: 10, flex: 1 }}>
-          <View style={[styles.filterChip, {
-            backgroundColor: selectedCats.length > 0 ? colors.primary + '15' : 'transparent',
-            borderColor: selectedCats.length > 0 ? colors.primary : colors.border
-          }]}>
-            <TouchableOpacity onPress={() => setShowFilterModal('Category')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="category" size={16} color={selectedCats.length > 0 ? colors.primary : colors.textSecondary} style={{marginRight: 4}} />
-              <Text style={[styles.filterChipText, { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary }]}>
+        <View style={styles.row}>
+          <View
+            style={[
+              styles.filterChip,
+              {
+                backgroundColor: selectedCats.length > 0 ? colors.primary + '15' : 'transparent',
+                borderColor: selectedCats.length > 0 ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={() => setShowFilterModal('Category')}
+              style={styles.filterChipButton}
+            >
+              <Icon
+                name="category"
+                size={16}
+                color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
+                style={styles.filterIcon}
+              />
+              <Text
+                style={[
+                  styles.filterChipText,
+                  { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary },
+                ]}
+              >
                 {selectedCats.length > 0 ? `${selectedCats.length} Mixed` : 'Categories'}
               </Text>
-              <Icon name="arrow-drop-down" size={20} color={selectedCats.length > 0 ? colors.primary : colors.textSecondary} />
+              <Icon
+                name="arrow-drop-down"
+                size={20}
+                color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
+              />
             </TouchableOpacity>
             {selectedCats.length > 0 && (
               <TouchableOpacity onPress={() => setSelectedCats([])} style={styles.smallClose}>
@@ -277,16 +350,38 @@ export default function TransactionsScreen() {
             )}
           </View>
 
-          <View style={[styles.filterChip, {
-            backgroundColor: selectedPayees.length > 0 ? colors.primary + '15' : 'transparent',
-            borderColor: selectedPayees.length > 0 ? colors.primary : colors.border
-          }]}>
-            <TouchableOpacity onPress={() => setShowFilterModal('Payee')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="person" size={16} color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary} style={{marginRight: 4}} />
-              <Text style={[styles.filterChipText, { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary }]}>
+          <View
+            style={[
+              styles.filterChip,
+              {
+                backgroundColor: selectedPayees.length > 0 ? colors.primary + '15' : 'transparent',
+                borderColor: selectedPayees.length > 0 ? colors.primary : colors.border,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              onPress={() => setShowFilterModal('Payee')}
+              style={styles.filterChipButton}
+            >
+              <Icon
+                name="person"
+                size={16}
+                color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
+                style={common.mr4}
+              />
+              <Text
+                style={[
+                  styles.filterChipText,
+                  { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary },
+                ]}
+              >
                 {selectedPayees.length > 0 ? `${selectedPayees.length} Payees` : 'Payees'}
               </Text>
-              <Icon name="arrow-drop-down" size={20} color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary} />
+              <Icon
+                name="arrow-drop-down"
+                size={20}
+                color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
+              />
             </TouchableOpacity>
             {selectedPayees.length > 0 && (
               <TouchableOpacity onPress={() => setSelectedPayees([])} style={styles.smallClose}>
@@ -300,15 +395,26 @@ export default function TransactionsScreen() {
       {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
         <View style={styles.statsRow}>
           <TouchableOpacity
-            style={[styles.statsPill, { backgroundColor: colors.card, borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40' }]}
+            style={[
+              styles.statsPill,
+              {
+                backgroundColor: colors.card,
+                borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40',
+              },
+            ]}
             onPress={loadStatsBreakdown}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-               <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>FILTER TOTAL</Text>
-               <Text style={[styles.statsValue, { color: totalFiltered >= 0 ? colors.success : colors.danger }]}>
-                 {totalFiltered >= 0 ? '+' : ''}₹{totalFiltered.toLocaleString()}
-               </Text>
-               <Icon name="bar-chart" size={16} color={colors.primary} />
+            <View style={styles.statsPillContent}>
+              <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>FILTER TOTAL</Text>
+              <Text
+                style={[
+                  styles.statsValue,
+                  { color: totalFiltered >= 0 ? colors.success : colors.danger },
+                ]}
+              >
+                {totalFiltered >= 0 ? '+' : ''}₹{totalFiltered.toLocaleString()}
+              </Text>
+              <Icon name="bar-chart" size={16} color={colors.primary} />
             </View>
           </TouchableOpacity>
         </View>
@@ -317,7 +423,9 @@ export default function TransactionsScreen() {
       <TypedFlashList
         ref={listRef}
         data={listData}
-        keyExtractor={(item: FlashListItem) => item.itemType === 'header' ? `header-${item.date}` : item.id}
+        keyExtractor={(item: FlashListItem) =>
+          item.itemType === 'header' ? `header-${item.date}` : item.id
+        }
         renderItem={({ item }: { item: FlashListItem }) => {
           if (item.itemType === 'header') {
             return <TransactionSectionHeader date={item.date} total={item.total} colors={colors} />;
@@ -335,19 +443,30 @@ export default function TransactionsScreen() {
         getItemType={(item: FlashListItem) => item.itemType}
         stickyHeaderIndices={stickyHeaderIndices}
         estimatedItemSize={80}
-        ListEmptyComponent={loading ? <ActivityIndicator style={{marginTop: 40}} color={colors.primary} /> : (
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator style={styles.emptyLoader} color={colors.primary} />
+          ) : (
             <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIconBox, { backgroundColor: colors.border + '15' }]}>
-              <Icon name="search-off" size={48} color={colors.border} />
+              <View style={[styles.emptyIconBox, { backgroundColor: colors.border + '15' }]}>
+                <Icon name="search-off" size={48} color={colors.border} />
+              </View>
+              <Text style={[styles.emptyHeader, { color: colors.text }]}>
+                No transactions found
+              </Text>
+              <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                Try adjusting your filters or search terms
+              </Text>
+              <TouchableOpacity
+                style={[styles.clearFilterBtn, { backgroundColor: colors.primary }]}
+                onPress={clearFilters}
+              >
+                <Text style={styles.clearFilterBtnText}>Clear All Filters</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.emptyHeader, { color: colors.text }]}>No transactions found</Text>
-            <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Try adjusting your filters or search terms</Text>
-            <TouchableOpacity style={[styles.clearFilterBtn, { backgroundColor: colors.primary }]} onPress={clearFilters}>
-              <Text style={styles.clearFilterBtnText}>Clear All Filters</Text>
-            </TouchableOpacity>
-            </View>
-        )}
-        contentContainerStyle={{ paddingBottom: 100 }}
+          )
+        }
+        contentContainerStyle={styles.listContent}
       />
 
       <TransactionFilterSelector
@@ -358,7 +477,11 @@ export default function TransactionsScreen() {
         payees={payees}
         tempSelectedItems={tempSelectedCats}
         setTempSelectedItems={setTempSelectedCats}
-        onApply={(selected) => { setSelectedCats(selected); setShowFilterModal(null); setModalSearch(''); }}
+        onApply={(selected) => {
+          setSelectedCats(selected);
+          setShowFilterModal(null);
+          setModalSearch('');
+        }}
         colors={colors}
         modalSearch={modalSearch}
         setModalSearch={setModalSearch}
@@ -371,7 +494,11 @@ export default function TransactionsScreen() {
         payees={payees}
         tempSelectedItems={tempSelectedPayees}
         setTempSelectedItems={setTempSelectedPayees}
-        onApply={(selected) => { setSelectedPayees(selected); setShowFilterModal(null); setModalSearch(''); }}
+        onApply={(selected) => {
+          setSelectedPayees(selected);
+          setShowFilterModal(null);
+          setModalSearch('');
+        }}
         colors={colors}
         modalSearch={modalSearch}
         setModalSearch={setModalSearch}
@@ -403,7 +530,7 @@ export default function TransactionsScreen() {
         onPress={() => navigation.navigate('AddTransaction')}
         iconName="add"
         backgroundColor={colors.primary}
-        style={{ bottom: Platform.OS === 'ios' ? 120 : 24 }}
+        style={styles.fab}
         iconSize={32}
       />
 
@@ -421,7 +548,13 @@ export default function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   searchContainer: { padding: 16, paddingBottom: 8 },
-  filterRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, alignItems: 'center', gap: 8 },
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+    gap: 8,
+  },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -429,7 +562,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 24,
     borderWidth: 1.5,
-    backgroundColor: 'transparent'
+    backgroundColor: 'transparent',
   },
   filterChipText: { fontSize: 13, fontWeight: '700' },
   smallClose: { padding: 2, marginLeft: 8 },
@@ -437,8 +570,20 @@ const styles = StyleSheet.create({
   statsPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
   statsLabel: { fontSize: 10, fontWeight: '800' },
   statsValue: { fontSize: 14, fontWeight: '800' },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 },
-  emptyIconBox: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   emptyHeader: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
   emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
   clearFilterBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, elevation: 2 },
@@ -459,4 +604,43 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     borderWidth: 1.5,
   },
+  headerTitleContainer: {
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    fontSize: 10,
+  },
+  headerRightBtn: {
+    paddingRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+    flex: 1,
+  },
+  filterChipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  filterIcon: {
+    marginRight: 4,
+  },
+  statsPillContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  emptyLoader: {
+    marginTop: 40,
+  },
+  fab: {
+    bottom: Platform.OS === 'ios' ? 120 : 24,
+  },
+  listContent: { paddingBottom: 100 },
 });

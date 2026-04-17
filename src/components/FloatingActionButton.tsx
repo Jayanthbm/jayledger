@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp, Platform } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 interface FloatingActionButtonProps {

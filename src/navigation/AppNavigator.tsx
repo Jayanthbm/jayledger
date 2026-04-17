@@ -1,9 +1,13 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer, RouteProp } from '@react-navigation/native';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
 import { useAuth } from '../store/AuthContext';
-import { ActivityIndicator, View, Platform } from 'react-native';
+import { ActivityIndicator, View, Platform, StyleSheet } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
+import { RootStackParamList } from './navigationTypes';
 
 import LoginScreen from '../screens/LoginScreen';
 import MainTabs from './MainTabs';
@@ -18,7 +22,7 @@ import AddQuickTransactionScreen from '../screens/AddQuickTransactionScreen';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { TouchableOpacity } from 'react-native';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { session, loading } = useAuth();
@@ -26,16 +30,16 @@ export default function AppNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
-  const standardHeaderLeft = (navigation: any) => (
+  const standardHeaderLeft = (navigation: { goBack: () => void }) => (
     <TouchableOpacity
       onPress={() => navigation.goBack()}
-      style={{ paddingRight: 12, justifyContent: 'center', alignItems: 'center' }}
+      style={styles.headerLeftBtn}
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
     >
       <Icon name="arrow-back" size={24} color={colors.text} />
@@ -65,7 +69,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: "Today's Activity",
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -75,7 +79,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Transaction Calendar',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -85,17 +89,23 @@ export default function AppNavigator() {
                 headerShown: false,
                 presentation: 'transparentModal',
                 contentStyle: { backgroundColor: 'transparent' },
-                animation: 'slide_from_bottom'
+                animation: 'slide_from_bottom',
               }}
             />
             <Stack.Screen
               name="ReportDetail"
               component={ReportView}
-              options={({ route, navigation }: any) => ({
+              options={({
+                route,
+                navigation,
+              }: {
+                route: RouteProp<RootStackParamList, 'ReportDetail'>;
+                navigation: NativeStackNavigationProp<RootStackParamList>;
+              }) => ({
                 headerShown: true,
                 title: route.params?.title || 'Report',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -105,7 +115,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Categories',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -115,7 +125,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Payees',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -125,7 +135,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Quick Transactions',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -135,7 +145,7 @@ export default function AppNavigator() {
                 headerShown: false,
                 presentation: 'transparentModal',
                 contentStyle: { backgroundColor: 'transparent' },
-                animation: 'slide_from_bottom'
+                animation: 'slide_from_bottom',
               }}
             />
           </>
@@ -146,3 +156,16 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerLeftBtn: {
+    paddingRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

@@ -15,158 +15,162 @@ interface TransactionCardProps {
   compact?: boolean;
 }
 
-export const TransactionCard = React.memo(({ 
-  transaction, 
-  onEdit, 
-  onDelete, 
-  onFilterCategory, 
-  onFilterPayee,
-  compact = false
-}: TransactionCardProps) => {
-  const { colors } = useTheme();
-  const swipeableRef = useRef<Swipeable>(null);
-  const isIncome = transaction.type === 'Income';
+export const TransactionCard = React.memo(
+  ({
+    transaction,
+    onEdit,
+    onDelete,
+    onFilterCategory,
+    onFilterPayee,
+    compact = false,
+  }: TransactionCardProps) => {
+    const { colors } = useTheme();
+    const swipeableRef = useRef<Swipeable>(null);
+    const isIncome = transaction.type === 'Income';
 
-  const handleLinkPress = () => {
-    if (transaction.product_link) {
-      Linking.openURL(transaction.product_link).catch(err => console.error("Couldn't load page", err));
-    }
-  };
+    const handleLinkPress = () => {
+      if (transaction.product_link) {
+        Linking.openURL(transaction.product_link).catch((err) =>
+          console.error("Couldn't load page", err),
+        );
+      }
+    };
 
-  const handleEdit = () => {
-    swipeableRef.current?.close();
-    onEdit?.(transaction);
-  };
+    const handleEdit = () => {
+      swipeableRef.current?.close();
+      onEdit?.(transaction);
+    };
 
-  const handleDelete = () => {
-    swipeableRef.current?.close();
-    onDelete?.(transaction);
-  };
+    const handleDelete = () => {
+      swipeableRef.current?.close();
+      onDelete?.(transaction);
+    };
 
-  const renderRightActions = () => (
-    <View style={styles.actionsContainer}>
-      <TouchableOpacity 
-        style={[styles.actionButton, { backgroundColor: colors.primary }]} 
-        onPress={handleEdit}
-      >
-        <Icon name="edit" size={24} color="white" />
-      </TouchableOpacity>
-      <TouchableOpacity 
-        style={[styles.actionButton, { backgroundColor: colors.danger }]} 
-        onPress={handleDelete}
-      >
-        <Icon name="delete" size={24} color="white" />
-      </TouchableOpacity>
-    </View>
-  );
-
-  const cardContent = (
-    <View style={[
-      styles.card, 
-      { backgroundColor: colors.card },
-      compact && { padding: 12, marginVertical: 4, borderRadius: 12, marginHorizontal: 0 }
-    ]}>
-      <View style={styles.mainRow}>
-        <TouchableOpacity 
-          style={[
-            styles.iconContainer, 
-            { backgroundColor: colors.background },
-            compact && { width: 36, height: 36, borderRadius: 18 }
-          ]}
-          onPress={() => onFilterCategory?.(transaction.category_id!)}
-          activeOpacity={0.7}
+    const renderRightActions = () => (
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: colors.primary }]}
+          onPress={handleEdit}
         >
-          <Icon 
-            name={(transaction.category_app_icon || 'receipt') as any} 
-            size={compact ? 20 : 24} 
-            color={isIncome ? colors.success : colors.primary} 
-          />
+          <Icon name="edit" size={24} color="white" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: colors.danger }]}
+          onPress={handleDelete}
+        >
+          <Icon name="delete" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+    );
 
-        <View style={styles.middleSection}>
-          <Text style={[
-            styles.categoryName, 
-            { color: colors.text },
-            compact && { fontSize: 14, marginBottom: 2 }
-          ]}>
-            {transaction.category_name}
-          </Text>
-          
-          {transaction.description && (
-            <Text 
+    const cardContent = (
+      <View style={[styles.card, { backgroundColor: colors.card }, compact && styles.cardCompact]}>
+        <View style={styles.mainRow}>
+          <TouchableOpacity
+            style={[
+              styles.iconContainer,
+              { backgroundColor: colors.background },
+              compact && styles.iconContainerCompact,
+            ]}
+            onPress={() => onFilterCategory?.(transaction.category_id!)}
+            activeOpacity={0.7}
+          >
+            <Icon
+              name={(transaction.category_app_icon || 'receipt') as keyof typeof Icon.glyphMap}
+              size={compact ? 20 : 24}
+              color={isIncome ? colors.success : colors.primary}
+            />
+          </TouchableOpacity>
+
+          <View style={styles.middleSection}>
+            <Text
               style={[
-                styles.description, 
-                { color: colors.textSecondary },
-                compact && { fontSize: 13, lineHeight: 16, marginBottom: 2 }
-              ]} 
-              numberOfLines={compact ? 1 : 2} 
-              ellipsizeMode="tail"
+                styles.categoryName,
+                { color: colors.text },
+                compact && styles.categoryNameCompact,
+              ]}
             >
-              {transaction.description}
+              {transaction.category_name}
             </Text>
-          )}
 
-          {transaction.payee_name && (
-            <TouchableOpacity 
-              style={styles.payeeRow}
-              onPress={() => onFilterPayee?.(transaction.payee_id)}
-              activeOpacity={0.6}
+            {transaction.description && (
+              <Text
+                style={[
+                  styles.description,
+                  { color: colors.textSecondary },
+                  compact && styles.descriptionCompact,
+                ]}
+                numberOfLines={compact ? 1 : 2}
+                ellipsizeMode="tail"
+              >
+                {transaction.description}
+              </Text>
+            )}
+
+            {transaction.payee_name && (
+              <TouchableOpacity
+                style={styles.payeeRow}
+                onPress={() => onFilterPayee?.(transaction.payee_id)}
+                activeOpacity={0.6}
+              >
+                {transaction.payee_logo ? (
+                  <Image source={{ uri: transaction.payee_logo }} style={styles.payeeLogo} />
+                ) : (
+                  <View style={[styles.payeeLogoPlaceholder, { backgroundColor: colors.border }]}>
+                    <Icon name="person" size={10} color={colors.textSecondary} />
+                  </View>
+                )}
+                <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
+                  {transaction.payee_name}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
+              {format(new Date(transaction.transaction_timestamp), compact ? 'dd MMM, p' : 'PPp')}
+            </Text>
+          </View>
+
+          <View style={styles.rightSection}>
+            <Text
+              style={[
+                styles.amount,
+                { color: isIncome ? colors.success : colors.danger },
+                compact && styles.amountCompact,
+              ]}
             >
-              {transaction.payee_logo ? (
-                <Image source={{ uri: transaction.payee_logo }} style={styles.payeeLogo} />
-              ) : (
-                <View style={[styles.payeeLogoPlaceholder, { backgroundColor: colors.border }]}>
-                  <Icon name="person" size={10} color={colors.textSecondary} />
-                </View>
-              )}
-              <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
-                {transaction.payee_name}
-              </Text>
-            </TouchableOpacity>
-          )}
+              {isIncome ? '+' : '-'} ₹{transaction.amount.toLocaleString()}
+            </Text>
 
-          <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
-            {format(new Date(transaction.transaction_timestamp), compact ? 'dd MMM, p' : 'PPp')}
-          </Text>
-        </View>
-
-        <View style={styles.rightSection}>
-          <Text style={[
-            styles.amount, 
-            { color: isIncome ? colors.success : colors.danger },
-            compact && { fontSize: 15 }
-          ]}>
-            {isIncome ? '+' : '-'} ₹{transaction.amount.toLocaleString()}
-          </Text>
-          
-          {transaction.product_link && (
-            <TouchableOpacity onPress={handleLinkPress} style={styles.linkButton}>
-              <Icon name="link" size={14} color={colors.primary} />
-              <Text style={[styles.linkText, { color: colors.primary }]}>
-                View
-              </Text>
-            </TouchableOpacity>
-          )}
+            {transaction.product_link && (
+              <TouchableOpacity onPress={handleLinkPress} style={styles.linkButton}>
+                <Icon name="link" size={14} color={colors.primary} />
+                <Text style={[styles.linkText, { color: colors.primary }]}>View</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
-    </View>
-  );
-
-  if (onEdit || onDelete) {
-    return (
-      <Swipeable
-        ref={swipeableRef}
-        renderRightActions={renderRightActions}
-        friction={2}
-        rightThreshold={40}
-      >
-        {cardContent}
-      </Swipeable>
     );
-  }
 
-  return cardContent;
-});
+    if (onEdit || onDelete) {
+      return (
+        <Swipeable
+          ref={swipeableRef}
+          renderRightActions={renderRightActions}
+          friction={2}
+          rightThreshold={40}
+        >
+          {cardContent}
+        </Swipeable>
+      );
+    }
+
+    return cardContent;
+  },
+);
+
+TransactionCard.displayName = 'TransactionCard';
 
 const styles = StyleSheet.create({
   card: {
@@ -267,5 +271,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     marginLeft: 8,
+  },
+  cardCompact: {
+    padding: 12,
+    marginVertical: 4,
+    borderRadius: 12,
+    marginHorizontal: 0,
+  },
+  iconContainerCompact: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  categoryNameCompact: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  descriptionCompact: {
+    fontSize: 13,
+    lineHeight: 16,
+    marginBottom: 2,
+  },
+  amountCompact: {
+    fontSize: 15,
   },
 });

@@ -7,7 +7,7 @@ export interface BudgetCardProps {
   amount: number;
   spent: number;
   startDateText: string; // e.g., "Apr 1"
-  endDateText: string;   // e.g., "Apr 30"
+  endDateText: string; // e.g., "Apr 30"
   isCurrentMonth: boolean;
   daysRemaining?: number;
   todayProgress?: number; // percentage of month elapsed
@@ -16,32 +16,33 @@ export interface BudgetCardProps {
   onLongPress?: () => void;
 }
 
-export const BudgetCard = ({ 
-  name, 
-  amount, 
-  spent, 
-  startDateText, 
-  endDateText, 
-  isCurrentMonth, 
+export const BudgetCard = ({
+  name,
+  amount,
+  spent,
+  startDateText,
+  endDateText,
+  isCurrentMonth,
   daysRemaining,
   todayProgress,
   daysInMonth = 30,
   onPress,
-  onLongPress
+  onLongPress,
 }: BudgetCardProps) => {
   const { colors } = useTheme();
-  
+
   const percentage = amount > 0 ? Math.round((spent / amount) * 100) : 0;
   const visualPercentage = Math.min(percentage, 100);
   const isOverspent = spent > amount;
   const remaining = amount - spent;
-  
+
   let adviceText = '';
   if (isCurrentMonth) {
     if (isOverspent) {
       adviceText = `Overspent ₹${(spent - amount).toLocaleString()}`;
     } else {
-      const perDay = daysRemaining && daysRemaining > 0 ? Math.floor(remaining / daysRemaining) : remaining;
+      const perDay =
+        daysRemaining && daysRemaining > 0 ? Math.floor(remaining / daysRemaining) : remaining;
       adviceText = `You can spend ₹${perDay.toLocaleString()}/day for ${daysRemaining || 0} more days`;
     }
   } else {
@@ -53,8 +54,8 @@ export const BudgetCard = ({
   }
 
   return (
-    <TouchableOpacity 
-      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.7}
@@ -72,41 +73,52 @@ export const BudgetCard = ({
           {isCurrentMonth && (
             <View style={StyleSheet.absoluteFill}>
               {Array.from({ length: daysInMonth }).map((_, i) => (
-                <View 
-                  key={i} 
+                <View
+                  key={i}
                   style={[
-                    styles.dayMarker, 
-                    { left: `${(i / daysInMonth) * 100}%`, backgroundColor: colors.background + '40' }
-                  ]} 
+                    styles.dayMarker,
+                    {
+                      left: `${(i / daysInMonth) * 100}%`,
+                      backgroundColor: colors.background + '40',
+                    },
+                  ]}
                 />
               ))}
             </View>
           )}
 
-          <View 
+          <View
             style={[
-              styles.progressFill, 
-              { 
-                width: `${visualPercentage}%`, 
-                backgroundColor: isOverspent ? '#EF4444' : colors.primary 
-              }
-            ]} 
+              styles.progressFill,
+              { width: `${visualPercentage}%` },
+              isOverspent ? styles.progressFillOverspent : { backgroundColor: colors.primary },
+            ]}
           />
 
           {/* Today Indicator Line */}
           {isCurrentMonth && todayProgress !== undefined && (
-            <View 
+            <View
               style={[
-                styles.todayIndicator, 
-                { left: `${todayProgress}%`, backgroundColor: colors.text }
-              ]} 
+                styles.todayIndicator,
+                { left: `${todayProgress}%`, backgroundColor: colors.text },
+              ]}
             />
           )}
         </View>
         <View style={styles.dateRow}>
           <Text style={[styles.dateText, { color: colors.textSecondary }]}>{startDateText}</Text>
-          <View style={[styles.percentageBadge, { backgroundColor: (isOverspent ? '#EF4444' : colors.primary) + '20' }]}>
-            <Text style={[styles.percentageText, { color: isOverspent ? '#EF4444' : colors.primary }]}>
+          <View
+            style={[
+              styles.percentageBadge,
+              { backgroundColor: (isOverspent ? '#EF4444' : colors.primary) + '20' },
+            ]}
+          >
+            <Text
+              style={[
+                styles.percentageText,
+                isOverspent ? styles.textOverspent : { color: colors.primary },
+              ]}
+            >
               {percentage}%
             </Text>
           </View>
@@ -115,10 +127,7 @@ export const BudgetCard = ({
       </View>
 
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
-        <Text style={[
-          styles.adviceText, 
-          { color: isOverspent ? '#EF4444' : '#10B981' }
-        ]}>
+        <Text style={[styles.adviceText, isOverspent ? styles.textOverspent : styles.textSafe]}>
           {adviceText}
         </Text>
       </View>
@@ -205,5 +214,14 @@ const styles = StyleSheet.create({
     width: 2,
     height: '100%',
     zIndex: 10,
+  },
+  textOverspent: {
+    color: '#EF4444',
+  },
+  textSafe: {
+    color: '#10B981',
+  },
+  progressFillOverspent: {
+    backgroundColor: '#EF4444',
   },
 });

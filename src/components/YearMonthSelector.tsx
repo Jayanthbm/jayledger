@@ -16,8 +16,18 @@ interface YearMonthSelectorProps {
 }
 
 const months = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 export function YearMonthSelector({
@@ -25,7 +35,7 @@ export function YearMonthSelector({
   month,
   onYearChange,
   onMonthChange,
-  showMonths = true
+  showMonths = true,
 }: YearMonthSelectorProps) {
   const { colors } = useTheme();
   const { session } = useAuth();
@@ -40,7 +50,7 @@ export function YearMonthSelector({
           const d = await getMinTransactionDate(session.user.id);
           if (d) setMinDate(new Date(d));
         } catch (error) {
-          console.error("Error fetching min transaction date:", error);
+          console.error('Error fetching min transaction date:', error);
         }
       }
     };
@@ -64,33 +74,41 @@ export function YearMonthSelector({
     <>
       <TouchableOpacity
         onPress={() => setShowPicker(true)}
-        style={[styles.selectorTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+        style={[
+          styles.selectorTrigger,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
       >
         <Text style={[styles.triggerText, { color: colors.text }]}>{displayLabel}</Text>
         <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
       </TouchableOpacity>
 
-      <BottomSheet
-        visible={showPicker}
-        onClose={() => setShowPicker(false)}
-        title="Select Period"
-      >
+      <BottomSheet visible={showPicker} onClose={() => setShowPicker(false)} title="Select Period">
         <View style={styles.pickerContainer}>
           <View style={styles.pickerColumns}>
             {/* YEAR COLUMN */}
             <View style={styles.pickerColumn}>
               <Text style={[styles.columnLabel, { color: colors.textSecondary }]}>YEAR</Text>
               <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
-                {years.map(y => {
+                {years.map((y) => {
                   const isSelected = year === y;
                   return (
                     <TouchableOpacity
                       key={y}
                       onPress={() => onYearChange(y)}
-                      style={[styles.pickerItem, isSelected && { backgroundColor: colors.primary + '15' }]}
+                      style={[styles.pickerItem, isSelected && styles.pickerItemActive]}
                     >
-                      <Text style={[styles.pickerItemText, { color: isSelected ? colors.primary : colors.text }]}>{y}</Text>
-                      {isSelected && <MaterialIcons name="check" size={16} color={colors.primary} />}
+                      <Text
+                        style={[
+                          styles.pickerItemText,
+                          { color: isSelected ? colors.primary : colors.text },
+                        ]}
+                      >
+                        {y}
+                      </Text>
+                      {isSelected && (
+                        <MaterialIcons name="check" size={16} color={colors.primary} />
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -99,22 +117,39 @@ export function YearMonthSelector({
 
             {/* MONTH COLUMN */}
             {showMonths && (
-              <View style={[styles.pickerColumn, { borderLeftWidth: 1, borderLeftColor: colors.border + '30' }]}>
+              <View style={[styles.pickerColumn, styles.columnDivider]}>
                 <Text style={[styles.columnLabel, { color: colors.textSecondary }]}>MONTH</Text>
                 <ScrollView style={styles.columnScroll} showsVerticalScrollIndicator={false}>
                   {months.map((m, i) => {
                     const date = new Date(parseInt(year), i, 1);
-                    const disabled = isBefore(endOfMonth(date), startOfMonth(minDate)) || isAfter(startOfMonth(date), endOfMonth(maxDate));
+                    const disabled =
+                      isBefore(endOfMonth(date), startOfMonth(minDate)) ||
+                      isAfter(startOfMonth(date), endOfMonth(maxDate));
                     const isSelected = month === i;
                     return (
                       <TouchableOpacity
                         key={m}
                         disabled={disabled}
                         onPress={() => onMonthChange(i)}
-                        style={[styles.pickerItem, isSelected && { backgroundColor: colors.primary + '15' }]}
+                        style={[styles.pickerItem, isSelected && styles.pickerItemActive]}
                       >
-                        <Text style={[styles.pickerItemText, { color: disabled ? colors.border : isSelected ? colors.primary : colors.text }]}>{m}</Text>
-                        {isSelected && <MaterialIcons name="check" size={16} color={colors.primary} />}
+                        <Text
+                          style={[
+                            styles.pickerItemText,
+                            {
+                              color: disabled
+                                ? colors.border
+                                : isSelected
+                                  ? colors.primary
+                                  : colors.text,
+                            },
+                          ]}
+                        >
+                          {m}
+                        </Text>
+                        {isSelected && (
+                          <MaterialIcons name="check" size={16} color={colors.primary} />
+                        )}
                       </TouchableOpacity>
                     );
                   })}
@@ -123,7 +158,10 @@ export function YearMonthSelector({
             )}
           </View>
 
-          <TouchableOpacity style={[styles.doneBtn, { backgroundColor: colors.primary }]} onPress={() => setShowPicker(false)}>
+          <TouchableOpacity
+            style={[styles.doneBtn, { backgroundColor: colors.primary }]}
+            onPress={() => setShowPicker(false)}
+          >
             <Text style={styles.doneBtnText}>Confirm Selection</Text>
           </TouchableOpacity>
         </View>
@@ -193,5 +231,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '800',
+  },
+  pickerItemActive: {
+    backgroundColor: 'rgba(59, 130, 246, 0.15)', // Default primary + 15
+  },
+  columnDivider: {
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0, 0, 0, 0.1)', // Default border + 30
   },
 });

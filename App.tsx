@@ -9,6 +9,7 @@ import { initDB } from './src/db/database';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BiometricLock } from './src/components/BiometricLock';
+import { common } from './src/styles/common';
 
 export default function App() {
   const [dbReady, setDbReady] = useState(false);
@@ -24,11 +25,8 @@ export default function App() {
     };
     checkBiometrics();
 
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         checkBiometrics();
       }
       appState.current = nextAppState;
@@ -41,13 +39,13 @@ export default function App() {
 
   useEffect(() => {
     const setup = async () => {
-      console.log("[App] Starting DB setup...");
+      console.log('[App] Starting DB setup...');
       try {
         await initDB();
-        console.log("[App] DB setup complete. Setting dbReady = true");
+        console.log('[App] DB setup complete. Setting dbReady = true');
         setDbReady(true);
       } catch (error) {
-        console.error("[App] Critical DB Setup Error:", error);
+        console.error('[App] Critical DB Setup Error:', error);
       }
     };
     setup();
@@ -55,7 +53,7 @@ export default function App() {
 
   if (!dbReady) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={common.flexCenter}>
         <ActivityIndicator size="large" />
       </View>
     );
@@ -70,7 +68,7 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={common.flex1}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>

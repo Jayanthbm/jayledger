@@ -1,20 +1,19 @@
-import { 
-  getIncomeExpenseSummary, 
-  getTransactionsByCategoryForExpense, 
-  getNetWorth, 
-  getSpentToday 
+import {
+  getIncomeExpenseSummary,
+  getTransactionsByCategoryForExpense,
+  getNetWorth,
+  getSpentToday,
 } from '../db/queries';
-import { 
-  startOfMonth, 
-  endOfMonth, 
-  startOfYear, 
-  endOfYear, 
-  format, 
-  differenceInDays, 
-  addMonths, 
-  getDaysInMonth, 
-  subMonths, 
-  subYears 
+import {
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  format,
+  differenceInDays,
+  addMonths,
+  getDaysInMonth,
+  subMonths,
+  subYears,
 } from 'date-fns';
 
 export interface DashboardMetrics {
@@ -24,13 +23,14 @@ export interface DashboardMetrics {
   prevYearComp: { income: number; expense: number };
   netWorth: number;
   spentToday: number;
-  topCategories: any[];
+  topCategories: { category_name: string; totalAmount: number }[];
 }
 
-export const processSummary = (summary: any[]) => {
+export const processSummary = (summary: { type: string; totalAmount: number }[]) => {
   if (!Array.isArray(summary)) return { income: 0, expense: 0 };
-  let inc = 0, exp = 0;
-  summary.forEach(s => {
+  let inc = 0,
+    exp = 0;
+  summary.forEach((s) => {
     if (s.type === 'Income') inc = s.totalAmount || 0;
     if (s.type === 'Expense') exp = s.totalAmount || 0;
   });
@@ -42,7 +42,6 @@ export const fetchDashboardMetrics = async (userId: string): Promise<DashboardMe
   const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
   const yearStart = format(startOfYear(today), 'yyyy-MM-dd');
-  const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
   const todayStr = format(today, 'yyyy-MM-dd');
 
   // Previous Month Comparison (up to same day of month)
@@ -72,7 +71,7 @@ export const fetchDashboardMetrics = async (userId: string): Promise<DashboardMe
     prevYearComp: processSummary(prevYearSum),
     topCategories: Array.isArray(topCats) ? topCats.slice(0, 3) : [],
     netWorth: totalNW || 0,
-    spentToday: todayExp || 0
+    spentToday: todayExp || 0,
   };
 };
 
@@ -99,6 +98,6 @@ export const calculatePayDayInfo = () => {
     daysInMonth,
     currentDay,
     remaining: daysInMonth - currentDay + 1,
-    nextMonth: format(addMonths(today, 1), 'MMM 01')
+    nextMonth: format(addMonths(today, 1), 'MMM 01'),
   };
 };

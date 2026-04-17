@@ -2,53 +2,86 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { DashboardCard } from './DashboardCard';
+import { ThemeColors, ReportItem } from '../../models/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/navigationTypes';
+import { common } from '../../styles/common';
 
 interface DashboardTopCategoriesProps {
-  topCategories: any[];
+  topCategories: ReportItem[];
   totalExpense: number;
-  navigation: any;
-  colors: any;
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+  colors: ThemeColors;
 }
 
-export const DashboardTopCategories = React.memo(({ topCategories, totalExpense, navigation, colors }: DashboardTopCategoriesProps) => {
-  return (
-    <DashboardCard
-      colors={colors}
-      title="TOP CATEGORIES"
-      icon="pie-chart"
-      onPress={() => navigation.navigate('ReportDetail', { reportType: 'summaryByCategory', title: 'Transactions By Category' })}
-      headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
-    >
-      {topCategories.length > 0 ? topCategories.map((cat, idx) => (
-        <View key={cat.category_name} style={styles.catRow}>
-          <View style={styles.catInfo}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={[styles.catName, { color: colors.text }]}>{cat.category_name}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
-                ({((cat.totalAmount / (totalExpense || 1)) * 100).toFixed(0)}%)
-              </Text>
+export const DashboardTopCategories = React.memo(
+  ({ topCategories, totalExpense, navigation, colors }: DashboardTopCategoriesProps) => {
+    return (
+      <DashboardCard
+        colors={colors}
+        title="TOP CATEGORIES"
+        icon="pie-chart"
+        onPress={() =>
+          navigation.navigate('ReportDetail', {
+            reportType: 'summaryByCategory',
+            title: 'Transactions By Category',
+          })
+        }
+        headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
+      >
+        {topCategories.length > 0 ? (
+          topCategories.map((cat, idx) => (
+            <View key={cat.category_name} style={styles.catRow}>
+              <View style={styles.catInfo}>
+                <View style={common.flexRowCenterGap4}>
+                  <Text style={[styles.catName, { color: colors.text }]}>{cat.category_name}</Text>
+                  <Text style={[styles.catPercent, { color: colors.textSecondary }]}>
+                    ({(((cat.totalAmount || 0) / (totalExpense || 1)) * 100).toFixed(0)}%)
+                  </Text>
+                </View>
+                <Text style={[styles.catAmt, { color: colors.textSecondary }]}>
+                  ₹{(cat.totalAmount || 0).toLocaleString()}
+                </Text>
+              </View>
+              <View style={styles.catProgressBg}>
+                <View
+                  style={[
+                    styles.catProgressFill,
+                    {
+                      width: `${Math.min(100, ((cat.totalAmount || 0) / (totalExpense || 1)) * 100)}%`,
+                      backgroundColor:
+                        idx === 0
+                          ? colors.primary
+                          : idx === 1
+                            ? colors.textSecondary
+                            : colors.border,
+                    },
+                  ]}
+                />
+              </View>
             </View>
-            <Text style={[styles.catAmt, { color: colors.textSecondary }]}>₹{cat.totalAmount.toLocaleString()}</Text>
-          </View>
-          <View style={styles.catProgressBg}>
-            <View style={[styles.catProgressFill, {
-              width: `${Math.min(100, (cat.totalAmount / (totalExpense || 1)) * 100)}%`,
-              backgroundColor: idx === 0 ? colors.primary : idx === 1 ? colors.textSecondary : colors.border
-            }]} />
-          </View>
-        </View>
-      )) : (
-        <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 10 }}>No expenses yet</Text>
-      )}
-    </DashboardCard>
-  );
-});
+          ))
+        ) : (
+          <Text style={[styles.catEmpty, { color: colors.textSecondary }]}>No expenses yet</Text>
+        )}
+      </DashboardCard>
+    );
+  },
+);
+DashboardTopCategories.displayName = 'DashboardTopCategories';
 
 const styles = StyleSheet.create({
   catRow: { marginBottom: 16 },
   catInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   catName: { fontSize: 14, fontWeight: '600' },
   catAmt: { fontSize: 14, fontWeight: '700' },
-  catProgressBg: { height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.05)', overflow: 'hidden' },
+  catProgressBg: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    overflow: 'hidden',
+  },
+  catPercent: { fontSize: 11, fontWeight: '700' },
+  catEmpty: { textAlign: 'center', padding: 10 },
   catProgressFill: { height: '100%', borderRadius: 3 },
 });

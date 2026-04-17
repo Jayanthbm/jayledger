@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { useTheme } from '../../store/ThemeContext';
+import { common } from '../../styles/common';
 
 interface BudgetDeleteModalProps {
   visible: boolean;
@@ -12,16 +13,12 @@ interface BudgetDeleteModalProps {
 export const BudgetDeleteModal: React.FC<BudgetDeleteModalProps> = ({
   visible,
   onClose,
-  onConfirm
+  onConfirm,
 }) => {
   const { colors } = useTheme();
 
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="Delete Budget?"
-    >
+    <BottomSheet visible={visible} onClose={onClose} title="Delete Budget?">
       <View>
         <Text style={[styles.deleteSubText, { color: colors.textSecondary }]}>
           This will remove the budget target but transactions will remain.
@@ -31,13 +28,14 @@ export const BudgetDeleteModal: React.FC<BudgetDeleteModalProps> = ({
             style={[styles.confirmDeleteBtn, { backgroundColor: colors.danger }]}
             onPress={onConfirm}
           >
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
+            <Text style={common.textWhiteBold}>Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
     </BottomSheet>
   );
 };
+BudgetDeleteModal.displayName = 'BudgetDeleteModal';
 
 const styles = StyleSheet.create({
   deleteSubText: {

@@ -8,16 +8,19 @@ interface TransactionSectionHeaderProps {
   colors: any;
 }
 
-export const TransactionSectionHeader = React.memo(({ date, total, colors }: TransactionSectionHeaderProps) => (
-  <View style={[styles.headerContainer, { backgroundColor: colors.background }]}>
-    <Text style={[styles.headerDate, { color: colors.textSecondary }]}>
-      {format(new Date(date), 'MMM dd, yyyy')}
-    </Text>
-    <Text style={[styles.headerTotal, { color: total >= 0 ? colors.success : colors.danger }]}>
-      {total >= 0 ? '+' : ''}₹{total.toLocaleString()}
-    </Text>
-  </View>
-));
+export const TransactionSectionHeader = React.memo(
+  ({ date, total, colors }: TransactionSectionHeaderProps) => (
+    <View style={[styles.headerContainer, { backgroundColor: colors.background }]}>
+      <Text style={[styles.headerDate, { color: colors.textSecondary }]}>
+        {format(new Date(date), 'MMM dd, yyyy')}
+      </Text>
+      <Text style={[styles.headerTotal, { color: total >= 0 ? colors.success : colors.danger }]}>
+        {total >= 0 ? '+' : ''}₹{total.toLocaleString()}
+      </Text>
+    </View>
+  ),
+);
+TransactionSectionHeader.displayName = 'TransactionSectionHeader';
 
 const styles = StyleSheet.create({
   headerContainer: {
@@ -31,7 +34,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
   },
   headerTotal: {
     fontSize: 13,

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
@@ -32,12 +32,12 @@ export default function QuickTransactionsScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity 
-          activeOpacity={0.7} 
+        <TouchableOpacity
+          activeOpacity={0.7}
           onPress={scrollToTop}
-          style={{ alignItems: 'flex-start' }}
+          style={styles.headerTitleContainer}
         >
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Quick Transactions</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Quick Transactions</Text>
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
@@ -54,16 +54,19 @@ export default function QuickTransactionsScreen() {
       const qts = await getQuickTransactions(session.user.id);
       setData(qts);
     } catch (error) {
-      console.error("Load Quick Transactions Error:", error);
+      console.error('Load Quick Transactions Error:', error);
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id]);
+  }, [session]);
 
   useFocusEffect(
     useCallback(() => {
-      loadData();
-    }, [loadData])
+      const timer = setTimeout(() => {
+        loadData();
+      }, 0);
+      return () => clearTimeout(timer);
+    }, [loadData]),
   );
 
   const handleDelete = (id: string) => {
@@ -78,21 +81,29 @@ export default function QuickTransactionsScreen() {
   };
 
   const renderItem = ({ item }: { item: QuickTransaction }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       onPress={() => navigation.navigate('AddQuickTransaction', { quickTransaction: item })}
     >
-      <View style={[styles.iconContainer, { backgroundColor: item.type === 'Income' ? colors.success + '20' : colors.danger + '20' }]}>
-        <Icon 
-          name={item.type === 'Income' ? 'add-circle' : 'remove-circle'} 
-          size={24} 
-          color={item.type === 'Income' ? colors.success : colors.danger} 
+      <View
+        style={[
+          styles.iconContainer,
+          {
+            backgroundColor: item.type === 'Income' ? colors.success + '20' : colors.danger + '20',
+          },
+        ]}
+      >
+        <Icon
+          name={item.type === 'Income' ? 'add-circle' : 'remove-circle'}
+          size={24}
+          color={item.type === 'Income' ? colors.success : colors.danger}
         />
       </View>
       <View style={styles.details}>
         <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
         <Text style={[styles.meta, { color: colors.textSecondary }]}>
-          {item.amount ? `₹${item.amount.toLocaleString()} • ` : ''}{item.type}
+          {item.amount ? `₹${item.amount.toLocaleString()} • ` : ''}
+          {item.type}
         </Text>
       </View>
       <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
@@ -114,13 +125,15 @@ export default function QuickTransactionsScreen() {
       <FlatList
         ref={listRef}
         data={data}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 80 }]}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Icon name="bolt" size={64} color={colors.border} />
-            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>No Templates Yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+              No Templates Yet
+            </Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
               Create templates for transactions you do frequently to add them in one tap.
             </Text>
@@ -140,21 +153,20 @@ export default function QuickTransactionsScreen() {
         onClose={() => setDeletingId(null)}
         title="Delete Template?"
       >
-        <View style={{ paddingBottom: 10 }}>
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: colors.danger + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+        <View style={styles.sheetInner}>
+          <View style={styles.sheetHeader}>
+            <View style={[styles.deleteIconBox, { backgroundColor: colors.danger + '15' }]}>
               <Icon name="delete-outline" size={32} color={colors.danger} />
             </View>
-            <Text style={{ color: colors.textSecondary, textAlign: 'center', fontSize: 16, lineHeight: 22 }}>
+            <Text style={[styles.sheetText, { color: colors.textSecondary }]}>
               Are you sure you want to delete this template? This action cannot be undone.
             </Text>
           </View>
-
-          <TouchableOpacity 
-            style={{ backgroundColor: colors.danger, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}
+          <TouchableOpacity
+            style={[styles.confirmDeleteBtn, { backgroundColor: colors.danger }]}
             onPress={confirmDelete}
           >
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Delete Template</Text>
+            <Text style={styles.confirmDeleteText}>Delete Template</Text>
           </TouchableOpacity>
         </View>
       </BottomSheet>
@@ -166,13 +178,72 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   list: { padding: 16 },
-  card: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
-  iconContainer: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
   details: { flex: 1 },
   name: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
   meta: { fontSize: 13, fontWeight: '600' },
   deleteBtn: { padding: 8 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 40 },
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 100,
+    paddingHorizontal: 40,
+  },
   emptyTitle: { fontSize: 20, fontWeight: '800', marginTop: 16 },
-  emptySub: { fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 22 }
+  emptySub: { fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 22 },
+  headerTitleContainer: {
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  sheetInner: {
+    paddingBottom: 10,
+  },
+  sheetHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  deleteIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sheetText: {
+    textAlign: 'center',
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  confirmDeleteBtn: {
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  confirmDeleteText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });

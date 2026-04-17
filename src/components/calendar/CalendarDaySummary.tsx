@@ -11,12 +11,16 @@ interface CalendarDaySummaryProps {
 export const CalendarDaySummary: React.FC<CalendarDaySummaryProps> = ({
   selectedDate,
   totalForDay,
-  colors
+  colors,
 }) => {
   return (
     <View style={styles.daySummary}>
-      <Text style={[styles.summaryDate, { color: colors.text }]}>{format(selectedDate, 'EEE, MMM d, yyyy')}</Text>
-      <Text style={[styles.summaryAmount, { color: totalForDay >= 0 ? colors.success : colors.danger }]}>
+      <Text style={[styles.summaryDate, { color: colors.text }]}>
+        {format(selectedDate, 'EEE, MMM d, yyyy')}
+      </Text>
+      <Text
+        style={[styles.summaryAmount, { color: totalForDay >= 0 ? colors.success : colors.danger }]}
+      >
         {totalForDay >= 0 ? '+' : ''}₹{totalForDay.toLocaleString()}
       </Text>
     </View>

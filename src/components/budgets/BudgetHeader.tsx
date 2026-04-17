@@ -1,56 +1,64 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../store/ThemeContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { YearMonthSelector } from '../YearMonthSelector';
-import { getYear, getMonth, endOfMonth, subMonths, addMonths, isBefore, startOfMonth, isAfter } from 'date-fns';
+import {
+  getYear,
+  getMonth,
+  endOfMonth,
+  subMonths,
+  addMonths,
+  isBefore,
+  startOfMonth,
+  isAfter,
+} from 'date-fns';
+import { common } from '../../styles/common';
 
 interface BudgetHeaderProps {
   selectedDate: Date;
   minDate: Date;
   maxDate: Date;
-  lastSyncTime: string;
-  isSyncing: boolean;
   sortBy: string;
   sortAsc: boolean;
   onPrev: () => void;
   onNext: () => void;
   onYearMonthChange: (date: Date) => void;
-  onSync: () => void;
   onSortPress: () => void;
-  onTitlePress: () => void;
 }
 
 export const BudgetHeader: React.FC<BudgetHeaderProps> = ({
   selectedDate,
   minDate,
   maxDate,
-  lastSyncTime,
-  isSyncing,
   sortBy,
   sortAsc,
   onPrev,
   onNext,
   onYearMonthChange,
-  onSync,
   onSortPress,
-  onTitlePress,
 }) => {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+    <View
+      style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+    >
       <View style={styles.headerControls}>
         <View style={styles.periodNavigation}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.navArrow}
-            onPress={onPrev} 
+            onPress={onPrev}
             disabled={isBefore(endOfMonth(subMonths(selectedDate, 1)), startOfMonth(minDate))}
           >
-            <MaterialIcons 
-              name="chevron-left" 
-              size={28} 
-              color={isBefore(endOfMonth(subMonths(selectedDate, 1)), startOfMonth(minDate)) ? colors.border : colors.text} 
+            <MaterialIcons
+              name="chevron-left"
+              size={28}
+              color={
+                isBefore(endOfMonth(subMonths(selectedDate, 1)), startOfMonth(minDate))
+                  ? colors.border
+                  : colors.text
+              }
             />
           </TouchableOpacity>
           <View style={styles.selectorWrapper}>
@@ -69,15 +77,19 @@ export const BudgetHeader: React.FC<BudgetHeaderProps> = ({
               }}
             />
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.navArrow}
-            onPress={onNext} 
+            onPress={onNext}
             disabled={isAfter(startOfMonth(addMonths(selectedDate, 1)), endOfMonth(maxDate))}
           >
-            <MaterialIcons 
-              name="chevron-right" 
-              size={28} 
-              color={isAfter(startOfMonth(addMonths(selectedDate, 1)), endOfMonth(maxDate)) ? colors.border : colors.text} 
+            <MaterialIcons
+              name="chevron-right"
+              size={28}
+              color={
+                isAfter(startOfMonth(addMonths(selectedDate, 1)), endOfMonth(maxDate))
+                  ? colors.border
+                  : colors.text
+              }
             />
           </TouchableOpacity>
         </View>
@@ -86,12 +98,12 @@ export const BudgetHeader: React.FC<BudgetHeaderProps> = ({
           style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={onSortPress}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <View style={common.flexRowCenterGap4}>
             <MaterialIcons name="sort" size={18} color={colors.primary} />
-            <MaterialIcons 
-              name={sortAsc ? "arrow-upward" : "arrow-downward"} 
-              size={14} 
-              color={colors.primary} 
+            <MaterialIcons
+              name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+              size={14}
+              color={colors.primary}
             />
           </View>
         </TouchableOpacity>
@@ -105,6 +117,7 @@ export const BudgetHeader: React.FC<BudgetHeaderProps> = ({
     </View>
   );
 };
+BudgetHeader.displayName = 'BudgetHeader';
 
 const styles = StyleSheet.create({
   header: {

@@ -12,7 +12,7 @@ export const fetchBudgetsWithSpending = async (
   startDateStr: string,
   endDateStr: string,
   sortBy: 'name' | 'amount' | 'spent' | 'remaining',
-  sortAsc: boolean
+  sortAsc: boolean,
 ): Promise<EnrichedBudget[]> => {
   const budgets = await getBudgets(userId);
   const enriched: EnrichedBudget[] = await Promise.all(
@@ -20,12 +20,12 @@ export const fetchBudgetsWithSpending = async (
       let categoryIds: string[] = [];
       try {
         categoryIds = JSON.parse(b.categories);
-      } catch (e) {
-        console.error("Error parsing budget categories:", e);
+      } catch (_e) {
+        console.error('Error parsing budget categories:', _e);
       }
       const spent = await getBudgetSpending(userId, categoryIds, startDateStr, endDateStr);
       return { ...b, spent };
-    })
+    }),
   );
 
   return [...enriched].sort((a, b) => {
@@ -33,8 +33,8 @@ export const fetchBudgetsWithSpending = async (
     if (sortBy === 'name') cmp = a.name.localeCompare(b.name);
     else if (sortBy === 'amount') cmp = a.amount - b.amount;
     else if (sortBy === 'spent') cmp = a.spent - b.spent;
-    else if (sortBy === 'remaining') cmp = (a.amount - a.spent) - (b.amount - b.spent);
-    
+    else if (sortBy === 'remaining') cmp = a.amount - a.spent - (b.amount - b.spent);
+
     return sortAsc ? cmp : -cmp;
   });
 };
@@ -43,17 +43,17 @@ export const fetchBudgetDrillDown = async (
   userId: string,
   categoriesJson: string,
   startDateStr: string,
-  endDateStr: string
+  endDateStr: string,
 ): Promise<Transaction[]> => {
   let categoryIds: string[] = [];
   try {
     categoryIds = JSON.parse(categoriesJson);
-  } catch (e) {
+  } catch {
     return [];
   }
 
   const all = await getTransactionsByDateRange(userId, startDateStr, endDateStr);
-  return all.filter(t => t.category_id && categoryIds.includes(t.category_id));
+  return all.filter((t) => t.category_id && categoryIds.includes(t.category_id));
 };
 
 export const handleBudgetSync = async (userId: string) => {

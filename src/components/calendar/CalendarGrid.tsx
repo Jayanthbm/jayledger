@@ -13,28 +13,27 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   days,
   selectedDate,
   setSelectedDate,
-  colors
+  colors,
 }) => {
   return (
     <View style={styles.daysGrid}>
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-        <Text key={d} style={[styles.dayLabel, { color: colors.textSecondary }]}>{d}</Text>
+      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+        <Text key={d} style={[styles.dayLabel, { color: colors.textSecondary }]}>
+          {d}
+        </Text>
       ))}
-      {days.map(day => {
+      {days.map((day) => {
         const isSelected = isSameDay(day, selectedDate);
         return (
           <TouchableOpacity
             key={day.toISOString()}
             style={[
               styles.dayCell,
-              isSelected && { backgroundColor: colors.primary, borderRadius: 12 }
+              isSelected && { backgroundColor: colors.primary, borderRadius: 12 },
             ]}
             onPress={() => setSelectedDate(day)}
           >
-            <Text style={[
-              styles.dayText,
-              { color: isSelected ? '#fff' : colors.text }
-            ]}>
+            <Text style={[styles.dayText, { color: isSelected ? '#fff' : colors.text }]}>
               {format(day, 'd')}
             </Text>
           </TouchableOpacity>

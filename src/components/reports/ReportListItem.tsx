@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
+import { ThemeColors, ReportItem } from '../../models/types';
+import { common } from '../../styles/common';
 
 interface ReportListItemProps {
-  item: any;
+  item: ReportItem;
   type: string;
   totalAmount: number;
   isDark: boolean;
-  colors: any;
+  colors: ThemeColors;
   onPress: () => void;
 }
 
@@ -27,13 +29,23 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
       <View style={styles.itemRow}>
         <View style={styles.itemMain}>
           {(item.category_app_icon || item.app_icon) && (
-            <Icon name={(item.category_app_icon || item.app_icon) as any} size={24} color={colors.primary} style={{ marginRight: 12 }} />
+            <Icon
+              name={(item.category_app_icon || item.app_icon) as any}
+              size={24}
+              color={colors.primary}
+              style={common.mr12}
+            />
           )}
           <Text style={[styles.itemName, { color: colors.text }]}>
             {item.category_name || item.payee_name || item.name || item.type}
           </Text>
         </View>
-        <Text style={[styles.itemAmount, { color: (item.type || type) === 'Income' ? colors.success : colors.danger }]}>
+        <Text
+          style={[
+            styles.itemAmount,
+            { color: (item.type || type) === 'Income' ? colors.success : colors.danger },
+          ]}
+        >
           ₹{(item.amount || item.totalAmount || 0).toLocaleString()}
         </Text>
       </View>
@@ -44,8 +56,8 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
               styles.progressFill,
               {
                 width: `${Math.min(100, ((item.amount || item.totalAmount || 0) / (totalAmount || 1)) * 100)}%`,
-                backgroundColor: (item.type || type) === 'Income' ? colors.success : colors.danger
-              }
+                backgroundColor: (item.type || type) === 'Income' ? colors.success : colors.danger,
+              },
             ]}
           />
         </View>
@@ -62,13 +74,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 12
+    marginBottom: 12,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12
+    marginBottom: 12,
   },
   itemMain: { flexDirection: 'row', alignItems: 'center' },
   itemName: { fontSize: 16, fontWeight: '600' },

@@ -6,6 +6,7 @@ import { useTheme } from '../../store/ThemeContext';
 import { Transaction } from '../../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { common } from '../../styles/common';
 
 interface BudgetDrillDownModalProps {
   visible: boolean;
@@ -22,32 +23,26 @@ export const BudgetDrillDownModal: React.FC<BudgetDrillDownModalProps> = ({
   title,
   subtitle,
   loading,
-  transactions
+  transactions,
 }) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title={title}
-      subtitle={subtitle}
-      isFullScreen
-    >
-      <View style={{ flex: 1 }}>
+    <BottomSheet visible={visible} onClose={onClose} title={title} subtitle={subtitle} isFullScreen>
+      <View style={common.flex1}>
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color={colors.primary} style={common.mt40} />
         ) : (
           <FlatList
             data={transactions}
-            keyExtractor={item => item.id}
+            keyExtractor={(item) => item.id}
             renderItem={({ item }) => <TransactionCard transaction={item} />}
             contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
             ListEmptyComponent={
               <View style={styles.emptyDrill}>
                 <MaterialIcons name="search-off" size={64} color={colors.border} />
-                <Text style={{ textAlign: 'center', marginTop: 12, color: colors.textSecondary }}>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                   No transactions found for this budget
                 </Text>
               </View>
@@ -58,11 +53,19 @@ export const BudgetDrillDownModal: React.FC<BudgetDrillDownModalProps> = ({
     </BottomSheet>
   );
 };
+BudgetDrillDownModal.displayName = 'BudgetDrillDownModal';
 
 const styles = StyleSheet.create({
   emptyDrill: {
     marginTop: 80,
     alignItems: 'center',
     paddingHorizontal: 40,
+  },
+  spinnerMt: {
+    marginTop: 40,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 12,
   },
 });

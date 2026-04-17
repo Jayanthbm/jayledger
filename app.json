@@ -28,9 +28,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-sqlite",
-      "@react-native-community/datetimepicker"
-    ]
+    "plugins": ["expo-sqlite", "@react-native-community/datetimepicker"]
   }
 }

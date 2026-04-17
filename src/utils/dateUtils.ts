@@ -4,9 +4,9 @@ export const getRelativeTime = (timestamp: number | string | Date): string => {
   try {
     const date = new Date(timestamp);
     if (isNaN(date.getTime())) return '';
-    
+
     const distance = formatDistanceToNowStrict(date, { addSuffix: true });
-    
+
     // Convert "5 minutes ago" to "5m ago"
     return distance
       .replace(' seconds', 's')
@@ -22,7 +22,7 @@ export const getRelativeTime = (timestamp: number | string | Date): string => {
       .replace(' years', 'y')
       .replace(' year', 'y')
       .replace(' ago', ' ago');
-  } catch (e) {
+  } catch {
     return '';
   }
 };

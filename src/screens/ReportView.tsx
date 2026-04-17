@@ -12,19 +12,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { format, endOfMonth } from 'date-fns';
+import { endOfMonth } from 'date-fns';
 import { Transaction, Category } from '../models/types';
-import {
-  getCategories,
-  toggleCategoryLivingCost,
-  getMinTransactionDate,
-} from '../db/queries';
+import { getCategories, toggleCategoryLivingCost, getMinTransactionDate } from '../db/queries';
 
-import {
-  fetchReportData,
-  handleReportDrillDown,
-  sortReportData
-} from '../services/reportService';
+import { fetchReportData, handleReportDrillDown, sortReportData } from '../services/reportService';
 
 // Modular Components
 import { ReportSelectors } from '../components/reports/ReportSelectors';
@@ -35,6 +27,7 @@ import { ReportSortPicker } from '../components/reports/ReportSortPicker';
 import { ReportDrillDownModal } from '../components/reports/ReportDrillDownModal';
 import { ReportConfigModal } from '../components/reports/ReportConfigModal';
 import { SearchBar } from '../components/SearchBar';
+import { common } from '../styles/common';
 
 const { width } = Dimensions.get('window');
 const currentYear = new Date().getFullYear();
@@ -74,17 +67,32 @@ export default function ReportView({ route, navigation }: any) {
 
   const displayTitle = useMemo(() => {
     if (!isSummary) return title;
-    const dateStr = reportType === 'yearlySummary' ? year : `${[
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ][month]} ${year}`;
+    const dateStr =
+      reportType === 'yearlySummary'
+        ? year
+        : `${
+            [
+              'January',
+              'February',
+              'March',
+              'April',
+              'May',
+              'June',
+              'July',
+              'August',
+              'September',
+              'October',
+              'November',
+              'December',
+            ][month]
+          } ${year}`;
     return `${title} | ${dateStr}`;
   }, [reportType, title, month, year, isSummary]);
 
   const summaryMetrics = useMemo(() => {
     if (!isSummary) return null;
-    const incomeObj = data.find(d => d.type?.toLowerCase() === 'income');
-    const expenseObj = data.find(d => d.type?.toLowerCase() === 'expense');
+    const incomeObj = data.find((d) => d.type?.toLowerCase() === 'income');
+    const expenseObj = data.find((d) => d.type?.toLowerCase() === 'expense');
 
     const income = Number(incomeObj?.totalAmount || 0);
     const expense = Number(expenseObj?.totalAmount || 0);
@@ -101,23 +109,29 @@ export default function ReportView({ route, navigation }: any) {
       const result = await fetchReportData(session.user.id, reportType, type, monthStr, year);
       setData(result);
     } catch (error) {
-      console.error("Report Load Error:", error);
+      console.error('Report Load Error:', error);
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, reportType, monthStr, year, type]);
-
+  }, [session, reportType, monthStr, year, type]);
 
   const handleDrillDown = async (item: any) => {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
-      const txs = await handleReportDrillDown(session.user.id, reportType, item, type, monthStr, year);
+      const txs = await handleReportDrillDown(
+        session.user.id,
+        reportType,
+        item,
+        type,
+        monthStr,
+        year,
+      );
       setDrillDownData(txs);
       setDrillDownTitle(item.category_name || item.payee_name || item.name);
       setShowDrillDown(true);
     } catch (e) {
-      console.error("Drilldown error:", e);
+      console.error('Drilldown error:', e);
     } finally {
       setLoading(false);
     }
@@ -131,9 +145,12 @@ export default function ReportView({ route, navigation }: any) {
     return sortedData.reduce((sum, item) => sum + (item.amount || item.totalAmount || 0), 0);
   }, [sortedData]);
 
-  const showMonthSelector = reportType !== 'yearlySummary' && reportType !== 'payees' && reportType !== 'categories';
+  const showMonthSelector =
+    reportType !== 'yearlySummary' && reportType !== 'payees' && reportType !== 'categories';
   const showYearSelector = reportType !== 'payees' && reportType !== 'categories';
-  const showTypeToggle = ['summaryByPayee', 'summaryByCategory', 'payees', 'categories'].includes(reportType);
+  const showTypeToggle = ['summaryByPayee', 'summaryByCategory', 'payees', 'categories'].includes(
+    reportType,
+  );
 
   useEffect(() => {
     const fetchMinDate = async () => {
@@ -142,21 +159,24 @@ export default function ReportView({ route, navigation }: any) {
           const d = await getMinTransactionDate(session.user.id);
           if (d) setMinDate(new Date(d));
         } catch (error) {
-          console.error("Error fetching min transaction date:", error);
+          console.error('Error fetching min transaction date:', error);
         }
       }
     };
     fetchMinDate();
-  }, [session?.user?.id]);
+  }, [session]);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   const loadAllCategories = async () => {
     if (!session?.user?.id) return;
     const cats = await getCategories(session.user.id);
-    setAllCategories(cats.filter(c => c.type === 'Expense'));
+    setAllCategories(cats.filter((c) => c.type === 'Expense'));
   };
 
   const handleToggleLivingCost = async (catId: string, current: boolean) => {
@@ -168,30 +188,51 @@ export default function ReportView({ route, navigation }: any) {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity activeOpacity={0.7} onPress={scrollToTop} style={{ alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>{displayTitle}</Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={scrollToTop}
+          style={styles.headerTitleContainer}
+        >
+          <Text style={[styles.headerTitleText, { color: colors.text }]}>{displayTitle}</Text>
         </TouchableOpacity>
       ),
       headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 12, justifyContent: 'center', alignItems: 'center' }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerLeftContainer}>
           <Icon name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
       ),
-      headerRight: reportType === 'monthlyLivingCosts' ? () => (
-        <TouchableOpacity onPress={() => { loadAllCategories(); setShowConfig(true); }} style={{ paddingRight: 16 }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-          <Icon name="settings" size={24} color={colors.text} />
-        </TouchableOpacity>
-      ) : undefined
+      headerRight:
+        reportType === 'monthlyLivingCosts'
+          ? () => (
+              <TouchableOpacity
+                onPress={() => {
+                  setShowConfig(true);
+                }}
+                style={styles.headerRightContainer}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Icon name="settings" size={24} color={colors.text} />
+              </TouchableOpacity>
+            )
+          : undefined,
     });
   }, [navigation, reportType, colors.text, displayTitle, scrollToTop]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ReportSelectors
-        type={type} setType={setType}
-        year={year} month={month} setYear={setYear} setMonth={setMonth}
-        reportType={reportType} minDate={minDate} maxDate={maxDate}
-        showTypeToggle={showTypeToggle} showYearSelector={showYearSelector} showMonthSelector={showMonthSelector}
+        type={type}
+        setType={setType}
+        year={year}
+        month={month}
+        setYear={setYear}
+        setMonth={setMonth}
+        reportType={reportType}
+        minDate={minDate}
+        maxDate={maxDate}
+        showTypeToggle={showTypeToggle}
+        showYearSelector={showYearSelector}
+        showMonthSelector={showMonthSelector}
         colors={colors}
       />
 
@@ -199,17 +240,26 @@ export default function ReportView({ route, navigation }: any) {
         <View style={styles.searchContainer}>
           <View style={styles.headerControls}>
             <SearchBar
-              value={searchQuery} onChangeText={setSearchQuery}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
               placeholder={`Search ${reportType === 'payees' ? 'payees' : 'categories'}...`}
-              size="medium" containerStyle={{ flex: 1 }}
+              size="medium"
+              containerStyle={common.flex1}
             />
             <TouchableOpacity
-              style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[
+                styles.sortButton,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
               onPress={() => setShowSortPicker(true)}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={common.flexRowCenterGap4}>
                 <Icon name="sort" size={18} color={colors.primary} />
-                <Icon name={sortAsc ? "arrow-upward" : "arrow-downward"} size={14} color={colors.primary} />
+                <Icon
+                  name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+                  size={14}
+                  color={colors.primary}
+                />
               </View>
             </TouchableOpacity>
           </View>
@@ -222,27 +272,42 @@ export default function ReportView({ route, navigation }: any) {
       )}
 
       <ReportSummary
-        isSummary={isSummary} summaryMetrics={summaryMetrics}
-        totalAmount={totalAmount} type={type} data={data}
-        searchQuery={searchQuery} sortedDataLength={sortedData.length}
+        isSummary={isSummary}
+        summaryMetrics={summaryMetrics}
+        totalAmount={totalAmount}
+        type={type}
+        data={data}
+        searchQuery={searchQuery}
+        sortedDataLength={sortedData.length}
         colors={colors}
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <ScrollView ref={scrollRef} style={styles.content} showsVerticalScrollIndicator={false}>
           {sortedData.length === 0 ? (
             <ReportEmptyState
-              searchQuery={searchQuery} reportType={reportType} colors={colors}
+              searchQuery={searchQuery}
+              reportType={reportType}
+              colors={colors}
               onClearFilters={() => setSearchQuery('')}
-              onOpenConfig={() => { loadAllCategories(); setShowConfig(true); }}
+              onOpenConfig={() => {
+                loadAllCategories();
+                setShowConfig(true);
+              }}
             />
           ) : (
-            !isSummary && sortedData.map((item, idx) => (
+            !isSummary &&
+            sortedData.map((item, idx) => (
               <ReportListItem
-                key={idx} item={item} type={type} totalAmount={totalAmount}
-                isDark={isDark} colors={colors} onPress={() => handleDrillDown(item)}
+                key={idx}
+                item={item}
+                type={type}
+                totalAmount={totalAmount}
+                isDark={isDark}
+                colors={colors}
+                onPress={() => handleDrillDown(item)}
               />
             ))
           )}
@@ -250,21 +315,36 @@ export default function ReportView({ route, navigation }: any) {
       )}
 
       <ReportSortPicker
-        visible={showSortPicker} onClose={() => setShowSortPicker(false)}
-        sortBy={sortBy} sortAsc={sortAsc} onSortChange={(b, a) => { setSortBy(b); setSortAsc(a); }}
+        visible={showSortPicker}
+        onClose={() => setShowSortPicker(false)}
+        sortBy={sortBy}
+        sortAsc={sortAsc}
+        onSortChange={(b, a) => {
+          setSortBy(b);
+          setSortAsc(a);
+        }}
         colors={colors}
       />
 
       <ReportDrillDownModal
-        visible={showDrillDown} onClose={() => setShowDrillDown(false)}
-        title={drillDownTitle} data={drillDownData} colors={colors} bottomInset={insets.bottom}
+        visible={showDrillDown}
+        onClose={() => setShowDrillDown(false)}
+        title={drillDownTitle}
+        data={drillDownData}
+        colors={colors}
+        bottomInset={insets.bottom}
       />
 
       <ReportConfigModal
-        visible={showConfig} onClose={() => setShowConfig(false)}
-        searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-        allCategories={allCategories} onToggleLivingCost={handleToggleLivingCost}
-        colors={colors} bottomInset={insets.bottom} width={width}
+        visible={showConfig}
+        onClose={() => setShowConfig(false)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        allCategories={allCategories}
+        onToggleLivingCost={handleToggleLivingCost}
+        colors={colors}
+        bottomInset={insets.bottom}
+        width={width}
       />
     </View>
   );
@@ -276,12 +356,23 @@ const styles = StyleSheet.create({
   searchContainer: { paddingHorizontal: 16, paddingBottom: 16 },
   headerControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   sortButton: {
-    width: 64, height: 44, borderRadius: 12, borderWidth: 1,
-    justifyContent: 'center', alignItems: 'center',
+    width: 64,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   captionRow: { marginTop: 2, alignItems: 'flex-end' },
   sortCaption: {
-    fontSize: 9, fontWeight: '700',
-    textTransform: 'uppercase', letterSpacing: 0.5,
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
+  headerTitleContainer: { alignItems: 'flex-start' },
+  headerTitleText: { fontSize: 17, fontWeight: '700' },
+  headerLeftContainer: { paddingRight: 12, justifyContent: 'center', alignItems: 'center' },
+  headerRightContainer: { paddingRight: 16 },
+  loader: { marginTop: 40 },
 });

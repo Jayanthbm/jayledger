@@ -1,5 +1,5 @@
 import { getDb } from '../db/database';
-import { Transaction, Category, Payee } from '../models/types';
+import { Transaction } from '../models/types';
 import { getCategories, getPayees, getMonthlyFilteredStats } from '../db/queries';
 
 export interface TransactionHeaderInfo {
@@ -8,8 +8,8 @@ export interface TransactionHeaderInfo {
   transactions: Transaction[];
 }
 
-export type FlashListItem = 
-  | (Transaction & { itemType: 'transaction' }) 
+export type FlashListItem =
+  | (Transaction & { itemType: 'transaction' })
   | (TransactionHeaderInfo & { itemType: 'header' });
 
 export interface TransactionFetchParams {
@@ -28,7 +28,11 @@ export const fetchTransactions = async ({
   selectedPayees = [],
   startDate = null,
   endDate = null,
-}: TransactionFetchParams): Promise<{ listData: FlashListItem[]; stickyHeaderIndices: number[]; totalFiltered: number }> => {
+}: TransactionFetchParams): Promise<{
+  listData: FlashListItem[];
+  stickyHeaderIndices: number[];
+  totalFiltered: number;
+}> => {
   const db = getDb();
 
   let query = `SELECT * FROM transactions WHERE user_id = '${userId}' AND deleted = 0`;
@@ -45,12 +49,12 @@ export const fetchTransactions = async ({
 
   // Filter logic
   if (selectedCats.length > 0) {
-    const catIdsString = selectedCats.map(id => `'${id}'`).join(',');
+    const catIdsString = selectedCats.map((id) => `'${id}'`).join(',');
     query += ` AND category_id IN (${catIdsString})`;
   }
 
   if (selectedPayees.length > 0) {
-    const payeeIdsString = selectedPayees.map(id => `'${id}'`).join(',');
+    const payeeIdsString = selectedPayees.map((id) => `'${id}'`).join(',');
     query += ` AND payee_id IN (${payeeIdsString})`;
   }
 
@@ -65,23 +69,26 @@ export const fetchTransactions = async ({
 
   const rows = await db.getAllAsync<Transaction>(query);
 
-  const grouped = rows.reduce((acc, tx) => {
-    if (!acc[tx.date]) acc[tx.date] = { date: tx.date, total: 0, transactions: [] };
-    acc[tx.date].transactions.push(tx);
-    acc[tx.date].total += (tx.type === 'Income' ? tx.amount : -tx.amount);
-    return acc;
-  }, {} as Record<string, TransactionHeaderInfo>);
+  const grouped = rows.reduce(
+    (acc, tx) => {
+      if (!acc[tx.date]) acc[tx.date] = { date: tx.date, total: 0, transactions: [] };
+      acc[tx.date].transactions.push(tx);
+      acc[tx.date].total += tx.type === 'Income' ? tx.amount : -tx.amount;
+      return acc;
+    },
+    {} as Record<string, TransactionHeaderInfo>,
+  );
 
   const flattened: FlashListItem[] = [];
   const stickyIndices: number[] = [];
   let currentTotal = 0;
 
-  Object.values(grouped).forEach(group => {
+  Object.values(grouped).forEach((group) => {
     stickyIndices.push(flattened.length);
     flattened.push({ itemType: 'header', ...group });
     group.transactions.forEach((tx) => {
       flattened.push({ itemType: 'transaction', ...tx });
-      currentTotal += (tx.type === 'Income' ? tx.amount : -tx.amount);
+      currentTotal += tx.type === 'Income' ? tx.amount : -tx.amount;
     });
   });
 
@@ -93,10 +100,7 @@ export const fetchTransactions = async ({
 };
 
 export const fetchTransactionFilterData = async (userId: string) => {
-  const [cats, p] = await Promise.all([
-    getCategories(userId),
-    getPayees(userId)
-  ]);
+  const [cats, p] = await Promise.all([getCategories(userId), getPayees(userId)]);
   return { categories: cats, payees: p };
 };
 
@@ -104,7 +108,7 @@ export const fetchStatsBreakdown = async (
   userId: string,
   selectedCats: string[],
   selectedPayees: string[],
-  search: string
+  search: string,
 ) => {
   return await getMonthlyFilteredStats(userId, selectedCats, selectedPayees, search);
 };

@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { ThemeColors } from '../../models/types';
 
 interface DashboardCardProps {
   children: React.ReactNode;
-  colors: any;
+  colors: ThemeColors;
   title?: string;
   subtitle?: string;
   icon?: string;
@@ -23,7 +24,7 @@ export const DashboardCard = ({
   onPress,
   isMain = false,
   style,
-  headerRight
+  headerRight,
 }: DashboardCardProps) => {
   const Container = onPress ? TouchableOpacity : View;
 
@@ -33,7 +34,7 @@ export const DashboardCard = ({
         styles.card,
         isMain && styles.mainCard,
         { backgroundColor: colors.card, borderColor: colors.border },
-        style
+        style,
       ]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
@@ -43,8 +44,12 @@ export const DashboardCard = ({
           <View style={styles.headerLeft}>
             {icon && <MaterialIcons name={icon as any} size={20} color={colors.primary} />}
             <View>
-              {title && <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{title}</Text>}
-              {subtitle && <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{subtitle}</Text>}
+              {title && (
+                <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{title}</Text>
+              )}
+              {subtitle && (
+                <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{subtitle}</Text>
+              )}
             </View>
           </View>
           {headerRight}
@@ -68,30 +73,30 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 }
+    shadowOffset: { width: 0, height: 4 },
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 16,
-    gap: 8
+    gap: 8,
   },
   headerLeft: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8
+    gap: 8,
   },
   cardTitle: {
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
-    textTransform: 'uppercase'
+    textTransform: 'uppercase',
   },
   cardSub: {
     fontSize: 10,
     fontWeight: '600',
-    marginTop: 2
+    marginTop: 2,
   },
 });

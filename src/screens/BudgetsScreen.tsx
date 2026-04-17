@@ -1,22 +1,45 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform, DeviceEventEmitter } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform,
+  DeviceEventEmitter,
+} from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { useToast } from '../store/ToastContext';
-import { addBudget, updateBudget, deleteBudget, getCategories, getMinTransactionDate } from '../db/queries';
+import {
+  addBudget,
+  updateBudget,
+  deleteBudget,
+  getCategories,
+  getMinTransactionDate,
+} from '../db/queries';
 import { Budget, Transaction, Category } from '../models/types';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { format, startOfMonth, endOfMonth, isSameMonth, differenceInDays, getYear, getMonth, getDaysInMonth, addMonths, subMonths, isAfter, isBefore } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  isSameMonth,
+  differenceInDays,
+  getDaysInMonth,
+  addMonths,
+  subMonths,
+} from 'date-fns';
 import { BudgetCard } from '../components/BudgetCard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
 import {
   fetchBudgetsWithSpending,
   fetchBudgetDrillDown,
   handleBudgetSync,
-  EnrichedBudget
+  EnrichedBudget,
 } from '../services/budgetService';
 
 // Modular Components
@@ -26,6 +49,7 @@ import { BudgetDeleteModal } from '../components/budgets/BudgetDeleteModal';
 import { BudgetDrillDownModal } from '../components/budgets/BudgetDrillDownModal';
 import { BudgetAddEditModal } from '../components/budgets/BudgetAddEditModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
+import { common } from '../styles/common';
 
 const currentYearNum = new Date().getFullYear();
 
@@ -33,14 +57,13 @@ export default function BudgetsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
   const { showToast } = useToast();
 
   const [data, setData] = useState<EnrichedBudget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [minDate, setMinDate] = useState<Date>(new Date(currentYearNum, 0, 1));
   const maxDate = useMemo(() => endOfMonth(new Date()), []);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const listRef = useRef<FlatList>(null);
 
@@ -87,30 +110,46 @@ export default function BudgetsScreen() {
     }
     setLoading(true);
     try {
-      const sorted = await fetchBudgetsWithSpending(session.user.id, startDateStr, endDateStr, sortBy, sortAsc);
+      const sorted = await fetchBudgetsWithSpending(
+        session.user.id,
+        startDateStr,
+        endDateStr,
+        sortBy,
+        sortAsc,
+      );
       setData(sorted);
 
       const lastSync = await AsyncStorage.getItem(`@last_sync_budgets_${session.user.id}`);
       if (lastSync) setLastSyncTime(getRelativeTime(parseInt(lastSync)));
 
       if (sorted.length === 0) {
-        const alreadyChecked = await AsyncStorage.getItem(`@initial_budget_sync_checked_${session.user.id}`);
+        const alreadyChecked = await AsyncStorage.getItem(
+          `@initial_budget_sync_checked_${session.user.id}`,
+        );
         if (!alreadyChecked) {
           setIsSyncing(true);
           await handleBudgetSync(session.user.id);
-          const lastSyncUpdated = await AsyncStorage.getItem(`@last_sync_budgets_${session.user.id}`);
+          const lastSyncUpdated = await AsyncStorage.getItem(
+            `@last_sync_budgets_${session.user.id}`,
+          );
           if (lastSyncUpdated) setLastSyncTime(getRelativeTime(parseInt(lastSyncUpdated)));
-          const updated = await fetchBudgetsWithSpending(session.user.id, startDateStr, endDateStr, sortBy, sortAsc);
+          const updated = await fetchBudgetsWithSpending(
+            session.user.id,
+            startDateStr,
+            endDateStr,
+            sortBy,
+            sortAsc,
+          );
           setData(updated);
           setIsSyncing(false);
         }
       }
     } catch (e) {
-      console.error("Load Budgets Error:", e);
+      console.error('Load Budgets Error:', e);
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, startDateStr, endDateStr, sortBy, sortAsc]);
+  }, [session, startDateStr, endDateStr, sortBy, sortAsc]);
 
   const handleManualSync = useCallback(async () => {
     if (!session?.user?.id || isSyncing) return;
@@ -122,52 +161,83 @@ export default function BudgetsScreen() {
       loadData();
       showToast('Budgets synced successfully', 'success');
     } catch (e) {
-      console.error("Manual sync error:", e);
+      console.error('Manual sync error:', e);
       showToast('Sync failed', 'error');
     } finally {
       setIsSyncing(false);
     }
-  }, [session?.user?.id, isSyncing, loadData]);
+  }, [session?.user?.id, isSyncing, loadData, showToast]);
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity activeOpacity={0.7} onPress={scrollToTop} style={{ alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Budgets</Text>
-          {lastSyncTime ? <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text> : null}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={scrollToTop}
+          style={styles.headerTitleContainer}
+        >
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Budgets</Text>
+          {lastSyncTime ? (
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              Synced: {lastSyncTime}
+            </Text>
+          ) : null}
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity onPress={handleManualSync} style={{ paddingRight: 16 }} disabled={isSyncing}>
-          {isSyncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={24} color={colors.text} />}
+        <TouchableOpacity
+          onPress={handleManualSync}
+          style={styles.headerRightBtn}
+          disabled={isSyncing}
+        >
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <MaterialIcons name="refresh" size={24} color={colors.text} />
+          )}
         </TouchableOpacity>
       ),
     });
-  }, [navigation, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime, handleManualSync, scrollToTop]);
+  }, [
+    navigation,
+    isSyncing,
+    colors.text,
+    colors.textSecondary,
+    colors.primary,
+    lastSyncTime,
+    handleManualSync,
+    scrollToTop,
+  ]);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
+
+  useEffect(() => {
     const init = async () => {
       if (session?.user?.id) {
         const [cats, minD] = await Promise.all([
           getCategories(session.user.id),
-          getMinTransactionDate(session.user.id)
+          getMinTransactionDate(session.user.id),
         ]);
-        setAllCategories(cats.filter(c => c.type === 'Expense'));
+        setAllCategories(cats.filter((c) => c.type === 'Expense'));
         if (minD) setMinDate(new Date(minD));
       }
     };
     init();
 
-    const subscription = DeviceEventEmitter.addListener('module_refreshed', (event) => {
+    const subscription = DeviceEventEmitter.addListener('module_refreshed', () => {
       loadData();
     });
 
     return () => {
       subscription.remove();
     };
-  }, [loadData, session?.user?.id]);
+  }, [loadData, session]);
 
   const handleCardPress = async (budget: EnrichedBudget) => {
     if (!session?.user?.id) return;
@@ -175,10 +245,15 @@ export default function BudgetsScreen() {
     setDrillDownTitle(budget.name);
     setShowDrillDown(true);
     try {
-      const transactions = await fetchBudgetDrillDown(session.user.id, budget.categories, startDateStr, endDateStr);
+      const transactions = await fetchBudgetDrillDown(
+        session.user.id,
+        budget.categories,
+        startDateStr,
+        endDateStr,
+      );
       setDrillDownData(transactions);
     } catch (e) {
-      console.error("Drill down error:", e);
+      console.error('Drill down error:', e);
     } finally {
       setDrillDownLoading(false);
     }
@@ -196,33 +271,34 @@ export default function BudgetsScreen() {
         selectedDate={selectedDate}
         minDate={minDate}
         maxDate={maxDate}
-        lastSyncTime={lastSyncTime}
-        isSyncing={isSyncing}
         sortBy={sortBy}
         sortAsc={sortAsc}
         onPrev={() => setSelectedDate(subMonths(selectedDate, 1))}
         onNext={() => setSelectedDate(addMonths(selectedDate, 1))}
         onYearMonthChange={setSelectedDate}
-        onSync={handleManualSync}
         onSortPress={() => setShowSortModal(true)}
-        onTitlePress={scrollToTop}
       />
 
       <View style={styles.toolsRow}>
         {!isCurrentMonthSelected && (
-          <TouchableOpacity onPress={() => setSelectedDate(new Date())} style={[styles.todayBtn, { backgroundColor: colors.primary + '15' }]}>
+          <TouchableOpacity
+            onPress={() => setSelectedDate(new Date())}
+            style={[styles.todayBtn, { backgroundColor: colors.primary + '15' }]}
+          >
             <Text style={[styles.todayText, { color: colors.primary }]}>Back to Today</Text>
           </TouchableOpacity>
         )}
       </View>
 
       {loading && data.length === 0 ? (
-        <View style={styles.loadingContainer}><ActivityIndicator size="large" color={colors.primary} /></View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       ) : (
         <FlatList
           ref={listRef}
           data={data}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <BudgetCard
               name={item.name}
@@ -241,11 +317,13 @@ export default function BudgetsScreen() {
               }}
             />
           )}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={common.pb40}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-               <MaterialIcons name="account-balance-wallet" size={64} color={colors.border} />
-               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Budgets Found</Text>
+              <MaterialIcons name="account-balance-wallet" size={64} color={colors.border} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No Budgets Found
+              </Text>
             </View>
           }
         />
@@ -309,7 +387,7 @@ export default function BudgetsScreen() {
         }}
         iconName="add"
         backgroundColor={colors.primary}
-        style={{ bottom: Platform.OS === 'ios' ? 40 : 24 }}
+        style={styles.fab}
         iconSize={32}
       />
     </View>
@@ -347,5 +425,23 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 16,
     fontWeight: '600',
+  },
+  headerTitleContainer: {
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    fontSize: 10,
+  },
+  headerRightBtn: {
+    paddingRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fab: {
+    bottom: Platform.OS === 'ios' ? 40 : 24,
   },
 });

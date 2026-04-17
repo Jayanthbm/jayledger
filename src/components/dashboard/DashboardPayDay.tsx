@@ -15,52 +15,77 @@ interface DashboardPayDayProps {
   colors: any;
 }
 
-export const DashboardPayDay = React.memo(({ payDayInfo, isDark, navigation, colors }: DashboardPayDayProps) => {
-  return (
-    <DashboardCard
-      colors={colors}
-      title="PAY DAY"
-      icon="event"
-      onPress={() => navigation.navigate('CalendarView')}
-      headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
-    >
-      <View style={styles.rowBetween}>
-        <View style={styles.payDayMain}>
-          <Text style={[styles.rowLabel, { color: colors.textSecondary, marginBottom: 12 }]}>{payDayInfo.nextMonth}</Text>
-          <View style={styles.dotGrid}>
-            {Array.from({ length: payDayInfo.daysInMonth }).map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  { backgroundColor: (i + 1) < payDayInfo.currentDay ? (isDark ? '#374151' : '#E5E7EB') : colors.primary }
-                ]}
-              />
-            ))}
+export const DashboardPayDay = React.memo(
+  ({ payDayInfo, isDark, navigation, colors }: DashboardPayDayProps) => {
+    return (
+      <DashboardCard
+        colors={colors}
+        title="PAY DAY"
+        icon="event"
+        onPress={() => navigation.navigate('CalendarView')}
+        headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
+      >
+        <View style={styles.rowBetween}>
+          <View style={styles.payDayMain}>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary, marginBottom: 12 }]}>
+              {payDayInfo.nextMonth}
+            </Text>
+            <View style={styles.dotGrid}>
+              {Array.from({ length: payDayInfo.daysInMonth }).map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor:
+                        i + 1 < payDayInfo.currentDay
+                          ? isDark
+                            ? '#374151'
+                            : '#E5E7EB'
+                          : colors.primary,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.circularContainer}>
-          <View style={[styles.progressCircle, {
-            borderColor: colors.border,
-            borderTopColor: colors.primary,
-            borderRightColor: (30 - payDayInfo.remaining) > 7 ? colors.primary : colors.border,
-            borderBottomColor: (30 - payDayInfo.remaining) > 15 ? colors.primary : colors.border,
-            borderLeftColor: (30 - payDayInfo.remaining) > 22 ? colors.primary : colors.border,
-            transform: [{ rotate: '0deg' }]
-          }]}>
-            <View style={[styles.progressInner, {
-              backgroundColor: colors.primary + '08',
-            }]}>
-              <Text style={[styles.progressText, { color: colors.text }]}>{payDayInfo.remaining}</Text>
-              <Text style={[styles.progressSub, { color: colors.textSecondary }]}>DAYS</Text>
+          <View style={styles.circularContainer}>
+            <View
+              style={[
+                styles.progressCircle,
+                {
+                  borderColor: colors.border,
+                  borderTopColor: colors.primary,
+                  borderRightColor: 30 - payDayInfo.remaining > 7 ? colors.primary : colors.border,
+                  borderBottomColor:
+                    30 - payDayInfo.remaining > 15 ? colors.primary : colors.border,
+                  borderLeftColor: 30 - payDayInfo.remaining > 22 ? colors.primary : colors.border,
+                  transform: [{ rotate: '0deg' }],
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.progressInner,
+                  {
+                    backgroundColor: colors.primary + '08',
+                  },
+                ]}
+              >
+                <Text style={[styles.progressText, { color: colors.text }]}>
+                  {payDayInfo.remaining}
+                </Text>
+                <Text style={[styles.progressSub, { color: colors.textSecondary }]}>DAYS</Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
-    </DashboardCard>
-  );
-});
+      </DashboardCard>
+    );
+  },
+);
+DashboardPayDay.displayName = 'DashboardPayDay';
 
 const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

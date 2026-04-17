@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { TransactionCard } from '../TransactionCard';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { Transaction } from '../../models/types';
+import { common } from '../../styles/common';
 
 interface ReportDrillDownModalProps {
   visible: boolean;
@@ -20,27 +21,28 @@ export const ReportDrillDownModal: React.FC<ReportDrillDownModalProps> = ({
   title,
   data,
   colors,
-  bottomInset
+  bottomInset,
 }) => (
-  <BottomSheet
-    visible={visible}
-    onClose={onClose}
-    title={title}
-    isFullScreen
-  >
-    <View style={{ flex: 1 }}>
+  <BottomSheet visible={visible} onClose={onClose} title={title} isFullScreen>
+    <View style={common.flex1}>
       <FlatList
         data={data}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => <TransactionCard transaction={item} />}
         contentContainerStyle={{ paddingBottom: bottomInset + 40 }}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', marginTop: 60 }}>
+          <View style={common.alignCenterMt60}>
             <Icon name="receipt-long" size={48} color={colors.border} />
-            <Text style={{ textAlign: 'center', marginTop: 12, color: colors.textSecondary }}>No transactions found</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No transactions found
+            </Text>
           </View>
         }
       />
     </View>
   </BottomSheet>
 );
+
+const styles = StyleSheet.create({
+  emptyText: { textAlign: 'center', marginTop: 12 },
+});

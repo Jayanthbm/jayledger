@@ -20,32 +20,44 @@ const AuthContext = createContext<AuthContextProps>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadingRef = React.useRef(loading);
 
   useEffect(() => {
-    console.log("[Auth] Initializing session...");
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    console.log('[Auth] Initializing session...');
     const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn("[Auth] Session initialization timed out. Forcing loading false.");
+      if (loadingRef.current) {
+        console.warn('[Auth] Session initialization timed out. Forcing loading false.');
         setLoading(false);
       }
     }, 7000);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(timeout);
-      console.log("[Auth] Session fetched:", session?.user?.id ? "Logged In" : "Not Logged In");
-      setSession(session);
-      setLoading(false);
-      if(session?.user?.id) {
-         console.log('[Auth] User logged in, skipping boot sync to allow Dashboard to handle logic.');
-      }
-    }).catch(err => {
-      clearTimeout(timeout);
-      console.error("[Auth] getSession error:", err);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout);
+        console.log('[Auth] Session fetched:', session?.user?.id ? 'Logged In' : 'Not Logged In');
+        setSession(session);
+        setLoading(false);
+        if (session?.user?.id) {
+          console.log(
+            '[Auth] User logged in, skipping boot sync to allow Dashboard to handle logic.',
+          );
+        }
+      })
+      .catch((err) => {
+        clearTimeout(timeout);
+        console.error('[Auth] getSession error:', err);
+        setLoading(false);
+      });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("[Auth] Auth state changed:", _event, session?.user?.id);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('[Auth] Auth state changed:', _event, session?.user?.id);
       setSession(session);
       setLoading(false);
     });
@@ -59,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    if(data.session?.user?.id) {
+    if (data.session?.user?.id) {
       await runFullSync(data.session.user.id);
     }
   };

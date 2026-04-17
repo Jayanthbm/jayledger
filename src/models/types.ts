@@ -1,3 +1,5 @@
+import { Colors } from '../store/ThemeContext';
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -78,3 +80,25 @@ export interface UserSession {
   id: string;
   email?: string;
 }
+
+export interface ReportItem {
+  id?: string;
+  name?: string;
+  amount?: number;
+  totalAmount?: number;
+  type?: string;
+  category_name?: string;
+  category_id?: string;
+  payee_name?: string;
+  payee_id?: string;
+  icon?: string;
+  app_icon?: string | null;
+  is_living_cost?: number;
+  month?: string;
+  income?: number;
+  expense?: number;
+  category_app_icon?: string;
+  payee_logo?: string;
+}
+
+export type ThemeColors = typeof Colors.light;

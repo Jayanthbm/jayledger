@@ -9,12 +9,7 @@ interface PayeeCardProps {
   onPress: (item: Payee) => void;
 }
 
-export const PayeeCard: React.FC<PayeeCardProps> = ({
-  item,
-  viewMode,
-  colors,
-  onPress
-}) => {
+export const PayeeCard: React.FC<PayeeCardProps> = ({ item, viewMode, colors, onPress }) => {
   const isGrid = viewMode === 'grid';
 
   return (
@@ -22,29 +17,36 @@ export const PayeeCard: React.FC<PayeeCardProps> = ({
       style={[
         styles.payeeCard,
         { backgroundColor: colors.card, borderColor: colors.border },
-        isGrid && styles.payeeCardGrid
+        isGrid && styles.payeeCardGrid,
       ]}
       activeOpacity={0.7}
       onPress={() => onPress(item)}
     >
-      <View style={[
-        styles.logoContainer,
-        { backgroundColor: colors.primary + '15' },
-        isGrid && { marginRight: 0 }
-      ]}>
+      <View
+        style={[
+          styles.logoContainer,
+          { backgroundColor: colors.primary + '15' },
+          isGrid && styles.logoContainerGrid,
+        ]}
+      >
         {item.logo && item.logo.startsWith('http') ? (
           <Image source={{ uri: item.logo }} style={styles.logoImage} />
         ) : (
-          <Text style={[styles.logoFallback, { color: colors.primary, fontSize: isGrid ? 18 : 22 }]}>
+          <Text
+            style={[
+              styles.logoFallback,
+              { color: colors.primary },
+              isGrid ? styles.logoFallbackSm : styles.logoFallbackLg,
+            ]}
+          >
             {item.name.charAt(0).toUpperCase()}
           </Text>
         )}
       </View>
-      <Text style={[
-        styles.payeeName,
-        { color: colors.text },
-        isGrid && { marginTop: 10, textAlign: 'center', fontSize: 13 }
-      ]} numberOfLines={2}>
+      <Text
+        style={[styles.payeeName, { color: colors.text }, isGrid && styles.gridName]}
+        numberOfLines={2}
+      >
         {item.name}
       </Text>
     </TouchableOpacity>
@@ -58,7 +60,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 12
+    marginBottom: 12,
   },
   payeeCardGrid: {
     width: '31%',
@@ -67,7 +69,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     paddingHorizontal: 8,
-    marginHorizontal: '1%'
+    marginHorizontal: '1%',
   },
   logoContainer: {
     width: 44,
@@ -76,9 +78,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    marginRight: 12
+    marginRight: 12,
   },
   logoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  logoFallback: { fontSize: 20, fontWeight: 'bold' },
+  logoFallback: { fontWeight: 'bold' },
+  logoFallbackLg: { fontSize: 22 },
+  logoFallbackSm: { fontSize: 18 },
+  logoContainerGrid: { marginRight: 0 },
   payeeName: { fontSize: 13, fontWeight: '700', flex: 1 },
+  gridName: { marginTop: 10, textAlign: 'center', fontSize: 13 },
 });

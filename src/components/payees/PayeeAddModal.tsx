@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Keyboard
+  Keyboard,
 } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 
@@ -22,7 +22,7 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
   visible,
   onClose,
   onAdd,
-  colors
+  colors,
 }) => {
   const [name, setName] = useState('');
   const [logo, setLogo] = useState('');
@@ -38,22 +38,21 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
       setLogo('');
       onClose();
     } catch (error) {
-      console.error("Add payee error:", error);
+      console.error('Add payee error:', error);
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="Add New Payee"
-    >
+    <BottomSheet visible={visible} onClose={onClose} title="Add New Payee">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Payee Name</Text>
         <TextInput
-          style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+          style={[
+            styles.inputField,
+            { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
+          ]}
           placeholder="e.g. Starbucks, Amazon"
           placeholderTextColor={colors.textSecondary}
           value={name}
@@ -61,9 +60,14 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
           autoFocus={visible}
         />
 
-        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 16 }]}>Logo URL (Optional)</Text>
+        <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 16 }]}>
+          Logo URL (Optional)
+        </Text>
         <TextInput
-          style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
+          style={[
+            styles.inputField,
+            { backgroundColor: colors.background, color: colors.text, borderColor: colors.border },
+          ]}
           placeholder="https://..."
           placeholderTextColor={colors.textSecondary}
           value={logo}
@@ -73,11 +77,18 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
         />
 
         <TouchableOpacity
-          style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!name.trim() || isSaving) ? 0.5 : 1 }]}
+          style={[
+            styles.saveButton,
+            { backgroundColor: colors.primary, opacity: !name.trim() || isSaving ? 0.5 : 1 },
+          ]}
           onPress={handleSave}
           disabled={!name.trim() || isSaving}
         >
-          {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save Payee</Text>}
+          {isSaving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Payee</Text>
+          )}
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </BottomSheet>
@@ -87,6 +98,12 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
 const styles = StyleSheet.create({
   inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
   inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-  saveButton: { height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 32 },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  saveButton: {
+    height: 54,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 32,
+  },
+  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

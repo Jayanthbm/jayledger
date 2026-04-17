@@ -1,13 +1,16 @@
 import { getTransactionsByDate, getMinTransactionDate } from '../db/queries';
 import { Transaction } from '../models/types';
-import { format, endOfMonth, getDaysInMonth } from 'date-fns';
+import { format, getDaysInMonth } from 'date-fns';
 
 export const fetchMinDate = async (userId: string): Promise<Date> => {
   const d = await getMinTransactionDate(userId);
   return d ? new Date(d) : new Date();
 };
 
-export const fetchTransactionsForDate = async (userId: string, date: Date): Promise<Transaction[]> => {
+export const fetchTransactionsForDate = async (
+  userId: string,
+  date: Date,
+): Promise<Transaction[]> => {
   const dateStr = format(date, 'yyyy-MM-dd');
   return await getTransactionsByDate(userId, dateStr);
 };

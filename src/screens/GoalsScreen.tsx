@@ -1,5 +1,13 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, DeviceEventEmitter } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  DeviceEventEmitter,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -11,11 +19,7 @@ import { getRelativeTime } from '../utils/dateUtils';
 import { useToast } from '../store/ToastContext';
 import { generateUUID } from '../utils/commonUtils';
 
-import {
-  fetchGoals,
-  handleGoalSync,
-  sortGoals
-} from '../services/goalService';
+import { fetchGoals, handleGoalSync, sortGoals } from '../services/goalService';
 
 // Modular Components
 import { GoalCard } from '../components/goals/GoalCard';
@@ -23,6 +27,7 @@ import { GoalSortModal } from '../components/goals/GoalSortModal';
 import { GoalDeleteModal } from '../components/goals/GoalDeleteModal';
 import { GoalAddEditModal } from '../components/goals/GoalAddEditModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
+import { common } from '../styles/common';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
@@ -32,7 +37,7 @@ export default function GoalsScreen() {
   const { showToast } = useToast();
 
   const [data, setData] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const listRef = useRef<FlatList>(null);
@@ -76,21 +81,28 @@ export default function GoalsScreen() {
         }
       }
     } catch (e) {
-      console.error("Load Goals Error:", e);
+      console.error('Load Goals Error:', e);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
-    const sub = DeviceEventEmitter.addListener('module_refreshed', (data) => {
-      if (data.module === 'Goals') loadData();
+    const sub = DeviceEventEmitter.addListener('module_refreshed', (event) => {
+      if (event.module === 'Goals') {
+        setTimeout(() => {
+          loadData();
+        }, 0);
+      }
     });
     return () => sub.remove();
   }, [loadData]);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   const handleManualSync = useCallback(async () => {
@@ -103,29 +115,54 @@ export default function GoalsScreen() {
       await loadData();
       showToast('Goals synced successfully', 'success');
     } catch (e) {
-      console.error("Manual sync error:", e);
+      console.error('Manual sync error:', e);
       showToast('Sync failed', 'error');
     } finally {
       setIsSyncing(false);
     }
-  }, [user?.id, loadData]);
+  }, [user, loadData, isSyncing, showToast]);
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity activeOpacity={0.7} onPress={scrollToTop} style={{ alignItems: 'flex-start' }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Goals</Text>
-          {lastSyncTime ? <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text> : null}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={scrollToTop}
+          style={styles.headerTitleContainer}
+        >
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Goals</Text>
+          {lastSyncTime ? (
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              Synced: {lastSyncTime}
+            </Text>
+          ) : null}
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity onPress={handleManualSync} style={{ paddingRight: 16 }} disabled={isSyncing}>
-          {isSyncing ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name="refresh" size={24} color={colors.text} />}
+        <TouchableOpacity
+          onPress={handleManualSync}
+          style={styles.headerRightBtn}
+          disabled={isSyncing}
+        >
+          {isSyncing ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <MaterialIcons name="refresh" size={24} color={colors.text} />
+          )}
         </TouchableOpacity>
       ),
     });
-  }, [navigation, handleManualSync, isSyncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime, scrollToTop]);
+  }, [
+    navigation,
+    handleManualSync,
+    isSyncing,
+    colors.text,
+    colors.textSecondary,
+    colors.primary,
+    lastSyncTime,
+    scrollToTop,
+  ]);
 
   const sortedData = useMemo(() => {
     return sortGoals(data, sortBy, sortAsc);
@@ -139,15 +176,18 @@ export default function GoalsScreen() {
             <Text style={[styles.title, { color: colors.text }]}>Savings Goals</Text>
           </View>
           <TouchableOpacity
-            style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            style={[
+              styles.sortButton,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
             onPress={() => setIsSortModalOpen(true)}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View style={common.flexRowCenterGap4}>
               <MaterialIcons name="sort" size={18} color={colors.primary} />
-              <MaterialIcons 
-                name={sortAsc ? "arrow-upward" : "arrow-downward"} 
-                size={14} 
-                color={colors.primary} 
+              <MaterialIcons
+                name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+                size={14}
+                color={colors.primary}
               />
             </View>
           </TouchableOpacity>
@@ -163,7 +203,7 @@ export default function GoalsScreen() {
       <FlatList
         ref={listRef}
         data={sortedData}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <GoalCard
             item={item}
@@ -175,9 +215,9 @@ export default function GoalsScreen() {
         )}
         contentContainerStyle={{ padding: 16, paddingTop: 4, paddingBottom: 40 }}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-             <MaterialIcons name="flag" size={48} color={colors.border} />
-             <Text style={{ textAlign: 'center', marginTop: 12, fontSize: 16, color: colors.textSecondary }}>No Goals Found</Text>
+          <View style={styles.emptyContainer}>
+            <MaterialIcons name="flag" size={48} color={colors.border} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No Goals Found</Text>
           </View>
         }
       />
@@ -207,7 +247,7 @@ export default function GoalsScreen() {
             logo: goalData.logo!,
             goal_amount: goalData.goal_amount!,
             current_amount: goalData.current_amount!,
-            user_id: user.id
+            user_id: user.id,
           };
           await insertGoal(newGoal);
           setIsModalOpen(false);
@@ -275,4 +315,28 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   title: { fontSize: 16, fontWeight: 'bold' },
+  headerTitleContainer: {
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    fontSize: 10,
+  },
+  headerRightBtn: {
+    paddingRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 12,
+    fontSize: 16,
+  },
 });

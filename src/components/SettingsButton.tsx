@@ -1,22 +1,20 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
 
 export const SettingsButton = () => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<any>(); // useNavigation often requires complex typing, leaving as any or using NavigationProp
   const { colors, isDark } = useTheme();
 
   return (
-    <TouchableOpacity 
-      onPress={() => navigation.navigate('Settings')}
+    <TouchableOpacity
+      onPress={() => navigation.navigate('Settings' as never)}
       style={[
-        styles.container, 
-        { 
-          backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-          borderColor: colors.border 
-        }
+        styles.container,
+        isDark ? styles.containerDark : styles.containerLight,
+        { borderColor: colors.border },
       ]}
     >
       <View style={[styles.avatar, { backgroundColor: colors.primary + '30' }]}>
@@ -37,6 +35,12 @@ const styles = StyleSheet.create({
     marginRight: 16,
     borderWidth: 1,
   },
+  containerDark: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  containerLight: {
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
   avatar: {
     width: 32,
     height: 32,
@@ -53,5 +57,5 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
     borderColor: 'white', // Header background usually white or clean
-  }
+  },
 });

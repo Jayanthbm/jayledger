@@ -25,7 +25,10 @@ export const ReportEmptyState: React.FC<ReportEmptyStateProps> = ({
       </Text>
       {searchQuery.trim() ? (
         <TouchableOpacity
-          style={[styles.clearFilterButton, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
+          style={[
+            styles.clearFilterButton,
+            { backgroundColor: colors.primary + '15', borderColor: colors.primary },
+          ]}
           onPress={onClearFilters}
         >
           <Icon name="close" size={18} color={colors.primary} />
