@@ -79,14 +79,34 @@ export const calculateDailyLimit = (metrics: DashboardMetrics) => {
   const today = new Date();
   const monthEnd = endOfMonth(today);
   const remainingDays = differenceInDays(monthEnd, today) + 1;
-  const balance = metrics.month.income - metrics.month.expense + metrics.spentToday;
+
+  // Formula logic:
+  // 1. Start with total monthly income.
+  const income = metrics.month.income;
+  // 2. Subtract all expenses made up to yesterday (exclude today’s spending).
+  const expenseUntilYesterday = metrics.month.expense - metrics.spentToday;
+  // 3. Divide the remaining balance by the number of days left in the month (including today).
+  const balance = income - expenseUntilYesterday;
   const limit = remainingDays > 0 ? balance / remainingDays : 0;
-  const remainingToday = limit - metrics.spentToday;
+
+  // Today’s metrics for the progress bar
+  const spent = metrics.spentToday;
+  const remaining = Math.max(0, limit - spent);
+
+  // Remaining % = (Remaining ÷ (Remaining + Spent)) × 100
+  // If Spent = 0, then Remaining % = 100%
+  let remainingPercentage = 100;
+  if (spent > 0 || remaining > 0) {
+    remainingPercentage = (remaining / (remaining + spent)) * 100;
+  } else if (spent === 0 && remaining === 0) {
+    remainingPercentage = 100; // Case where both are 0, usually means 100% of 0 is 100% left
+  }
 
   return {
     limit: Math.max(0, limit),
-    spentToday: metrics.spentToday,
-    remainingToday,
+    spentToday: spent,
+    remainingToday: remaining,
+    remainingPercentage: Math.min(100, Math.max(0, remainingPercentage)),
   };
 };
 
