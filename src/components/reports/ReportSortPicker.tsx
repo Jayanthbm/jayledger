@@ -1,9 +1,9 @@
-import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { BottomSheet } from '../BottomSheet';
+import { ActionModal } from '../common/ActionModal';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { common } from '../../styles/common';
+import { useTheme } from '../../store/ThemeContext';
 
 interface ReportSortPickerProps {
   visible: boolean;
@@ -11,7 +11,6 @@ interface ReportSortPickerProps {
   sortBy: 'name' | 'amount';
   sortAsc: boolean;
   onSortChange: (sortBy: 'name' | 'amount', sortAsc: boolean) => void;
-  colors: ThemeColors;
 }
 
 export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
@@ -20,15 +19,15 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
   sortBy,
   sortAsc,
   onSortChange,
-  colors,
 }) => {
+  const { colors } = useTheme();
   const sortOptions: Array<{ label: string; value: 'name' | 'amount' }> = [
     { label: 'Name', value: 'name' },
     { label: 'Amount', value: 'amount' },
   ];
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} title="Sort Results">
+    <ActionModal visible={visible} onClose={onClose} title="Sort Results" icon="sort">
       <View style={common.mt10}>
         {sortOptions.map((opt) => {
           const isActive = sortBy === opt.value;
@@ -40,7 +39,7 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
                 if (isActive) {
                   onSortChange(opt.value, !sortAsc);
                 } else {
-                  onSortChange(opt.value, opt.value === 'name'); // Default Asc for name, Desc for amount
+                  onSortChange(opt.value, opt.value === 'name');
                 }
                 onClose();
               }}
@@ -59,6 +58,6 @@ export const ReportSortPicker: React.FC<ReportSortPickerProps> = ({
           );
         })}
       </View>
-    </BottomSheet>
+    </ActionModal>
   );
 };

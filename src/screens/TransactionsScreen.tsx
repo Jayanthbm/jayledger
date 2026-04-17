@@ -41,6 +41,8 @@ import { syncTransactions, needsTransactionSync } from '../services/syncService'
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { MainTabParamList, RootStackParamList } from '../navigation/navigationTypes';
 import { common } from '../styles/common';
+import { DataErrorBoundary } from '../components/common/ErrorBoundaries';
+import { SyncFeedback } from '../components/common/SyncFeedback';
 
 import { formatCurrency } from '../utils/formatters';
 
@@ -272,6 +274,16 @@ export default function TransactionsScreen() {
     return () => clearTimeout(timeout);
   }, [loadData]);
 
+  // Auto-scroll to top when data updates due to filter changes
+  useEffect(() => {
+    if (listData.length > 0) {
+      const timer = setTimeout(() => {
+        scrollToTop();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [search, selectedCats, selectedPayees, startDate, endDate, scrollToTop, listData.length]);
+
   useEffect(() => {
     if (!showFilterModal) {
       const timer = setTimeout(() => {
@@ -283,12 +295,14 @@ export default function TransactionsScreen() {
 
   const handleFilterCategory = (catId: string) => {
     setSelectedCats([catId]);
+    setTempSelectedCats([catId]);
     setSearch('');
   };
 
   const handleFilterPayee = (payeeId: string | null) => {
     if (payeeId) {
       setSelectedPayees([payeeId]);
+      setTempSelectedPayees([payeeId]);
       setSearch('');
     }
   };
@@ -297,6 +311,8 @@ export default function TransactionsScreen() {
     setSearch('');
     setSelectedCats([]);
     setSelectedPayees([]);
+    setTempSelectedCats([]);
+    setTempSelectedPayees([]);
     setStartDate(null);
     setEndDate(null);
   }, []);
@@ -315,249 +331,265 @@ export default function TransactionsScreen() {
   );
 
   return (
-    <View style={[common.flex1, { backgroundColor: colors.background }]}>
-      <View style={styles.searchContainer}>
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search transactions..."
-          size="medium"
-          onClear={() => setSearch('')}
+    <DataErrorBoundary colors={colors} onReset={loadData}>
+      <View style={[common.flex1, { backgroundColor: colors.background }]}>
+        <SyncFeedback isSyncing={isSyncing} onRetry={handleManualSync} />
+        <View style={styles.searchContainer}>
+          <SearchBar
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search transactions..."
+            size="medium"
+            onClear={() => setSearch('')}
+          />
+        </View>
+
+        <View style={styles.filterRow}>
+          <View style={styles.row}>
+            <View
+              style={[
+                styles.filterChip,
+                selectedCats.length > 0
+                  ? themedStyles.selectedFilterChip
+                  : themedStyles.inactiveFilterChip,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => setShowFilterModal('Category')}
+                style={styles.filterChipButton}
+              >
+                <Icon
+                  name="category"
+                  size={16}
+                  color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
+                  style={styles.filterIcon}
+                />
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  {selectedCats.length > 0 ? `${selectedCats.length} Mixed` : 'Categories'}
+                </Text>
+                <Icon
+                  name="arrow-drop-down"
+                  size={20}
+                  color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+              {selectedCats.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedCats([]);
+                    setTempSelectedCats([]);
+                  }}
+                  style={styles.smallClose}
+                >
+                  <Icon name="close" size={14} color={colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View
+              style={[
+                styles.filterChip,
+                selectedPayees.length > 0
+                  ? themedStyles.selectedFilterChip
+                  : themedStyles.inactiveFilterChip,
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => setShowFilterModal('Payee')}
+                style={styles.filterChipButton}
+              >
+                <Icon
+                  name="person"
+                  size={16}
+                  color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
+                  style={common.mr4}
+                />
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary },
+                  ]}
+                >
+                  {selectedPayees.length > 0 ? `${selectedPayees.length} Payees` : 'Payees'}
+                </Text>
+                <Icon
+                  name="arrow-drop-down"
+                  size={20}
+                  color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+              {selectedPayees.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedPayees([]);
+                    setTempSelectedPayees([]);
+                  }}
+                  style={styles.smallClose}
+                >
+                  <Icon name="close" size={14} color={colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
+          <View style={styles.statsRow}>
+            <TouchableOpacity
+              style={[
+                styles.statsPill,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40',
+                },
+              ]}
+              onPress={loadStatsBreakdown}
+            >
+              <View style={styles.statsPillContent}>
+                <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
+                  FILTER TOTAL
+                </Text>
+                <Text
+                  style={[
+                    styles.statsValue,
+                    { color: totalFiltered >= 0 ? colors.success : colors.danger },
+                  ]}
+                >
+                  {totalFiltered >= 0 ? '+' : ''}
+                  {formatCurrency(totalFiltered)}
+                </Text>
+                <Icon name="bar-chart" size={16} color={colors.primary} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <FlashList
+          {...({
+            ref: listRef,
+            data: listData,
+            keyExtractor: (item: FlashListItem) =>
+              item.itemType === 'header' ? `header-${item.date}` : item.id,
+            estimatedItemSize: 100,
+            renderItem: ({ item }: { item: FlashListItem }) => {
+              if (item.itemType === 'header') {
+                return (
+                  <TransactionSectionHeader date={item.date} total={item.total} colors={colors} />
+                );
+              }
+              return (
+                <TransactionCard
+                  transaction={item}
+                  onEdit={handleEditTransaction}
+                  onDelete={handleDeleteTransaction}
+                  onFilterCategory={handleFilterCategory}
+                  onFilterPayee={handleFilterPayee}
+                />
+              );
+            },
+            getItemType: (item: FlashListItem) => item.itemType,
+            stickyHeaderIndices: stickyHeaderIndices,
+            ListEmptyComponent: loading ? (
+              <ActivityIndicator style={styles.emptyLoader} color={colors.primary} />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <View style={[styles.emptyIconBox, { backgroundColor: colors.border + '15' }]}>
+                  <Icon name="search-off" size={48} color={colors.border} />
+                </View>
+                <Text style={[styles.emptyHeader, { color: colors.text }]}>
+                  No transactions found
+                </Text>
+                <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                  Try adjusting your filters or search terms
+                </Text>
+                <TouchableOpacity
+                  style={[styles.clearFilterBtn, { backgroundColor: colors.primary }]}
+                  onPress={clearFilters}
+                >
+                  <Text style={styles.clearFilterBtnText}>Clear All Filters</Text>
+                </TouchableOpacity>
+              </View>
+            ),
+            contentContainerStyle: styles.listContent,
+          } as any)}
+        />
+
+        <TransactionFilterSelector
+          type="Category"
+          visible={showFilterModal === 'Category'}
+          onClose={() => setShowFilterModal(null)}
+          categories={categories}
+          payees={payees}
+          tempSelectedItems={tempSelectedCats}
+          setTempSelectedItems={setTempSelectedCats}
+          onApply={(selected) => {
+            setSelectedCats(selected);
+            setShowFilterModal(null);
+            setModalSearch('');
+          }}
+          colors={colors}
+          modalSearch={modalSearch}
+          setModalSearch={setModalSearch}
+        />
+        <TransactionFilterSelector
+          type="Payee"
+          visible={showFilterModal === 'Payee'}
+          onClose={() => setShowFilterModal(null)}
+          categories={categories}
+          payees={payees}
+          tempSelectedItems={tempSelectedPayees}
+          setTempSelectedItems={setTempSelectedPayees}
+          onApply={(selected) => {
+            setSelectedPayees(selected);
+            setShowFilterModal(null);
+            setModalSearch('');
+          }}
+          colors={colors}
+          modalSearch={modalSearch}
+          setModalSearch={setModalSearch}
+        />
+        <TransactionDeleteModal
+          transaction={deleteConfirmTx}
+          onCancel={() => setDeleteConfirmTx(null)}
+          onConfirm={confirmDelete}
+        />
+        <TransactionQuickModal
+          visible={showQuickModal}
+          onClose={() => setShowQuickModal(false)}
+          quickTransactions={quickTransactions}
+          onSelect={(item) => {
+            setShowQuickModal(false);
+            navigation.navigate('AddTransaction', { quickTransaction: item });
+          }}
+        />
+
+        <TouchableOpacity
+          style={[styles.quickFab, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setShowQuickModal(true)}
+        >
+          <Icon name="bolt" size={28} color={colors.primary} />
+        </TouchableOpacity>
+        <FloatingActionButton
+          onPress={() => navigation.navigate('AddTransaction')}
+          iconName="add"
+          backgroundColor={colors.primary}
+          style={styles.fab}
+          iconSize={32}
+        />
+
+        <TransactionStatsModal
+          visible={showStatsModal}
+          onClose={() => setShowStatsModal(false)}
+          statsBreakdown={statsBreakdown}
+          loadingStats={loadingStats}
         />
       </View>
-
-      <View style={styles.filterRow}>
-        <View style={styles.row}>
-          <View
-            style={[
-              styles.filterChip,
-              selectedCats.length > 0
-                ? themedStyles.selectedFilterChip
-                : themedStyles.inactiveFilterChip,
-            ]}
-          >
-            <TouchableOpacity
-              onPress={() => setShowFilterModal('Category')}
-              style={styles.filterChipButton}
-            >
-              <Icon
-                name="category"
-                size={16}
-                color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
-                style={styles.filterIcon}
-              />
-              <Text
-                style={[
-                  styles.filterChipText,
-                  { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary },
-                ]}
-              >
-                {selectedCats.length > 0 ? `${selectedCats.length} Mixed` : 'Categories'}
-              </Text>
-              <Icon
-                name="arrow-drop-down"
-                size={20}
-                color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
-              />
-            </TouchableOpacity>
-            {selectedCats.length > 0 && (
-              <TouchableOpacity onPress={() => setSelectedCats([])} style={styles.smallClose}>
-                <Icon name="close" size={14} color={colors.primary} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <View
-            style={[
-              styles.filterChip,
-              selectedPayees.length > 0
-                ? themedStyles.selectedFilterChip
-                : themedStyles.inactiveFilterChip,
-            ]}
-          >
-            <TouchableOpacity
-              onPress={() => setShowFilterModal('Payee')}
-              style={styles.filterChipButton}
-            >
-              <Icon
-                name="person"
-                size={16}
-                color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
-                style={common.mr4}
-              />
-              <Text
-                style={[
-                  styles.filterChipText,
-                  { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary },
-                ]}
-              >
-                {selectedPayees.length > 0 ? `${selectedPayees.length} Payees` : 'Payees'}
-              </Text>
-              <Icon
-                name="arrow-drop-down"
-                size={20}
-                color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
-              />
-            </TouchableOpacity>
-            {selectedPayees.length > 0 && (
-              <TouchableOpacity onPress={() => setSelectedPayees([])} style={styles.smallClose}>
-                <Icon name="close" size={14} color={colors.primary} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </View>
-
-      {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
-        <View style={styles.statsRow}>
-          <TouchableOpacity
-            style={[
-              styles.statsPill,
-              {
-                backgroundColor: colors.card,
-                borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40',
-              },
-            ]}
-            onPress={loadStatsBreakdown}
-          >
-            <View style={styles.statsPillContent}>
-              <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>FILTER TOTAL</Text>
-              <Text
-                style={[
-                  styles.statsValue,
-                  { color: totalFiltered >= 0 ? colors.success : colors.danger },
-                ]}
-              >
-                {totalFiltered >= 0 ? '+' : ''}
-                {formatCurrency(totalFiltered)}
-              </Text>
-              <Icon name="bar-chart" size={16} color={colors.primary} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <FlashList
-        ref={listRef}
-        data={listData}
-        keyExtractor={(item: FlashListItem) =>
-          item.itemType === 'header' ? `header-${item.date}` : item.id
-        }
-        renderItem={({ item }: { item: FlashListItem }) => {
-          if (item.itemType === 'header') {
-            return <TransactionSectionHeader date={item.date} total={item.total} colors={colors} />;
-          }
-          return (
-            <TransactionCard
-              transaction={item}
-              onEdit={handleEditTransaction}
-              onDelete={handleDeleteTransaction}
-              onFilterCategory={handleFilterCategory}
-              onFilterPayee={handleFilterPayee}
-            />
-          );
-        }}
-        getItemType={(item: FlashListItem) => item.itemType}
-        stickyHeaderIndices={stickyHeaderIndices}
-        ListEmptyComponent={
-          loading ? (
-            <ActivityIndicator style={styles.emptyLoader} color={colors.primary} />
-          ) : (
-            <View style={styles.emptyContainer}>
-              <View style={[styles.emptyIconBox, { backgroundColor: colors.border + '15' }]}>
-                <Icon name="search-off" size={48} color={colors.border} />
-              </View>
-              <Text style={[styles.emptyHeader, { color: colors.text }]}>
-                No transactions found
-              </Text>
-              <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
-                Try adjusting your filters or search terms
-              </Text>
-              <TouchableOpacity
-                style={[styles.clearFilterBtn, { backgroundColor: colors.primary }]}
-                onPress={clearFilters}
-              >
-                <Text style={styles.clearFilterBtnText}>Clear All Filters</Text>
-              </TouchableOpacity>
-            </View>
-          )
-        }
-        contentContainerStyle={styles.listContent}
-      />
-
-      <TransactionFilterSelector
-        type="Category"
-        visible={showFilterModal === 'Category'}
-        onClose={() => setShowFilterModal(null)}
-        categories={categories}
-        payees={payees}
-        tempSelectedItems={tempSelectedCats}
-        setTempSelectedItems={setTempSelectedCats}
-        onApply={(selected) => {
-          setSelectedCats(selected);
-          setShowFilterModal(null);
-          setModalSearch('');
-        }}
-        colors={colors}
-        modalSearch={modalSearch}
-        setModalSearch={setModalSearch}
-      />
-      <TransactionFilterSelector
-        type="Payee"
-        visible={showFilterModal === 'Payee'}
-        onClose={() => setShowFilterModal(null)}
-        categories={categories}
-        payees={payees}
-        tempSelectedItems={tempSelectedPayees}
-        setTempSelectedItems={setTempSelectedPayees}
-        onApply={(selected) => {
-          setSelectedPayees(selected);
-          setShowFilterModal(null);
-          setModalSearch('');
-        }}
-        colors={colors}
-        modalSearch={modalSearch}
-        setModalSearch={setModalSearch}
-      />
-      <TransactionDeleteModal
-        transaction={deleteConfirmTx}
-        onCancel={() => setDeleteConfirmTx(null)}
-        onConfirm={confirmDelete}
-        colors={colors}
-      />
-      <TransactionQuickModal
-        visible={showQuickModal}
-        onClose={() => setShowQuickModal(false)}
-        quickTransactions={quickTransactions}
-        onSelect={(item) => {
-          setShowQuickModal(false);
-          navigation.navigate('AddTransaction', { quickTransaction: item });
-        }}
-        colors={colors}
-      />
-
-      <TouchableOpacity
-        style={[styles.quickFab, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => setShowQuickModal(true)}
-      >
-        <Icon name="bolt" size={28} color={colors.primary} />
-      </TouchableOpacity>
-      <FloatingActionButton
-        onPress={() => navigation.navigate('AddTransaction')}
-        iconName="add"
-        backgroundColor={colors.primary}
-        style={styles.fab}
-        iconSize={32}
-      />
-
-      <TransactionStatsModal
-        visible={showStatsModal}
-        onClose={() => setShowStatsModal(false)}
-        statsBreakdown={statsBreakdown}
-        loadingStats={loadingStats}
-        colors={colors}
-      />
-    </View>
+    </DataErrorBoundary>
   );
 }
 

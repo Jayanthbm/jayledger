@@ -1,10 +1,10 @@
-import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { BottomSheet } from '../BottomSheet';
 import { QuickTransaction } from '../../models/types';
 import { common } from '../../styles/common';
+import { useTheme } from '../../store/ThemeContext';
 
 import { formatCurrency } from '../../utils/formatters';
 
@@ -13,11 +13,11 @@ interface TransactionQuickModalProps {
   onClose: () => void;
   quickTransactions: QuickTransaction[];
   onSelect: (item: QuickTransaction) => void;
-  colors: ThemeColors;
 }
 
 export const TransactionQuickModal = React.memo(
-  ({ visible, onClose, quickTransactions, onSelect, colors }: TransactionQuickModalProps) => {
+  ({ visible, onClose, quickTransactions, onSelect }: TransactionQuickModalProps) => {
+    const { colors } = useTheme();
     const themedStyles = React.useMemo(
       () => ({
         metaText: { color: colors.textSecondary, fontSize: 13 },

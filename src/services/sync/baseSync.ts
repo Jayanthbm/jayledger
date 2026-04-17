@@ -15,11 +15,12 @@ export interface SyncResult {
   success: boolean;
   count?: number;
   error?: unknown;
+  timestamp: number;
 }
 
 /**
  * Shared sync logging utility.
  */
 export const syncLog = (entity: string, message: string) => {
-  console.log(`[Sync:${entity}] ${message}`);
+  console.log(`[Sync:${entity}] [${new Date().toISOString()}] ${message}`);
 };
