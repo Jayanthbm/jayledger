@@ -2,21 +2,21 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import {
-  getIncomeExpenseSummary,
-  getTransactionsByCategoryForExpense,
-  getNetWorth,
-  getSpentToday
-} from '../db/queries';
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, format, differenceInDays, addMonths, getDaysInMonth, subMonths, subYears } from 'date-fns';
+import { format } from 'date-fns';
 import { DeviceEventEmitter } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { runFullSync, isOnline, needsTransactionSync, syncTransactions } from '../services/syncService';
 import { getRelativeTime } from '../utils/dateUtils';
-import { BottomSheet } from '../components/BottomSheet';
-
+import { DashboardRemainingCard } from '../components/dashboard/DashboardRemainingCard';
+import { DashboardDailyLimit } from '../components/dashboard/DashboardDailyLimit';
+import { DashboardPayDay } from '../components/dashboard/DashboardPayDay';
+import { DashboardSummaryCard } from '../components/dashboard/DashboardSummaryCard';
+import { DashboardTopCategories } from '../components/dashboard/DashboardTopCategories';
+import { DashboardNetWorth } from '../components/dashboard/DashboardNetWorth';
+import { DashboardSyncModal } from '../components/dashboard/DashboardSyncModal';
+import { fetchDashboardMetrics, calculateDailyLimit, calculatePayDayInfo, DashboardMetrics } from '../services/dashboardService';
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
@@ -30,14 +30,15 @@ export default function DashboardScreen() {
   const scrollToTop = useCallback(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
-  const [metrics, setMetrics] = useState({
+
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
     month: { income: 0, expense: 0 },
     prevMonthComp: { income: 0, expense: 0 },
     year: { income: 0, expense: 0 },
     prevYearComp: { income: 0, expense: 0 },
     netWorth: 0,
     spentToday: 0,
-    topCategories: [] as any[],
+    topCategories: [],
   });
 
   // First Sync Logic
@@ -65,51 +66,8 @@ export default function DashboardScreen() {
     setLoading(true);
 
     try {
-      const today = new Date();
-      const monthStart = format(startOfMonth(today), 'yyyy-MM-dd');
-      const monthEnd = format(endOfMonth(today), 'yyyy-MM-dd');
-      const yearStart = format(startOfYear(today), 'yyyy-MM-dd');
-      const yearEnd = format(endOfYear(today), 'yyyy-MM-dd');
-      const todayStr = format(today, 'yyyy-MM-dd');
-
-      // Previous Month Comparison (up to same day of month)
-      const prevMonthSameDate = subMonths(today, 1);
-      const prevMonthStartStr = format(startOfMonth(prevMonthSameDate), 'yyyy-MM-dd');
-      const prevMonthDateStr = format(prevMonthSameDate, 'yyyy-MM-dd');
-
-      // Previous Year Comparison (up to same date)
-      const prevYearSameDate = subYears(today, 1);
-      const prevYearStartStr = format(startOfYear(prevYearSameDate), 'yyyy-MM-dd');
-      const prevYearDateStr = format(prevYearSameDate, 'yyyy-MM-dd');
-
-      const monthSum = await getIncomeExpenseSummary(session.user.id, monthStart, todayStr);
-      const prevMonthSum = await getIncomeExpenseSummary(session.user.id, prevMonthStartStr, prevMonthDateStr);
-      const yearSum = await getIncomeExpenseSummary(session.user.id, yearStart, todayStr);
-      const prevYearSum = await getIncomeExpenseSummary(session.user.id, prevYearStartStr, prevYearDateStr);
-
-      const topCats = await getTransactionsByCategoryForExpense(session.user.id, monthStart, monthEnd);
-      const totalNW = await getNetWorth(session.user.id);
-      const todayExp = await getSpentToday(session.user.id, todayStr);
-
-      const processSummary = (summary: any[]) => {
-        if (!Array.isArray(summary)) return { income: 0, expense: 0 };
-        let inc = 0, exp = 0;
-        summary.forEach(s => {
-          if (s.type === 'Income') inc = s.totalAmount || 0;
-          if (s.type === 'Expense') exp = s.totalAmount || 0;
-        });
-        return { income: inc, expense: exp };
-      };
-
-      setMetrics({
-        month: processSummary(monthSum),
-        prevMonthComp: processSummary(prevMonthSum),
-        year: processSummary(yearSum),
-        prevYearComp: processSummary(prevYearSum),
-        topCategories: Array.isArray(topCats) ? topCats.slice(0, 3) : [],
-        netWorth: totalNW || 0,
-        spentToday: todayExp || 0
-      });
+      const data = await fetchDashboardMetrics(session.user.id);
+      setMetrics(data);
     } catch (error) {
       console.error("Dashboard Load Error:", error);
     } finally {
@@ -241,32 +199,9 @@ export default function DashboardScreen() {
     checkSyncStatus();
   }, [loadData, checkSyncStatus]);
 
-  const dailyLimitCalc = useMemo(() => {
-    const today = new Date();
-    const monthEnd = endOfMonth(today);
-    const remainingDays = differenceInDays(monthEnd, today) + 1;
-    const balance = metrics.month.income - metrics.month.expense + metrics.spentToday;
-    const limit = remainingDays > 0 ? balance / remainingDays : 0;
-    const remainingToday = limit - metrics.spentToday;
+  const dailyLimitCalc = useMemo(() => calculateDailyLimit(metrics), [metrics]);
 
-    return {
-      limit: Math.max(0, limit),
-      spentToday: metrics.spentToday,
-      remainingToday,
-    };
-  }, [metrics]);
-
-  const payDayInfo = useMemo(() => {
-    const today = new Date();
-    const daysInMonth = getDaysInMonth(today);
-    const currentDay = today.getDate();
-    return {
-      daysInMonth,
-      currentDay,
-      remaining: daysInMonth - currentDay + 1,
-      nextMonth: format(addMonths(today, 1), 'MMM 01')
-    };
-  }, []);
+  const payDayInfo = useMemo(() => calculatePayDayInfo(), []);
 
   if (loading) {
     return (
@@ -282,344 +217,68 @@ export default function DashboardScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       showsVerticalScrollIndicator={false}
     >
+      <DashboardDailyLimit
+        dailyLimitCalc={dailyLimitCalc}
+        navigation={navigation}
+        colors={colors}
+      />
 
-      <View style={[styles.mainCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <MaterialIcons name="account-balance-wallet" size={20} color={colors.primary} />
-            <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>REMAINING FOR PERIOD</Text>
-          </View>
-        </View>
-        <Text style={[styles.mainAmount, { color: colors.text }]}>₹{(metrics.month.income - metrics.month.expense).toLocaleString()}</Text>
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, {
-            width: `${Math.min(100, (metrics.month.expense / (metrics.month.income || 1)) * 100)}%`,
-            backgroundColor: colors.primary
-          }]} />
-        </View>
-        <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
-          {((metrics.month.expense / (metrics.month.income || 1)) * 100).toFixed(0)}% Spent
-        </Text>
-      </View>
+      <DashboardRemainingCard
+        monthIncome={metrics.month.income}
+        monthExpense={metrics.month.expense}
+        colors={colors}
+      />
 
-      {/* 2. Daily Limit -> One Row */}
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => navigation.navigate('DailyLimitDetail')}
-      >
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="speed" size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>DAILY LIMIT</Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <View>
-            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>REMAINING</Text>
-            <Text style={[styles.rowValue, { color: dailyLimitCalc.remainingToday >= 0 ? colors.success : colors.danger }]}>
-              ₹{Math.abs(dailyLimitCalc.remainingToday).toLocaleString()}
-            </Text>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>SPENT</Text>
-            <Text style={[styles.rowValue, { color: colors.danger }]}>₹{dailyLimitCalc.spentToday.toLocaleString()}</Text>
-          </View>
-        </View>
-      </TouchableOpacity>
+      <DashboardPayDay
+        payDayInfo={payDayInfo}
+        isDark={isDark}
+        navigation={navigation}
+        colors={colors}
+      />
 
-      {/* 3. Pay Day -> One Row with Dots & Circular Progress */}
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => navigation.navigate('CalendarView')}
-      >
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="event" size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>PAY DAY</Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <View style={styles.payDayMain}>
-             <Text style={[styles.rowLabel, { color: colors.textSecondary, marginBottom: 12 }]}>{payDayInfo.nextMonth}</Text>
-             <View style={styles.dotGrid}>
-                {Array.from({ length: payDayInfo.daysInMonth }).map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.dot,
-                      { backgroundColor: (i + 1) < payDayInfo.currentDay ? (isDark ? '#374151' : '#E5E7EB') : colors.primary }
-                    ]}
-                  />
-                ))}
-             </View>
-          </View>
+      <DashboardTopCategories
+        topCategories={metrics.topCategories}
+        totalExpense={metrics.month.expense}
+        navigation={navigation}
+        colors={colors}
+      />
 
-          <View style={styles.circularContainer}>
-            <View style={[styles.progressCircle, {
-                borderColor: colors.border,
-                borderTopColor: colors.primary,
-                borderRightColor: (30 - payDayInfo.remaining) > 7 ? colors.primary : colors.border,
-                borderBottomColor: (30 - payDayInfo.remaining) > 15 ? colors.primary : colors.border,
-                borderLeftColor: (30 - payDayInfo.remaining) > 22 ? colors.primary : colors.border,
-                transform: [{ rotate: '0deg' }]
-             }]}>
-              <View style={[styles.progressInner, {
-                  backgroundColor: colors.primary + '08',
-                }]}>
-                  <Text style={[styles.progressText, { color: colors.text }]}>{payDayInfo.remaining}</Text>
-                  <Text style={[styles.progressSub, { color: colors.textSecondary }]}>DAYS</Text>
-                </View>
-             </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-
-      {/* 4. This Month -> One Row with Circular Progress */}
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      <DashboardSummaryCard
+        title="THIS MONTH"
+        subtitle={format(new Date(), 'MMMM')}
+        income={metrics.month.income}
+        expense={metrics.month.expense}
+        prevIncome={metrics.prevMonthComp.income}
+        prevExpense={metrics.prevMonthComp.expense}
         onPress={() => navigation.navigate('ReportDetail', { reportType: 'monthlySummary', title: 'Monthly Summary' })}
-      >
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View>
-              <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS MONTH</Text>
-              <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'MMMM')}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
-          </View>
-        </View>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1 }}>
-            <View style={{ marginBottom: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
-                {metrics.prevMonthComp.expense > 0 && (
-                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.month.expense > metrics.prevMonthComp.expense ? colors.danger : colors.success }}>
-                     {metrics.month.expense > metrics.prevMonthComp.expense ? '↑' : '↓'}
-                     {Math.abs(((metrics.month.expense - metrics.prevMonthComp.expense) / metrics.prevMonthComp.expense) * 100).toFixed(0)}%
-                   </Text>
-                )}
-              </View>
-              <Text style={[styles.rowValue, { color: colors.danger }]}>₹{metrics.month.expense.toLocaleString()}</Text>
-            </View>
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>INCOME</Text>
-                 {metrics.prevMonthComp.income > 0 && (
-                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.month.income > metrics.prevMonthComp.income ? colors.success : colors.danger }}>
-                     {metrics.month.income > metrics.prevMonthComp.income ? '↑' : '↓'}
-                     {Math.abs(((metrics.month.income - metrics.prevMonthComp.income) / metrics.prevMonthComp.income) * 100).toFixed(0)}%
-                   </Text>
-                )}
-              </View>
-              <Text style={[styles.rowValue, { color: colors.success }]}>₹{metrics.month.income.toLocaleString()}</Text>
-            </View>
-          </View>
+        colors={colors}
+      />
 
-          <View style={styles.circularContainer}>
-            <View style={[styles.progressCircle, {
-                borderColor: colors.border,
-                borderTopColor: colors.danger,
-                borderRightColor: (metrics.month.expense / (metrics.month.income || 1)) > 0.25 ? colors.danger : colors.border,
-                borderBottomColor: (metrics.month.expense / (metrics.month.income || 1)) > 0.5 ? colors.danger : colors.border,
-                borderLeftColor: (metrics.month.expense / (metrics.month.income || 1)) > 0.75 ? colors.danger : colors.border,
-             }]}>
-                <View style={[styles.progressInner, { backgroundColor: colors.danger + '05' }]}>
-                  <Text style={[styles.progressText, { color: colors.text, fontSize: 16 }]}>
-                    {((metrics.month.expense / (metrics.month.income || 1)) * 100).toFixed(0)}%
-                  </Text>
-                  <Text style={[styles.progressSub, { color: colors.textSecondary }]}>USED</Text>
-                </View>
-             </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-
-      {/* 5. Top Categories */}
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => navigation.navigate('ReportDetail', { reportType: 'summaryByCategory', title: 'Transactions By Category' })}
-      >
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="pie-chart" size={20} color={colors.primary} />
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>TOP CATEGORIES</Text>
-            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
-          </View>
-        </View>
-        {metrics.topCategories.length > 0 ? metrics.topCategories.map((cat, idx) => (
-          <View key={cat.category_name} style={styles.catRow}>
-            <View style={styles.catInfo}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={[styles.catName, { color: colors.text }]}>{cat.category_name}</Text>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>
-                  ({((cat.totalAmount / (metrics.month.expense || 1)) * 100).toFixed(0)}%)
-                </Text>
-              </View>
-              <Text style={[styles.catAmt, { color: colors.textSecondary }]}>₹{cat.totalAmount.toLocaleString()}</Text>
-            </View>
-            <View style={styles.catProgressBg}>
-              <View style={[styles.catProgressFill, {
-                width: `${Math.min(100, (cat.totalAmount / (metrics.month.expense || 1)) * 100)}%`,
-                backgroundColor: idx === 0 ? colors.primary : idx === 1 ? colors.textSecondary : colors.border
-              }]} />
-            </View>
-          </View>
-        )) : (
-          <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 10 }}>No expenses yet</Text>
-        )}
-      </TouchableOpacity>
-
-      {/* 6. This Year -> One Row with Circular Progress */}
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      <DashboardSummaryCard
+        title="THIS YEAR"
+        subtitle={format(new Date(), 'yyyy')}
+        income={metrics.year.income}
+        expense={metrics.year.expense}
+        prevIncome={metrics.prevYearComp.income}
+        prevExpense={metrics.prevYearComp.expense}
         onPress={() => navigation.navigate('ReportDetail', { reportType: 'yearlySummary', title: 'Yearly Summary' })}
-      >
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="event-note" size={20} color={colors.primary} />
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View>
-              <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>THIS YEAR</Text>
-              <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{format(new Date(), 'yyyy')}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
-          </View>
-        </View>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1 }}>
-            <View style={{ marginBottom: 16 }}>
-               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
-                {metrics.prevYearComp.expense > 0 && (
-                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.year.expense > metrics.prevYearComp.expense ? colors.danger : colors.success }}>
-                     {metrics.year.expense > metrics.prevYearComp.expense ? '↑' : '↓'}
-                     {Math.abs(((metrics.year.expense - metrics.prevYearComp.expense) / metrics.prevYearComp.expense) * 100).toFixed(0)}%
-                   </Text>
-                )}
-              </View>
-              <Text style={[styles.rowValue, { color: colors.danger }]}>₹{metrics.year.expense.toLocaleString()}</Text>
-            </View>
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>INCOME</Text>
-                 {metrics.prevYearComp.income > 0 && (
-                   <Text style={{ fontSize: 10, fontWeight: '700', color: metrics.year.income > metrics.prevYearComp.income ? colors.success : colors.danger }}>
-                     {metrics.year.income > metrics.prevYearComp.income ? '↑' : '↓'}
-                     {Math.abs(((metrics.year.income - metrics.prevYearComp.income) / metrics.prevYearComp.income) * 100).toFixed(0)}%
-                   </Text>
-                )}
-              </View>
-              <Text style={[styles.rowValue, { color: colors.success }]}>₹{metrics.year.income.toLocaleString()}</Text>
-            </View>
-          </View>
+        colors={colors}
+      />
 
-          <View style={styles.circularContainer}>
-            <View style={[styles.progressCircle, {
-                borderColor: colors.border,
-                borderTopColor: colors.danger,
-                borderRightColor: (metrics.year.expense / (metrics.year.income || 1)) > 0.25 ? colors.danger : colors.border,
-                borderBottomColor: (metrics.year.expense / (metrics.year.income || 1)) > 0.5 ? colors.danger : colors.border,
-                borderLeftColor: (metrics.year.expense / (metrics.year.income || 1)) > 0.75 ? colors.danger : colors.border,
-             }]}>
-                <View style={[styles.progressInner, { backgroundColor: colors.danger + '05' }]}>
-                  <Text style={[styles.progressText, { color: colors.text, fontSize: 16 }]}>
-                    {((metrics.year.expense / (metrics.year.income || 1)) * 100).toFixed(0)}%
-                  </Text>
-                  <Text style={[styles.progressSub, { color: colors.textSecondary }]}>USED</Text>
-                </View>
-             </View>
-          </View>
-        </View>
-      </TouchableOpacity>
+      <DashboardNetWorth
+        netWorth={metrics.netWorth}
+        colors={colors}
+      />
 
-      {/* 7. Net Worth */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 40 }]}>
-        <View style={styles.cardHeader}>
-          <MaterialIcons name="stars" size={20} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>NET WORTH</Text>
-        </View>
-        <Text style={[styles.rowValue, { color: metrics.netWorth >= 0 ? colors.success : colors.danger, fontSize: 32, textAlign: 'center' }]}>
-          ₹{metrics.netWorth.toLocaleString()}
-        </Text>
-        <Text style={[styles.rowLabel, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>ALL TIME BALANCE</Text>
-      </View>
-
-      <BottomSheet
+      <DashboardSyncModal
         visible={showSyncModal}
-        onClose={() => {}} // Non-dismissable during initial setup
-        title="Initializing JayLedger"
-        subtitle={syncError ? 'Action Required' : 'Setting up your personal finance workspace...'}
-        showCloseButton={!!syncError}
-      >
-        <View style={{ paddingBottom: 20 }}>
-            <View style={styles.syncProgressContainer}>
-              {syncError ? (
-                <View style={styles.errorContainer}>
-                   <View style={styles.syncIconContainer}>
-                      <MaterialIcons name="error-outline" size={60} color={colors.danger} />
-                   </View>
-                  <Text style={[styles.errorText, { color: colors.danger }]}>{syncError}</Text>
-                  <TouchableOpacity
-                    style={[styles.retryBtn, { backgroundColor: colors.primary }]}
-                    onPress={handleInitialSync}
-                  >
-                    <Text style={styles.retryBtnText}>Connect & Retry</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.stepsContainer}>
-                   <View style={[styles.syncIconContainer, { alignSelf: 'center' }]}>
-                      <MaterialIcons name="cloud-sync" size={60} color={colors.primary} />
-                   </View>
-                  {[
-                    'Pushing local changes...',
-                    'Syncing Transactions',
-                    'Syncing Budgets',
-                    'Syncing Goals',
-                    'Calculating reports',
-                    'Finalizing'
-                  ].map((step) => {
-                    const steps = [
-                      'Pushing local changes...',
-                      'Syncing Transactions',
-                      'Syncing Budgets',
-                      'Syncing Goals',
-                      'Calculating reports',
-                      'Finalizing'
-                    ];
-                    const isDone = steps.indexOf(step) < steps.indexOf(syncStatus);
-                    const isActive = syncStatus === step;
-
-                    return (
-                      <View key={step} style={styles.stepRow}>
-                        <View style={[
-                          styles.stepIndicator,
-                          { backgroundColor: isDone ? colors.success : isActive ? colors.primary : colors.border }
-                        ]}>
-                          {isDone ? (
-                            <MaterialIcons name="check" size={12} color="#fff" />
-                          ) : isActive ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                          ) : null}
-                        </View>
-                        <Text style={[
-                          styles.stepText,
-                          { color: isDone ? colors.text : isActive ? colors.primary : colors.textSecondary }
-                        ]}>
-                          {step}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
-
-            {!syncError && (
-              <View style={styles.spinnerContainer}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={[styles.syncSubMessage, { color: colors.textSecondary }]}>This may take a minute...</Text>
-              </View>
-            )}
-        </View>
-      </BottomSheet>
+        onClose={() => { }}
+        syncError={syncError}
+        syncStatus={syncStatus}
+        isSyncing={isSyncing}
+        onRetry={handleInitialSync}
+        colors={colors}
+      />
 
     </ScrollView>
   );
@@ -628,110 +287,4 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  mainCard: {
-    padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 12,
-    elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }
-  },
-  card: { padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 12 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
-  cardTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
-  cardSub: { fontSize: 10, fontWeight: '600', marginTop: 2 },
-  mainAmount: { fontSize: 36, fontWeight: '800', marginBottom: 16 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  rowLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
-  rowValue: { fontSize: 20, fontWeight: '800' },
-  payDayMain: { flex: 1 },
-  dotGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 100, gap: 5 }, // 7 dots * 8px + 6 gaps * 5px = 56 + 30 = 86px (fits in 100)
-  dot: { width: 8, height: 8, borderRadius: 4, marginBottom: 5 },
-  circularContainer: { marginLeft: 16, alignItems: 'center', justifyContent: 'center' },
-  progressCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressInner: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressText: { fontSize: 20, fontWeight: '800' },
-  progressSub: { fontSize: 8, fontWeight: '800', letterSpacing: 1 },
-  progressBarBg: { height: 8, borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.05)', overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  progressLabel: { fontSize: 12, fontWeight: '600', marginTop: 8, textAlign: 'right' },
-  catRow: { marginBottom: 16 },
-  catInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  catName: { fontSize: 14, fontWeight: '600' },
-  catAmt: { fontSize: 14, fontWeight: '700' },
-  catProgressBg: { height: 6, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.05)', overflow: 'hidden' },
-  catProgressFill: { height: '100%', borderRadius: 3 },
-
-  // Sync Overlay Styles
-  syncIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  syncProgressContainer: {
-    width: '100%',
-    marginBottom: 32,
-  },
-  stepsContainer: {
-    gap: 16,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  stepIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  spinnerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  syncSubMessage: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    gap: 12,
-  },
-  errorText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  retryBtn: {
-    marginTop: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 16,
-  },
-  retryBtnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
 });
