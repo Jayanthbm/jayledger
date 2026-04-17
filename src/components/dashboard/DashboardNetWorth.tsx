@@ -4,6 +4,8 @@ import { Text, StyleSheet } from 'react-native';
 import { common } from '../../styles/common';
 import { DashboardCard } from './DashboardCard';
 
+import { formatCurrency } from '../../utils/formatters';
+
 interface DashboardNetWorthProps {
   netWorth: number;
   colors: ThemeColors;
@@ -13,7 +15,7 @@ export const DashboardNetWorth = React.memo(({ netWorth, colors }: DashboardNetW
   return (
     <DashboardCard colors={colors} title="NET WORTH" icon="stars" style={common.mb40}>
       <Text style={[styles.rowValue, { color: netWorth >= 0 ? colors.success : colors.danger }]}>
-        ₹{netWorth.toLocaleString()}
+        {formatCurrency(netWorth)}
       </Text>
       <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>ALL TIME BALANCE</Text>
     </DashboardCard>

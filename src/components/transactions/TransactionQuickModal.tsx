@@ -6,6 +6,8 @@ import { BottomSheet } from '../BottomSheet';
 import { QuickTransaction } from '../../models/types';
 import { common } from '../../styles/common';
 
+import { formatCurrency } from '../../utils/formatters';
+
 interface TransactionQuickModalProps {
   visible: boolean;
   onClose: () => void;
@@ -55,7 +57,7 @@ export const TransactionQuickModal = React.memo(
               <View style={common.flex1}>
                 <Text style={[styles.quickName, { color: colors.text }]}>{item.name}</Text>
                 {item.amount ? (
-                  <Text style={themedStyles.metaText}>₹{item.amount.toLocaleString()}</Text>
+                  <Text style={themedStyles.metaText}>{formatCurrency(item.amount)}</Text>
                 ) : null}
               </View>
               <Icon name="chevron-right" size={24} color={colors.border} />

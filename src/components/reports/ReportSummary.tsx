@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { ThemeColors, ReportItem } from '../../models/types';
+import { formatCurrency } from '../../utils/formatters';
 
 interface ReportSummaryProps {
   isSummary: boolean;
@@ -41,7 +42,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
           <View style={styles.summaryTextColumn}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>INCOME</Text>
             <Text style={[styles.summaryValue, { color: colors.success }]}>
-              ₹{summaryMetrics.income.toLocaleString()}
+              {formatCurrency(summaryMetrics.income)}
             </Text>
           </View>
         </View>
@@ -54,7 +55,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
           <View style={styles.summaryTextColumn}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
             <Text style={[styles.summaryValue, { color: colors.danger }]}>
-              ₹{summaryMetrics.expense.toLocaleString()}
+              {formatCurrency(summaryMetrics.expense)}
             </Text>
           </View>
         </View>
@@ -67,7 +68,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
           <View style={styles.summaryTextColumn}>
             <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>SAVED</Text>
             <Text style={[styles.summaryValue, { color: colors.primary }]}>
-              ₹{String(summaryMetrics.saved?.toLocaleString() || '0')}
+              {formatCurrency(summaryMetrics.saved || 0)}
             </Text>
           </View>
         </View>
@@ -98,7 +99,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
             { color: (data[0]?.type || type) === 'Income' ? colors.success : colors.danger },
           ]}
         >
-          ₹{totalAmount.toLocaleString()}
+          {formatCurrency(totalAmount)}
         </Text>
       </View>
     );

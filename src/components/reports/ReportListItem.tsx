@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { MaterialIconName, ThemeColors, ReportItem } from '../../models/types';
 import { common } from '../../styles/common';
+import { formatCurrency } from '../../utils/formatters';
 
 import { ProgressBar } from '../ProgressBar';
 
@@ -50,7 +51,7 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
             { color: (item.type || type) === 'Income' ? colors.success : colors.danger },
           ]}
         >
-          ₹{(item.amount || item.totalAmount || 0).toLocaleString()}
+          {formatCurrency(item.amount || item.totalAmount || 0)}
         </Text>
       </View>
       <View style={styles.progressContainer}>

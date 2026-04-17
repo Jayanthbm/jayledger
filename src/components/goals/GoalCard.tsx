@@ -6,6 +6,8 @@ import { common } from '../../styles/common';
 
 import { ProgressBar } from '../ProgressBar';
 
+import { formatCurrency } from '../../utils/formatters';
+
 interface GoalCardProps {
   item: Goal;
   onPress: (goal: Goal) => void;
@@ -46,10 +48,10 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
       </View>
       <View style={styles.statsRow}>
         <Text style={[styles.amountValue, { color: colors.success }]}>
-          ₹{item.current_amount.toLocaleString()}
+          {formatCurrency(item.current_amount)}
         </Text>
         <Text style={[styles.amountValue, { color: colors.text }]}>
-          ₹{item.goal_amount.toLocaleString()}
+          {formatCurrency(item.goal_amount)}
         </Text>
       </View>
 
@@ -66,7 +68,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
           {progressDisplay}% Complete
         </Text>
         <Text style={[styles.remainingLabel, { color: colors.textSecondary }]}>
-          ₹{remaining.toLocaleString()} left
+          {formatCurrency(remaining)} left
         </Text>
       </View>
     </TouchableOpacity>

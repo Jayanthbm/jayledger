@@ -4,6 +4,8 @@ import { Text, StyleSheet } from 'react-native';
 import { DashboardCard } from './DashboardCard';
 import { ProgressBar } from '../ProgressBar';
 
+import { formatCurrency } from '../../utils/formatters';
+
 interface DashboardRemainingProps {
   monthIncome: number;
   monthExpense: number;
@@ -22,9 +24,7 @@ export const DashboardRemainingCard = React.memo(
         icon="account-balance-wallet"
         isMain={true}
       >
-        <Text style={[styles.mainAmount, { color: colors.text }]}>
-          ₹{remaining.toLocaleString()}
-        </Text>
+        <Text style={[styles.mainAmount, { color: colors.text }]}>{formatCurrency(remaining)}</Text>
         <ProgressBar
           progress={spentPercent}
           color={colors.primary}

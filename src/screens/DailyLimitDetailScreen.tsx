@@ -8,6 +8,8 @@ import { TransactionCard } from '../components/TransactionCard';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
+import { formatCurrency } from '../utils/formatters';
+
 export default function DailyLimitDetailScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
@@ -48,7 +50,7 @@ export default function DailyLimitDetailScreen() {
       >
         <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>Total Spent Today</Text>
         <Text style={[styles.statsValue, { color: colors.danger }]}>
-          ₹{totalSpent.toLocaleString()}
+          {formatCurrency(totalSpent)}
         </Text>
       </View>
 

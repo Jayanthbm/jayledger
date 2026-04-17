@@ -42,6 +42,8 @@ import { FloatingActionButton } from '../components/FloatingActionButton';
 import { MainTabParamList, RootStackParamList } from '../navigation/navigationTypes';
 import { common } from '../styles/common';
 
+import { formatCurrency } from '../utils/formatters';
+
 export default function TransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
@@ -426,7 +428,8 @@ export default function TransactionsScreen() {
                   { color: totalFiltered >= 0 ? colors.success : colors.danger },
                 ]}
               >
-                {totalFiltered >= 0 ? '+' : ''}₹{totalFiltered.toLocaleString()}
+                {totalFiltered >= 0 ? '+' : ''}
+                {formatCurrency(totalFiltered)}
               </Text>
               <Icon name="bar-chart" size={16} color={colors.primary} />
             </View>

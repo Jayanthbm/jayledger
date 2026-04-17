@@ -5,6 +5,8 @@ import { BottomSheet } from '../BottomSheet';
 import { common } from '../../styles/common';
 import type { MonthlyStatsBreakdown } from '../../models/types';
 
+import { formatCurrency } from '../../utils/formatters';
+
 interface TransactionStatsModalProps {
   visible: boolean;
   onClose: () => void;
@@ -41,7 +43,8 @@ export const TransactionStatsModal = React.memo(
                     },
                   ]}
                 >
-                  {s.income - s.expense >= 0 ? '+' : ''}₹{(s.income - s.expense).toLocaleString()}
+                  {s.income - s.expense >= 0 ? '+' : ''}
+                  {formatCurrency(s.income - s.expense)}
                 </Text>
               </View>
             </View>

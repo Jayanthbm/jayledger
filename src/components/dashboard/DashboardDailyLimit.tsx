@@ -7,6 +7,8 @@ import type { AppNavigation } from '../../navigation/navigationTypes';
 
 import { CircularProgress } from '../CircularProgress';
 
+import { formatCurrency } from '../../utils/formatters';
+
 interface DashboardDailyLimitProps {
   dailyLimitCalc: {
     limit: number;
@@ -37,13 +39,13 @@ export const DashboardDailyLimit = React.memo(
             <View style={styles.metricGroup}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>REMAINING</Text>
               <Text style={[styles.valueLarge, { color: progressColor }]}>
-                ₹{Math.round(remainingToday).toLocaleString()}
+                {formatCurrency(remainingToday)}
               </Text>
             </View>
             <View style={styles.metricGroup}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>SPENT TODAY</Text>
               <Text style={[styles.valueSmall, { color: colors.text }]}>
-                ₹{Math.round(spentToday).toLocaleString()}
+                {formatCurrency(spentToday)}
               </Text>
             </View>
           </View>

@@ -1,0 +1,137 @@
+import { supabase } from '../supabase';
+import { getDb } from '../../db/database';
+import { getUnsyncedTransactions, updateTransactionSyncStatus } from '../../db/queries';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isOnline, syncLog } from './baseSync';
+import { STORAGE_KEYS, TABLES } from '../../constants';
+
+/**
+ * Pushes unsynced local transactions to Supabase.
+ */
+export const pushLocalTransactions = async (userId: string) => {
+  if (!(await isOnline())) return;
+
+  const db = getDb();
+  const unsyncedTx = await getUnsyncedTransactions(userId);
+
+  if (unsyncedTx.length === 0) return;
+
+  syncLog('Transactions', `Pushing ${unsyncedTx.length} unsynced transactions...`);
+
+  for (const tx of unsyncedTx) {
+    if (tx.deleted === 1) {
+      const { error } = await supabase.from(TABLES.TRANSACTIONS).delete().eq('id', tx.id);
+      if (!error) {
+        await db.execAsync(`DELETE FROM transactions WHERE id = '${tx.id}'`);
+      } else {
+        console.error(`[Sync:Transactions] Error deleting transaction ${tx.id}:`, error);
+      }
+      continue;
+    }
+
+    const txToPush = {
+      id: tx.id,
+      user_id: tx.user_id,
+      amount: tx.amount,
+      transaction_timestamp: tx.transaction_timestamp,
+      description: tx.description || '',
+      category_id: tx.category_id,
+      payee_id: tx.payee_id === 'null' ? null : tx.payee_id || null,
+      type: tx.type || 'Expense',
+      product_link: tx.product_link || null,
+      created_at: tx.created_at || new Date().toISOString(),
+      updated_at: tx.updated_at || new Date().toISOString(),
+      sync_status: 'synced' as const,
+      ...(tx.tid && tx.tid !== 0 ? { tid: tx.tid } : {}),
+    };
+
+    const { data, error } = await supabase
+      .from(TABLES.TRANSACTIONS)
+      .upsert([txToPush], { onConflict: 'id' })
+      .select('tid');
+
+    if (error) {
+      console.error(`[Sync:Transactions] Error pushing transaction ${tx.id}:`, error);
+    } else {
+      const newTid = data?.[0]?.tid;
+      if (newTid) {
+        await db.execAsync(
+          `UPDATE transactions SET tid = ${newTid}, sync_status = 0 WHERE id = '${tx.id}'`,
+        );
+      } else {
+        await updateTransactionSyncStatus(tx.id, 0);
+      }
+    }
+  }
+};
+
+/**
+ * Syncs transactions from Supabase to local DB.
+ */
+export const syncTransactions = async (userId: string, isPartial = true) => {
+  if (!userId || !(await isOnline())) return;
+
+  syncLog('Transactions', `Starting ${isPartial ? 'Partial' : 'Force'} Sync...`);
+
+  await pushLocalTransactions(userId);
+
+  const db = getDb();
+  let lastTid = 0;
+
+  if (isPartial) {
+    const localMax = await db.getFirstAsync<{ max_tid: number }>(
+      `SELECT MAX(tid) as max_tid FROM transactions WHERE user_id = '${userId}'`,
+    );
+    lastTid = localMax?.max_tid || 0;
+  } else {
+    await db.execAsync(`DELETE FROM transactions WHERE user_id = '${userId}'`);
+  }
+
+  const CHUNK_SIZE = 1000;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabase.rpc('get_user_transactions', {
+      uid: userId,
+      after_tid: lastTid,
+      limit_count: CHUNK_SIZE,
+      offset_count: offset,
+    });
+
+    if (error) {
+      console.error('[Sync:Transactions] Error pulling transactions:', error);
+      break;
+    }
+
+    if (!data || data.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    await db.withTransactionAsync(async () => {
+      for (const item of data) {
+        const sanitized = {
+          ...item,
+          description: (item.description || '').replace(/'/g, "''"),
+          category_name: (item.category_name || '').replace(/'/g, "''"),
+          payee_name: (item.payee_name || '').replace(/'/g, "''"),
+        };
+
+        await db.execAsync(
+          `INSERT OR REPLACE INTO transactions (id, amount, description, transaction_timestamp, date, category_id, category_name, category_icon, category_app_icon, payee_id, payee_name, payee_logo, type, user_id, product_link, tid, sync_status)
+           VALUES ('${sanitized.id}', ${sanitized.amount}, '${sanitized.description}', '${sanitized.transaction_timestamp}', '${sanitized.transaction_timestamp.split('T')[0]}', '${sanitized.category_id}', '${sanitized.category_name}', '${sanitized.category_icon}', '${sanitized.category_app_icon}', '${sanitized.payee_id}', '${sanitized.payee_name}', '${sanitized.payee_logo}', '${sanitized.type}', '${userId}', '${sanitized.product_link || ''}', ${sanitized.tid}, 0)`,
+        );
+      }
+    });
+
+    syncLog('Transactions', `Saved ${data.length} transactions to local DB.`);
+    offset += CHUNK_SIZE;
+  }
+
+  await AsyncStorage.setItem(
+    `${STORAGE_KEYS.LAST_SYNC_TRANSACTIONS}${userId}`,
+    Date.now().toString(),
+  );
+  syncLog('Transactions', 'Sync completed.');
+};

@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/navigationTypes';
 import { common } from '../../styles/common';
 import { ProgressBar } from '../ProgressBar';
+import { formatCurrency } from '../../utils/formatters';
 
 interface DashboardTopCategoriesProps {
   topCategories: ReportItem[];
@@ -41,7 +42,7 @@ export const DashboardTopCategories = React.memo(
                   </Text>
                 </View>
                 <Text style={[styles.catAmt, { color: colors.textSecondary }]}>
-                  ₹{(cat.totalAmount || 0).toLocaleString()}
+                  {formatCurrency(cat.totalAmount || 0)}
                 </Text>
               </View>
               <ProgressBar

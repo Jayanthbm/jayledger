@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-
 import { Transaction } from '../models/types';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { format } from 'date-fns';
+import { formatCurrency, formatDate } from '../utils/formatters';
 import { Swipeable } from 'react-native-gesture-handler';
 
 interface TransactionCardProps {
@@ -127,7 +127,7 @@ export const TransactionCard = React.memo(
             )}
 
             <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
-              {format(new Date(transaction.transaction_timestamp), compact ? 'dd MMM, p' : 'PPp')}
+              {formatDate(transaction.transaction_timestamp, compact ? 'dd MMM, p' : 'PPp')}
             </Text>
           </View>
 
@@ -139,7 +139,7 @@ export const TransactionCard = React.memo(
                 compact && styles.amountCompact,
               ]}
             >
-              {isIncome ? '+' : '-'} ₹{transaction.amount.toLocaleString()}
+              {isIncome ? '+' : '-'} {formatCurrency(transaction.amount)}
             </Text>
 
             {transaction.product_link && (

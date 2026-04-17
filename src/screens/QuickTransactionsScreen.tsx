@@ -19,6 +19,8 @@ import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
 
+import { formatCurrency } from '../utils/formatters';
+
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
@@ -111,8 +113,8 @@ export default function QuickTransactionsScreen() {
       <View style={styles.details}>
         <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
         <Text style={[styles.meta, { color: colors.textSecondary }]}>
-          {item.amount ? `₹${item.amount.toLocaleString()} • ` : ''}
-          {item.type}
+          {item.amount ? `${formatCurrency(item.amount)} • ` : ''}
+          {item.type} Template
         </Text>
       </View>
       <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>

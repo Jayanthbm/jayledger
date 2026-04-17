@@ -17,6 +17,7 @@ export interface BudgetCardProps {
 }
 
 import { ProgressBar } from './ProgressBar';
+import { formatCurrency } from '../utils/formatters';
 
 export const BudgetCard = ({
   name,
@@ -41,17 +42,17 @@ export const BudgetCard = ({
   let adviceText = '';
   if (isCurrentMonth) {
     if (isOverspent) {
-      adviceText = `Overspent ₹${(spent - amount).toLocaleString()}`;
+      adviceText = `Overspent ${formatCurrency(spent - amount)}`;
     } else {
       const perDay =
         daysRemaining && daysRemaining > 0 ? Math.floor(remaining / daysRemaining) : remaining;
-      adviceText = `You can spend ₹${perDay.toLocaleString()}/day for ${daysRemaining || 0} more days`;
+      adviceText = `You can spend ${formatCurrency(perDay)}/day for ${daysRemaining || 0} more days`;
     }
   } else {
     if (isOverspent) {
-      adviceText = `Overspent ₹${(spent - amount).toLocaleString()}`;
+      adviceText = `Overspent ${formatCurrency(spent - amount)}`;
     } else {
-      adviceText = `Saved ₹${remaining.toLocaleString()}`;
+      adviceText = `Saved ${formatCurrency(remaining)}`;
     }
   }
 
@@ -65,7 +66,7 @@ export const BudgetCard = ({
       <View style={styles.header}>
         <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
         <Text style={[styles.spentText, { color: colors.textSecondary }]}>
-          ₹{spent.toLocaleString()} spent of ₹{amount.toLocaleString()}
+          {formatCurrency(spent)} spent of {formatCurrency(amount)}
         </Text>
       </View>
 

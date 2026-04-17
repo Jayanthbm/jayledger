@@ -6,6 +6,8 @@ import { DashboardCard } from './DashboardCard';
 
 import { CircularProgress } from '../CircularProgress';
 
+import { formatCurrency } from '../../utils/formatters';
+
 interface DashboardSummaryCardProps {
   title: string;
   subtitle: string;
@@ -68,7 +70,7 @@ export const DashboardSummaryCard = React.memo(
                 {renderTrend(expense, prevExpense, false)}
               </View>
               <Text style={[styles.rowValue, { color: colors.danger }]}>
-                ₹{expense.toLocaleString()}
+                {formatCurrency(expense)}
               </Text>
             </View>
             <View>
@@ -77,7 +79,7 @@ export const DashboardSummaryCard = React.memo(
                 {renderTrend(income, prevIncome, true)}
               </View>
               <Text style={[styles.rowValue, { color: colors.success }]}>
-                ₹{income.toLocaleString()}
+                {formatCurrency(income)}
               </Text>
             </View>
           </View>

@@ -1,7 +1,7 @@
 import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { format } from 'date-fns';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 
 interface TransactionSectionHeaderProps {
   date: string;
@@ -13,10 +13,11 @@ export const TransactionSectionHeader = React.memo(
   ({ date, total, colors }: TransactionSectionHeaderProps) => (
     <View style={[styles.headerContainer, { backgroundColor: colors.background }]}>
       <Text style={[styles.headerDate, { color: colors.textSecondary }]}>
-        {format(new Date(date), 'MMM dd, yyyy')}
+        {formatDate(date, 'MMM dd, yyyy')}
       </Text>
       <Text style={[styles.headerTotal, { color: total >= 0 ? colors.success : colors.danger }]}>
-        {total >= 0 ? '+' : ''}₹{total.toLocaleString()}
+        {total >= 0 ? '+' : ''}
+        {formatCurrency(total)}
       </Text>
     </View>
   ),

@@ -1,7 +1,7 @@
 import type { ThemeColors } from '../../models/types';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { format } from 'date-fns';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 
 interface CalendarDaySummaryProps {
   selectedDate: Date;
@@ -17,12 +17,13 @@ export const CalendarDaySummary: React.FC<CalendarDaySummaryProps> = ({
   return (
     <View style={styles.daySummary}>
       <Text style={[styles.summaryDate, { color: colors.text }]}>
-        {format(selectedDate, 'EEE, MMM d, yyyy')}
+        {formatDate(selectedDate, 'EEE, MMM d, yyyy')}
       </Text>
       <Text
         style={[styles.summaryAmount, { color: totalForDay >= 0 ? colors.success : colors.danger }]}
       >
-        {totalForDay >= 0 ? '+' : ''}₹{totalForDay.toLocaleString()}
+        {totalForDay >= 0 ? '+' : ''}
+        {formatCurrency(totalForDay)}
       </Text>
     </View>
   );
