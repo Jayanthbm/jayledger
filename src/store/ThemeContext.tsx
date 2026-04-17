@@ -31,7 +31,7 @@ interface ThemeContextProps {
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextProps>({
+export const ThemeContext = createContext<ThemeContextProps>({
   isDark: false,
   colors: Colors.light,
   toggleTheme: () => {},

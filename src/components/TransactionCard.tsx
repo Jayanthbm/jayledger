@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image, Text } from 'react-native';
-import { Transaction } from '../models/types';
+import { Transaction, MaterialIconName } from '../models/types';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -79,7 +79,7 @@ export const TransactionCard = React.memo(
       <FinancialListItem
         title={transaction.category_name || 'No Category'}
         subtitle={transaction.description || undefined}
-        icon={(transaction.category_app_icon || 'receipt') as any}
+        icon={(transaction.category_app_icon || 'receipt') as MaterialIconName}
         iconColor={isIncome ? colors.success : colors.primary}
         amountText={`${isIncome ? '+' : '-'} ${formatCurrency(transaction.amount)}`}
         amountColor={isIncome ? colors.success : colors.danger}

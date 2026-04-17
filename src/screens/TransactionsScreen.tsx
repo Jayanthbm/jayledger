@@ -516,6 +516,7 @@ export default function TransactionsScreen() {
               </View>
             ),
             contentContainerStyle: styles.listContent,
+            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
           } as any)}
         />
 

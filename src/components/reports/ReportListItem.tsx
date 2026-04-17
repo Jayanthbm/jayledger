@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ThemeColors, ReportItem } from '../../models/types';
+import { ThemeColors, ReportItem, MaterialIconName } from '../../models/types';
 import { common } from '../../styles/common';
 import { formatCurrency } from '../../utils/formatters';
 import { ProgressBar } from '../ProgressBar';
@@ -31,7 +31,7 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
   return (
     <FinancialListItem
       title={item.category_name || item.payee_name || item.name || item.type || 'Unknown'}
-      icon={(item.category_app_icon || item.app_icon) as any}
+      icon={(item.category_app_icon || item.app_icon || 'receipt') as MaterialIconName}
       iconColor={colors.primary}
       amountText={formatCurrency(amount)}
       amountColor={isIncome ? colors.success : colors.danger}
