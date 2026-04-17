@@ -4,6 +4,8 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 import { MaterialIconName, ThemeColors, ReportItem } from '../../models/types';
 import { common } from '../../styles/common';
 
+import { ProgressBar } from '../ProgressBar';
+
 interface ReportListItemProps {
   item: ReportItem;
   type: string;
@@ -21,12 +23,7 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
   colors,
   onPress,
 }) => {
-  const themedStyles = React.useMemo(
-    () => ({
-      progressBg: { backgroundColor: isDark ? '#333' : '#eee' },
-    }),
-    [isDark],
-  );
+  const progressPercent = ((item.amount || item.totalAmount || 0) / (totalAmount || 1)) * 100;
 
   return (
     <TouchableOpacity
@@ -57,24 +54,21 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
         </Text>
       </View>
       <View style={styles.progressContainer}>
-        <View style={[styles.progressBg, themedStyles.progressBg]}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${Math.min(100, ((item.amount || item.totalAmount || 0) / (totalAmount || 1)) * 100)}%`,
-                backgroundColor: (item.type || type) === 'Income' ? colors.success : colors.danger,
-              },
-            ]}
-          />
-        </View>
+        <ProgressBar
+          progress={progressPercent}
+          color={(item.type || type) === 'Income' ? colors.success : colors.danger}
+          backgroundColor={isDark ? '#333' : '#eee'}
+          height={6}
+          style={common.flex1}
+        />
         <Text style={[styles.progressPercent, { color: colors.textSecondary }]}>
-          {(((item.amount || item.totalAmount || 0) / (totalAmount || 1)) * 100).toFixed(0)}%
+          {progressPercent.toFixed(0)}%
         </Text>
       </View>
     </TouchableOpacity>
   );
 };
+ReportListItem.displayName = 'ReportListItem';
 
 const styles = StyleSheet.create({
   reportItem: {
@@ -93,7 +87,5 @@ const styles = StyleSheet.create({
   itemName: { fontSize: 16, fontWeight: '600' },
   itemAmount: { fontSize: 16, fontWeight: '700' },
   progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  progressBg: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
   progressPercent: { fontSize: 12, fontWeight: '600', width: 35 },
 });

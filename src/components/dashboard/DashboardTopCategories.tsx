@@ -6,6 +6,7 @@ import { ThemeColors, ReportItem } from '../../models/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/navigationTypes';
 import { common } from '../../styles/common';
+import { ProgressBar } from '../ProgressBar';
 
 interface DashboardTopCategoriesProps {
   topCategories: ReportItem[];
@@ -43,22 +44,14 @@ export const DashboardTopCategories = React.memo(
                   ₹{(cat.totalAmount || 0).toLocaleString()}
                 </Text>
               </View>
-              <View style={styles.catProgressBg}>
-                <View
-                  style={[
-                    styles.catProgressFill,
-                    {
-                      width: `${Math.min(100, ((cat.totalAmount || 0) / (totalExpense || 1)) * 100)}%`,
-                      backgroundColor:
-                        idx === 0
-                          ? colors.primary
-                          : idx === 1
-                            ? colors.textSecondary
-                            : colors.border,
-                    },
-                  ]}
-                />
-              </View>
+              <ProgressBar
+                progress={((cat.totalAmount || 0) / (totalExpense || 1)) * 100}
+                color={
+                  idx === 0 ? colors.primary : idx === 1 ? colors.textSecondary : colors.border
+                }
+                backgroundColor="rgba(0,0,0,0.05)"
+                height={6}
+              />
             </View>
           ))
         ) : (
@@ -75,13 +68,6 @@ const styles = StyleSheet.create({
   catInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   catName: { fontSize: 14, fontWeight: '600' },
   catAmt: { fontSize: 14, fontWeight: '700' },
-  catProgressBg: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    overflow: 'hidden',
-  },
   catPercent: { fontSize: 11, fontWeight: '700' },
   catEmpty: { textAlign: 'center', padding: 10 },
-  catProgressFill: { height: '100%', borderRadius: 3 },
 });

@@ -4,6 +4,8 @@ import { Goal } from '../../models/types';
 import { useTheme } from '../../store/ThemeContext';
 import { common } from '../../styles/common';
 
+import { ProgressBar } from '../ProgressBar';
+
 interface GoalCardProps {
   item: Goal;
   onPress: (goal: Goal) => void;
@@ -51,23 +53,13 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
         </Text>
       </View>
 
-      <View
-        style={[
-          styles.progressWrapper,
-          styles.progressWrapperSpaced,
-          { backgroundColor: colors.border },
-        ]}
-      >
-        <View
-          style={[
-            styles.progressFill,
-            {
-              width: `${progress}%`,
-              backgroundColor: progress >= 100 ? colors.success : colors.primary,
-            },
-          ]}
-        />
-      </View>
+      <ProgressBar
+        progress={progress}
+        color={progress >= 100 ? colors.success : colors.primary}
+        backgroundColor={colors.border}
+        height={10}
+        style={styles.progressWrapperSpaced}
+      />
 
       <View style={styles.statsRow}>
         <Text style={[styles.percentLabel, { color: colors.primary }]}>
@@ -114,19 +106,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  progressWrapper: {
-    width: '100%',
-    height: 10,
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
   progressWrapperSpaced: {
     marginTop: 12,
     marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 5,
   },
   statsRow: {
     flexDirection: 'row',

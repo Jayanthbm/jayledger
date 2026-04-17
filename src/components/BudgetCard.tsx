@@ -16,6 +16,8 @@ export interface BudgetCardProps {
   onLongPress?: () => void;
 }
 
+import { ProgressBar } from './ProgressBar';
+
 export const BudgetCard = ({
   name,
   amount,
@@ -68,7 +70,12 @@ export const BudgetCard = ({
       </View>
 
       <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+        <ProgressBar
+          progress={visualPercentage}
+          color={isOverspent ? '#EF4444' : colors.primary}
+          backgroundColor={colors.border}
+          height={10}
+        >
           {/* Day Markers (Divisions) */}
           {isCurrentMonth && (
             <View style={StyleSheet.absoluteFill}>
@@ -87,14 +94,6 @@ export const BudgetCard = ({
             </View>
           )}
 
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${visualPercentage}%` },
-              isOverspent ? styles.progressFillOverspent : { backgroundColor: colors.primary },
-            ]}
-          />
-
           {/* Today Indicator Line */}
           {isCurrentMonth && todayProgress !== undefined && (
             <View
@@ -104,7 +103,7 @@ export const BudgetCard = ({
               ]}
             />
           )}
-        </View>
+        </ProgressBar>
         <View style={styles.dateRow}>
           <Text style={[styles.dateText, { color: colors.textSecondary }]}>{startDateText}</Text>
           <View
@@ -168,16 +167,6 @@ const styles = StyleSheet.create({
   progressContainer: {
     marginBottom: 20,
   },
-  progressBar: {
-    height: 10,
-    borderRadius: 5,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 5,
-  },
   dateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -220,8 +209,5 @@ const styles = StyleSheet.create({
   },
   textSafe: {
     color: '#10B981',
-  },
-  progressFillOverspent: {
-    backgroundColor: '#EF4444',
   },
 });
