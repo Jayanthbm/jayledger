@@ -1,0 +1,46 @@
+import React from 'react';
+import { View, Text, FlatList } from 'react-native';
+import { BottomSheet } from '../BottomSheet';
+import { TransactionCard } from '../TransactionCard';
+import Icon from '@expo/vector-icons/MaterialIcons';
+import { Transaction } from '../../models/types';
+
+interface ReportDrillDownModalProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  data: Transaction[];
+  colors: any;
+  bottomInset: number;
+}
+
+export const ReportDrillDownModal: React.FC<ReportDrillDownModalProps> = ({
+  visible,
+  onClose,
+  title,
+  data,
+  colors,
+  bottomInset
+}) => (
+  <BottomSheet
+    visible={visible}
+    onClose={onClose}
+    title={title}
+    isFullScreen
+  >
+    <View style={{ flex: 1 }}>
+      <FlatList
+        data={data}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => <TransactionCard transaction={item} />}
+        contentContainerStyle={{ paddingBottom: bottomInset + 40 }}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
+            <Icon name="receipt-long" size={48} color={colors.border} />
+            <Text style={{ textAlign: 'center', marginTop: 12, color: colors.textSecondary }}>No transactions found</Text>
+          </View>
+        }
+      />
+    </View>
+  </BottomSheet>
+);

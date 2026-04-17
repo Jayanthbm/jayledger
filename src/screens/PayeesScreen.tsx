@@ -1,48 +1,44 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, Image, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, FlatList, Keyboard } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getPayees, insertPayee } from '../db/queries';
-import { syncPayees } from '../services/syncService';
 import { Payee } from '../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { getRelativeTime } from '../utils/dateUtils';
-import { BottomSheet } from '../components/BottomSheet';
 import { SearchBar } from '../components/SearchBar';
+import { useToast } from '../store/ToastContext';
 
-// Lightweight UUIDv4 generator for offline creation
-const generateUUID = () => {
-  let dt = new Date().getTime();
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = (dt + Math.random()*16)%16 | 0;
-    dt = Math.floor(dt/16);
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-};
+import {
+  fetchPayeesData,
+  savePayeeViewMode,
+  addPayee,
+  performPayeeSync
+} from '../services/payeeService';
+
+// Modular Components
+import { PayeeCard } from '../components/payees/PayeeCard';
+import { PayeeAddModal } from '../components/payees/PayeeAddModal';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export default function PayeesScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
+  const { showToast } = useToast();
+  const navigation = useNavigation<any>();
 
   const [payees, setPayees] = useState<Payee[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
-  // UI State
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
 
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
-
-  // Add Modal State
   const [isAddModalVisible, setAddModalVisible] = useState(false);
-  const [newPayeeName, setNewPayeeName] = useState('');
-  const [newPayeeLogo, setNewPayeeLogo] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  
   const listRef = useRef<FlatList>(null);
 
   const scrollToTop = useCallback(() => {
@@ -50,90 +46,50 @@ export default function PayeesScreen() {
   }, []);
 
   const loadData = useCallback(async () => {
-    if (user?.id) {
-      // Load viewMode preference
-      try {
-        const savedMode = await AsyncStorage.getItem(`@payee_view_mode_${user.id}`);
-        if (savedMode === 'list' || savedMode === 'grid') {
-          setViewMode(savedMode as 'list' | 'grid');
-        }
-      } catch (e) {}
-
-      let fetchedPayees = await getPayees(user.id);
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      const { payees: fetchedPayees, viewMode: savedMode } = await fetchPayeesData(user.id);
       setPayees(fetchedPayees);
-
-      const last = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
-      if (last) {
-        setLastSyncTime(getRelativeTime(parseInt(last)));
-      }
-
-      if (fetchedPayees.length === 0) {
-        const alreadyChecked = await AsyncStorage.getItem(`@initial_payees_sync_checked_${user.id}`);
-        if (!alreadyChecked) {
-          setSyncing(true);
-          await syncPayees(user.id);
-          await AsyncStorage.setItem(`@initial_payees_sync_checked_${user.id}`, 'true');
-          const lastUpdated = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
-          if (lastUpdated) {
-            setLastSyncTime(getRelativeTime(parseInt(lastUpdated)));
-          }
-          fetchedPayees = await getPayees(user.id);
-          setPayees(fetchedPayees);
-          setSyncing(false);
-        }
-      }
+      setViewMode(savedMode);
+    } catch (err) {
+      console.error("[Payees] loadData error:", err);
+    } finally {
+      setLoading(false);
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const toggleViewMode = async () => {
     const newMode = viewMode === 'list' ? 'grid' : 'list';
     setViewMode(newMode);
     if (user?.id) {
-      try {
-        await AsyncStorage.setItem(`@payee_view_mode_${user.id}`, newMode);
-      } catch (e) {}
+      await savePayeeViewMode(user.id, newMode);
     }
   };
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await loadData();
-      } catch (error) {
-        console.error("[Payees] Load error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, [user]);
-
-  const navigation = useNavigation<any>();
 
   const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setSyncing(true);
-    await syncPayees(user.id);
-    const last = await AsyncStorage.getItem(`@last_sync_payees_${user.id}`);
-    if (last) {
-      setLastSyncTime(getRelativeTime(parseInt(last)));
+    try {
+      const updatedPayees = await performPayeeSync(user.id);
+      setPayees(updatedPayees);
+      showToast('Payees synced successfully', 'success');
+    } catch (e) {
+      console.error("Sync error:", e);
+    } finally {
+      setSyncing(false);
     }
-    await loadData();
-    setSyncing(false);
-  }, [user?.id, loadData]);
+  }, [user?.id, showToast]);
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={scrollToTop}
-          style={{ alignItems: 'flex-start' }}
-        >
+        <TouchableOpacity activeOpacity={0.7} onPress={scrollToTop} style={{ alignItems: 'flex-start' }}>
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Payees</Text>
-          {lastSyncTime ? (
-            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
-          ) : null}
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
@@ -152,34 +108,15 @@ export default function PayeesScreen() {
         </TouchableOpacity>
       )
     });
-  }, [navigation, handleManualSync, syncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime]);
+  }, [navigation, handleManualSync, syncing, colors.text, colors.primary, scrollToTop]);
 
-  const handleAddPayee = async () => {
-    if (!newPayeeName.trim() || !user?.id) return;
-    Keyboard.dismiss();
-    setIsSaving(true);
-
-    const newPayee: Payee = {
-      id: generateUUID(),
-      name: newPayeeName.trim(),
-      logo: newPayeeLogo.trim() || '',
-      user_id: user.id
-    };
-
-    // Optimistic Local Insert
-    await insertPayee(newPayee);
+  const handleAddPayeeSubmit = async (name: string, logo: string) => {
+    if (!user?.id) return;
+    const newPayee = await addPayee(user.id, name, logo);
     setPayees(prev => [...prev, newPayee]);
-
-    setAddModalVisible(false);
-    setNewPayeeName('');
-    setNewPayeeLogo('');
-    setIsSaving(false);
-
-    // Background push sync
-    syncPayees(user.id).catch(err => console.error("Payee sync failed", err));
+    showToast('Payee added successfully', 'success');
   };
 
-  // Memoized processing for search & sort
   const filteredPayees = useMemo(() => {
     let result = [...payees];
     if (searchQuery.trim()) {
@@ -193,7 +130,6 @@ export default function PayeesScreen() {
     return result;
   }, [payees, searchQuery, sortAsc]);
 
-
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
@@ -202,50 +138,8 @@ export default function PayeesScreen() {
     );
   }
 
-  const renderItem = ({ item }: { item: Payee }) => {
-    const isGrid = viewMode === 'grid';
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.payeeCard,
-          { backgroundColor: colors.card, borderColor: colors.border },
-          isGrid && styles.payeeCardGrid
-        ]}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('Main', {
-          screen: 'Transactions',
-          params: { initialSelectedPayees: [item.id] }
-        })}
-      >
-        <View style={[
-          styles.logoContainer,
-          { backgroundColor: colors.primary + '15' }, // 15% opacity tint
-          isGrid && { marginRight: 0 }
-        ]}>
-          {item.logo && item.logo.startsWith('http') ? (
-            <Image source={{ uri: item.logo }} style={styles.logoImage} />
-          ) : (
-            <Text style={[styles.logoFallback, { color: colors.primary, fontSize: isGrid ? 18 : 22 }]}>
-              {item.name.charAt(0).toUpperCase()}
-            </Text>
-          )}
-        </View>
-        <Text style={[
-          styles.payeeName,
-          { color: colors.text },
-          isGrid && { marginTop: 10, textAlign: 'center', fontSize: 13 }
-        ]} numberOfLines={2}>
-          {item.name}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-
-      {/* Header Tools */}
       <View style={styles.headerTools}>
         <View style={styles.headerControls}>
           <SearchBar
@@ -256,21 +150,17 @@ export default function PayeesScreen() {
             containerStyle={{ flex: 1 }}
           />
           <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            <TouchableOpacity 
+              style={[styles.sortButton, { backgroundColor: colors.card, borderColor: colors.border }]} 
               onPress={() => setSortAsc(!sortAsc)}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <MaterialIcons name="sort" size={18} color={colors.primary} />
-                <MaterialIcons 
-                  name={sortAsc ? "arrow-upward" : "arrow-downward"} 
-                  size={14} 
-                  color={colors.primary} 
-                />
+                <MaterialIcons name={sortAsc ? "arrow-upward" : "arrow-downward"} size={14} color={colors.primary} />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            <TouchableOpacity 
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
               onPress={toggleViewMode}
             >
               <MaterialIcons name={viewMode === 'list' ? "grid-view" : "view-list"} size={22} color={colors.text} />
@@ -279,160 +169,75 @@ export default function PayeesScreen() {
         </View>
 
         <View style={styles.captionRow}>
-          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
-            Sorted by Name
-          </Text>
+          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
         </View>
       </View>
 
-      {/* Main List */}
       {filteredPayees.length === 0 ? (
-        <View style={styles.centered}>
+        <View style={styles.emptyCentered}>
           <MaterialIcons name="storefront" size={64} color={colors.border} />
-          <Text style={[styles.emptyHeader, { color: colors.textSecondary }]}>
-            {searchQuery ? 'No Payees Found' : 'No Payees Yet'}
-          </Text>
-          <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
-            {searchQuery ? `We couldn't find anything matching "${searchQuery}".` : 'Add your first payee to see it here.'}
-          </Text>
-          {searchQuery ? (
-            <TouchableOpacity
-              style={[styles.clearFilterButton, { borderColor: colors.border }]}
-              onPress={() => setSearchQuery('')}
-            >
-              <Text style={[styles.clearFilterText, { color: colors.primary }]}>Clear Search</Text>
+          <Text style={[styles.emptyHeader, { color: colors.textSecondary }]}>{searchQuery ? 'No Payees Found' : 'No Payees Yet'}</Text>
+          <Text style={[styles.emptySub, { color: colors.textSecondary }]}>{searchQuery ? `We couldn't find anything matching "${searchQuery}".` : 'Add your first payee to see it here.'}</Text>
+          {searchQuery && (
+            <TouchableOpacity style={styles.clearSearchBtn} onPress={() => setSearchQuery('')}>
+              <Text style={{ color: colors.primary, fontWeight: '600' }}>Clear Search</Text>
             </TouchableOpacity>
-          ) : null}
+          )}
         </View>
       ) : (
-          <FlatList
-            ref={listRef}
-            key={viewMode} // force re-render across columns dynamically
-            data={filteredPayees}
-            numColumns={viewMode === 'grid' ? 3 : 1}
-            keyExtractor={item => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={styles.listContent}
-            columnWrapperStyle={viewMode === 'grid' ? styles.gridWrapper : undefined}
-            showsVerticalScrollIndicator={false}
-          />
+        <FlatList
+          ref={listRef}
+          key={viewMode}
+          data={filteredPayees}
+          numColumns={viewMode === 'grid' ? 3 : 1}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <PayeeCard
+              item={item}
+              viewMode={viewMode}
+              colors={colors}
+              onPress={(p) => navigation.navigate('Main', {
+                screen: 'Transactions',
+                params: { initialSelectedPayees: [p.id] }
+              })}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          columnWrapperStyle={viewMode === 'grid' ? styles.gridWrapper : undefined}
+          showsVerticalScrollIndicator={false}
+        />
       )}
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
-         onPress={() => setAddModalVisible(true)}
-         activeOpacity={0.8}
-      >
-        <MaterialIcons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <FloatingActionButton
+        onPress={() => setAddModalVisible(true)}
+        iconName="add"
+        backgroundColor={colors.primary}
+      />
 
-      {/* Add Payee Modal */}
-      <BottomSheet
+      <PayeeAddModal
         visible={isAddModalVisible}
         onClose={() => setAddModalVisible(false)}
-        title="Add New Payee"
-      >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Payee Name</Text>
-            <TextInput
-              style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              placeholder="e.g. Starbucks, Amazon"
-              placeholderTextColor={colors.textSecondary}
-              value={newPayeeName}
-              onChangeText={setNewPayeeName}
-              autoFocus
-            />
-
-            <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 16 }]}>Logo URL (Optional)</Text>
-            <TextInput
-              style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              placeholder="https://..."
-              placeholderTextColor={colors.textSecondary}
-              value={newPayeeLogo}
-              onChangeText={setNewPayeeLogo}
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-
-            <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!newPayeeName.trim() || isSaving) ? 0.5 : 1 }]}
-              onPress={handleAddPayee}
-              disabled={!newPayeeName.trim() || isSaving}
-            >
-              {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save Payee</Text>}
-            </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </BottomSheet>
-
+        onAdd={handleAddPayeeSubmit}
+        colors={colors}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
-
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyCentered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
   headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
-  headerControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  actionRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center',
-    gap: 8,
-  },
-  sortButton: {
-    width: 64,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconBtn: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 12, 
-    borderWidth: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  captionRow: {
-    marginTop: 4,
-    alignItems: 'flex-end',
-  },
-  sortCaption: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
+  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sortButton: { width: 64, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  captionRow: { marginTop: 4, alignItems: 'flex-end' },
+  sortCaption: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 },
   gridWrapper: { justifyContent: 'flex-start' },
-
-  payeeCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
-  payeeCardGrid: { width: '31%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 8, marginHorizontal: '1%' },
-
-  logoContainer: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
-  logoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  logoFallback: { fontSize: 20, fontWeight: 'bold' },
-  payeeName: { fontSize: 13, fontWeight: '700', flex: 1 },
-
   emptyHeader: { fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
   emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 16 },
-  clearFilterButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, marginTop: 12 },
-  clearFilterText: { fontWeight: '600', fontSize: 14 },
-
-  fab: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
-
-
-  inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
-  inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-
-  saveButton: { height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 32 },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  clearSearchBtn: { paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1, borderRadius: 20, marginTop: 12, borderColor: '#ccc' },
 });

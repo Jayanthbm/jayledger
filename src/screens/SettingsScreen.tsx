@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Switch } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
+import { useToast } from '../store/ToastContext';
 import { scheduleReminder } from '../services/notificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { runFullSync } from '../services/syncService';
@@ -17,6 +18,7 @@ export default function SettingsScreen() {
   const { session, signOut } = useAuth();
   const user = session?.user;
   const navigation = useNavigation<any>();
+  const { showToast } = useToast();
 
   const [notificationPref, setNotificationPref] = useState('None');
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -49,10 +51,7 @@ export default function SettingsScreen() {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
       if (!hasHardware || !isEnrolled) {
-        Alert.alert(
-          'Biometrics Unavailable',
-          'Your device does not support biometrics or you have not enrolled any fingerprints/faces.'
-        );
+        showToast('Biometrics Unavailable: Your device does not support biometrics or no fingerprints/faces enrolled.', 'error');
         return;
       }
 

@@ -5,15 +5,16 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   FlatList,
   TouchableWithoutFeedback,
   Keyboard,
-  ScrollView
+  ScrollView,
+  DeviceEventEmitter
 } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
+import { useToast } from '../store/ToastContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -24,7 +25,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { SearchBar } from '../components/SearchBar';
 import { Category, Payee, Transaction } from '../models/types';
-import * as Crypto from 'expo-crypto';
+import { generateUUID } from '../utils/commonUtils';
 import { syncTransactions } from '../services/syncService';
 
 const formatIconName = (name: string) => {
@@ -44,6 +45,7 @@ export default function AddTransactionScreen() {
   const route = useRoute<any>();
   const editTx = route.params?.transaction as Transaction | undefined;
   const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
 
   const [amount, setAmount] = useState(editTx ? editTx.amount.toString() : '');
   const [description, setDescription] = useState(editTx ? editTx.description || '' : '');
@@ -123,18 +125,18 @@ export default function AddTransactionScreen() {
 
   const handleSave = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      showToast('Please enter a valid amount', 'error');
       return;
     }
     if (!selectedCategory) {
-      Alert.alert('Error', 'Please select a category');
+      showToast('Please select a category', 'error');
       return;
     }
     if (!session?.user?.id) return;
 
     setSubmitting(true);
     try {
-      const txId = editTx?.id || await Crypto.randomUUID();
+      const txId = editTx?.id || generateUUID();
       const newTx: Transaction = {
         id: txId,
         amount: parseFloat(amount),
@@ -158,13 +160,16 @@ export default function AddTransactionScreen() {
 
       await insertOrUpdateTransaction(newTx, 1);
       syncTransactions(session.user.id, true).catch(err => console.error("Background sync failed", err));
+      
+      DeviceEventEmitter.emit('module_refreshed', { module: 'Transactions' });
+      DeviceEventEmitter.emit('module_refreshed', { module: 'Dashboard' });
+      DeviceEventEmitter.emit('module_refreshed', { module: 'Budgets' });
 
-      Alert.alert('Success', 'Transaction saved successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      showToast('Transaction saved successfully', 'success');
+      navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to save transaction');
+      showToast('Failed to save transaction', 'error');
     } finally {
       setSubmitting(false);
     }

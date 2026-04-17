@@ -3,6 +3,7 @@ import { ActivityIndicator, View, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider } from './src/store/ThemeContext';
 import { AuthProvider } from './src/store/AuthContext';
+import { ToastProvider } from './src/store/ToastContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initDB } from './src/db/database';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -73,7 +74,9 @@ export default function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <AppNavigator />
+            <ToastProvider>
+              <AppNavigator />
+            </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

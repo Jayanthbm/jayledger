@@ -15,6 +15,7 @@ import { QuickTransaction } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
@@ -126,12 +127,13 @@ export default function QuickTransactionsScreen() {
           </View>
         }
       />
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: colors.primary, bottom: insets.bottom + 16 }]}
+      <FloatingActionButton
         onPress={() => navigation.navigate('AddQuickTransaction')}
-      >
-        <Icon name="add" size={30} color="#fff" />
-      </TouchableOpacity>
+        iconName="add"
+        backgroundColor={colors.primary}
+        style={{ bottom: insets.bottom + 16 }}
+        iconSize={30}
+      />
 
       <BottomSheet
         visible={!!deletingId}
@@ -170,7 +172,6 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
   meta: { fontSize: 13, fontWeight: '600' },
   deleteBtn: { padding: 8 },
-  fab: { position: 'absolute', right: 16, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 20, fontWeight: '800', marginTop: 16 },
   emptySub: { fontSize: 15, textAlign: 'center', marginTop: 8, lineHeight: 22 }

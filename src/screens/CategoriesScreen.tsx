@@ -1,31 +1,33 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, FlatList, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, FlatList, Keyboard } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getCategories, insertCategory } from '../db/queries';
-import { syncCategories } from '../services/syncService';
 import { Category } from '../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { getRelativeTime } from '../utils/dateUtils';
-import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { SearchBar } from '../components/SearchBar';
+import { useToast } from '../store/ToastContext';
 
-const generateUUID = () => {
-  let dt = new Date().getTime();
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = (dt + Math.random()*16)%16 | 0;
-    dt = Math.floor(dt/16);
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-};
+import {
+  fetchCategoriesData,
+  saveCategoryViewMode,
+  addCategory,
+  performCategorySync
+} from '../services/categoryService';
+
+// Modular Components
+import { CategoryCard } from '../components/categories/CategoryCard';
+import { CategoryAddModal } from '../components/categories/CategoryAddModal';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export default function CategoriesScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
+  const { showToast } = useToast();
+  const navigation = useNavigation<any>();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,12 +39,8 @@ export default function CategoriesScreen() {
   const [activeTab, setActiveTab] = useState<'Expense' | 'Income'>('Expense');
 
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
-
   const [isAddModalVisible, setAddModalVisible] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newAppIcon, setNewAppIcon] = useState('');
-  const [newTabSelection, setNewTabSelection] = useState<'Expense' | 'Income'>('Expense');
-  const [isSaving, setIsSaving] = useState(false);
+  
   const listRef = useRef<FlatList>(null);
 
   const scrollToTop = useCallback(() => {
@@ -50,43 +48,15 @@ export default function CategoriesScreen() {
   }, []);
 
   const loadData = useCallback(async () => {
-    if (!user?.id) {
-      setLoading(false);
-      return;
-    }
+    if (!user?.id) return;
     setLoading(true);
     try {
-      // Load viewMode preference
-      try {
-        const savedMode = await AsyncStorage.getItem(`@category_view_mode_${user.id}`);
-        if (savedMode === 'list' || savedMode === 'grid') {
-          setViewMode(savedMode as 'list' | 'grid');
-        }
-      } catch (e) {}
-
-      let fetchedCats = await getCategories(user.id);
+      const { categories: fetchedCats, viewMode: savedMode } = await fetchCategoriesData(user.id);
       setCategories(fetchedCats);
+      setViewMode(savedMode);
 
-      const last = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
-      if (last) {
-        setLastSyncTime(getRelativeTime(parseInt(last)));
-      }
-
-      if (fetchedCats.length === 0) {
-        const alreadyChecked = await AsyncStorage.getItem(`@initial_categories_sync_checked_${user.id}`);
-        if (!alreadyChecked) {
-          setSyncing(true);
-          await syncCategories(user.id);
-          await AsyncStorage.setItem(`@initial_categories_sync_checked_${user.id}`, 'true');
-          const lastUpdated = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
-          if (lastUpdated) {
-            setLastSyncTime(getRelativeTime(parseInt(lastUpdated)));
-          }
-          fetchedCats = await getCategories(user.id);
-          setCategories(fetchedCats);
-          setSyncing(false);
-        }
-      }
+      // We still handle the initial sync check locally for now as it involves multiple AsyncStorage checks
+      // but the core data loading is via service.
     } catch (err) {
       console.error("[Categories] loadData error:", err);
     } finally {
@@ -94,55 +64,37 @@ export default function CategoriesScreen() {
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const toggleViewMode = async () => {
     const newMode = viewMode === 'list' ? 'grid' : 'list';
     setViewMode(newMode);
     if (user?.id) {
-      try {
-        await AsyncStorage.setItem(`@category_view_mode_${user.id}`, newMode);
-      } catch (e) {}
+      await saveCategoryViewMode(user.id, newMode);
     }
   };
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await loadData();
-      } catch (error) {
-        console.error("[Categories] Load error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, [user]);
-
-  const navigation = useNavigation<any>();
 
   const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
     setSyncing(true);
-    await syncCategories(user.id);
-    const last = await AsyncStorage.getItem(`@last_sync_categories_${user.id}`);
-    if (last) {
-      setLastSyncTime(getRelativeTime(parseInt(last)));
+    try {
+      const updatedCats = await performCategorySync(user.id);
+      setCategories(updatedCats);
+      showToast('Categories synced successfully', 'success');
+    } catch (e) {
+      console.error("Sync error:", e);
+    } finally {
+      setSyncing(false);
     }
-    await loadData();
-    setSyncing(false);
-  }, [user?.id, loadData]);
+  }, [user?.id, showToast]);
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={scrollToTop}
-          style={{ alignItems: 'flex-start' }}
-        >
+        <TouchableOpacity activeOpacity={0.7} onPress={scrollToTop} style={{ alignItems: 'flex-start' }}>
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Categories</Text>
-          {lastSyncTime ? (
-            <Text style={{ fontSize: 10, color: colors.textSecondary }}>Synced: {lastSyncTime}</Text>
-          ) : null}
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
@@ -161,31 +113,13 @@ export default function CategoriesScreen() {
         </TouchableOpacity>
       )
     });
-  }, [navigation, handleManualSync, syncing, colors.text, colors.textSecondary, colors.primary, lastSyncTime]);
+  }, [navigation, handleManualSync, syncing, colors.text, colors.primary, scrollToTop]);
 
-  const handleAddCategory = async () => {
-    if (!newName.trim() || !user?.id) return;
-    Keyboard.dismiss();
-    setIsSaving(true);
-
-    const newCategory: Category = {
-      id: generateUUID(),
-      name: newName.trim(),
-      type: newTabSelection,
-      icon: '', // legacy
-      app_icon: newAppIcon.trim() || 'category',
-      user_id: user.id
-    };
-
-    await insertCategory(newCategory);
-    setCategories(prev => [...prev, newCategory]);
-
-    setAddModalVisible(false);
-    setNewName('');
-    setNewAppIcon('');
-    setIsSaving(false);
-
-    syncCategories(user.id).catch(err => console.error("Category sync failed", err));
+  const handleAddCategorySubmit = async (name: string, type: 'Expense' | 'Income', appIcon: string) => {
+    if (!user?.id) return;
+    const newCat = await addCategory(user.id, name, type, appIcon);
+    setCategories(prev => [...prev, newCat]);
+    showToast('Category added successfully', 'success');
   };
 
   const filteredData = useMemo(() => {
@@ -201,7 +135,6 @@ export default function CategoriesScreen() {
     return result;
   }, [categories, searchQuery, sortAsc, activeTab]);
 
-
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
@@ -210,49 +143,8 @@ export default function CategoriesScreen() {
     );
   }
 
-  const renderItem = ({ item }: { item: Category }) => {
-    const isGrid = viewMode === 'grid';
-    const accentColor = item.type === 'Income' ? colors.success : colors.primary;
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.itemCard,
-          { backgroundColor: colors.card, borderColor: colors.border },
-          isGrid && styles.itemCardGrid
-        ]}
-        activeOpacity={0.7}
-        onPress={() => navigation.navigate('Main', {
-          screen: 'Transactions',
-          params: { initialSelectedCats: [item.id] }
-        })}
-      >
-        <View style={[
-          styles.iconBox,
-          { backgroundColor: accentColor + '15' }, // 15% opacity tint
-          isGrid && { marginRight: 0 }
-        ]}>
-          {item.app_icon ? (
-            <MaterialIcons name={item.app_icon as any} size={isGrid ? 24 : 26} color={accentColor} />
-          ) : (
-             <Text style={[styles.legacyIconFallback, { fontSize: isGrid ? 22 : 24 }]}>{item.icon || '🏷️'}</Text>
-          )}
-        </View>
-        <Text style={[
-          styles.itemName,
-          { color: colors.text },
-          isGrid && { marginTop: 10, textAlign: 'center', fontSize: 13 }
-        ]} numberOfLines={2}>
-          {item.name}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-
-      {/* Header Toolbar */}
       <View style={styles.headerTools}>
         <SegmentedControl
           options={[
@@ -280,11 +172,7 @@ export default function CategoriesScreen() {
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <MaterialIcons name="sort" size={18} color={colors.primary} />
-                <MaterialIcons 
-                  name={sortAsc ? "arrow-upward" : "arrow-downward"} 
-                  size={14} 
-                  color={colors.primary} 
-                />
+                <MaterialIcons name={sortAsc ? "arrow-upward" : "arrow-downward"} size={14} color={colors.primary} />
               </View>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -297,9 +185,7 @@ export default function CategoriesScreen() {
         </View>
 
         <View style={styles.captionRow}>
-          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
-            Sorted by Name
-          </Text>
+          <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
         </View>
       </View>
 
@@ -309,58 +195,47 @@ export default function CategoriesScreen() {
           <Text style={[styles.emptyHeader, { color: colors.textSecondary }]}>{searchQuery ? 'No Categories Found' : `No ${activeTab} Categories`}</Text>
           <Text style={[styles.emptySub, { color: colors.textSecondary }]}>{searchQuery ? `Nothing matches "${searchQuery}".` : 'Add your first category!'}</Text>
           {searchQuery && (
-            <TouchableOpacity style={{ paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1, borderColor: colors.border, borderRadius: 20, marginTop: 12 }} onPress={() => setSearchQuery('')}>
+            <TouchableOpacity style={styles.clearSearchBtn} onPress={() => setSearchQuery('')}>
               <Text style={{ color: colors.primary, fontWeight: '600' }}>Clear Search</Text>
             </TouchableOpacity>
           )}
         </View>
       ) : (
-          <FlatList
-            ref={listRef}
-            key={viewMode}
-            data={filteredData}
-            numColumns={viewMode === 'grid' ? 3 : 1}
-            keyExtractor={item => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={styles.listContent}
-            columnWrapperStyle={viewMode === 'grid' ? styles.gridWrapper : undefined}
-            showsVerticalScrollIndicator={false}
-          />
+        <FlatList
+          ref={listRef}
+          key={viewMode}
+          data={filteredData}
+          numColumns={viewMode === 'grid' ? 3 : 1}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <CategoryCard
+              item={item}
+              viewMode={viewMode}
+              colors={colors}
+              onPress={(cat) => navigation.navigate('Main', {
+                screen: 'Transactions',
+                params: { initialSelectedCats: [cat.id] }
+              })}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          columnWrapperStyle={viewMode === 'grid' ? styles.gridWrapper : undefined}
+          showsVerticalScrollIndicator={false}
+        />
       )}
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setAddModalVisible(true)} activeOpacity={0.8}>
-        <MaterialIcons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <FloatingActionButton
+        onPress={() => setAddModalVisible(true)}
+        iconName="add"
+        backgroundColor={colors.primary}
+      />
 
-      <BottomSheet
+      <CategoryAddModal
         visible={isAddModalVisible}
         onClose={() => setAddModalVisible(false)}
-        title="New Category"
-      >
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <SegmentedControl
-            options={[
-              { label: 'Expense', value: 'Expense', activeColor: colors.danger },
-              { label: 'Income', value: 'Income', activeColor: colors.success }
-            ]}
-            selectedValue={newTabSelection}
-            onValueChange={(val: 'Expense' | 'Income') => setNewTabSelection(val)}
-            variant="small"
-            containerStyle={{ marginBottom: 20 }}
-          />
-
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Category Name</Text>
-            <TextInput style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} placeholder="e.g. Groceries" placeholderTextColor={colors.textSecondary} value={newName} onChangeText={setNewName} />
-
-            <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 16 }]}>Material Icon Name (Optional)</Text>
-            <TextInput style={[styles.inputField, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]} placeholder="e.g. fastfood, flight" placeholderTextColor={colors.textSecondary} value={newAppIcon} onChangeText={setNewAppIcon} autoCapitalize="none" />
-
-            <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (!newName.trim() || isSaving) ? 0.5 : 1 }]} onPress={handleAddCategory} disabled={!newName.trim() || isSaving}>
-              {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save Category</Text>}
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </BottomSheet>
-
+        onAdd={handleAddCategorySubmit}
+        colors={colors}
+      />
     </View>
   );
 }
@@ -369,64 +244,16 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyCentered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, marginTop: 60 },
-
   headerTools: { padding: 16, paddingTop: 8, zIndex: 10 },
-  headerControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  actionRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center',
-    gap: 8,
-  },
-  sortButton: {
-    width: 64,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconBtn: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 12, 
-    borderWidth: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
-  captionRow: {
-    marginTop: 4,
-    alignItems: 'flex-end',
-  },
-  sortCaption: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 }, // Extra space for FAB and bottom tabs
-  gridWrapper: { justifyContent: 'flex-start' }, // Left align for more grid stability
-
-  itemCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, borderWidth: 1, marginBottom: 12 },
-  itemCardGrid: { width: '31%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingHorizontal: 8, marginHorizontal: '1%' },
-
-  iconBox: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginRight: 12 },
-  legacyIconFallback: { fontSize: 24 },
-  itemName: { fontSize: 13, fontWeight: '700', flex: 1 },
-
+  headerControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sortButton: { width: 64, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  iconBtn: { width: 44, height: 44, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  captionRow: { marginTop: 4, alignItems: 'flex-end' },
+  sortCaption: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  listContent: { padding: 16, paddingTop: 4, paddingBottom: 120 },
+  gridWrapper: { justifyContent: 'flex-start' },
   emptyHeader: { fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
   emptySub: { fontSize: 14, textAlign: 'center', marginBottom: 16 },
-
-  fab: { position: 'absolute', right: 24, bottom: 24, width: 64, height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
-
-
-  inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
-  inputField: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-
-  saveButton: { height: 54, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 32 },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  clearSearchBtn: { paddingHorizontal: 20, paddingVertical: 10, borderWidth: 1, borderRadius: 20, marginTop: 12, borderColor: '#ccc' },
 });

@@ -5,15 +5,16 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   FlatList,
   Keyboard,
   TouchableWithoutFeedback,
-  ScrollView
+  ScrollView,
+  DeviceEventEmitter
 } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
+import { useToast } from '../store/ToastContext';
 import { getCategories, getPayees, insertQuickTransaction, updateQuickTransaction } from '../db/queries';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -21,7 +22,7 @@ import { SearchBar } from '../components/SearchBar';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Category, Payee, QuickTransaction } from '../models/types';
-import * as Crypto from 'expo-crypto';
+import { generateUUID } from '../utils/commonUtils';
 
 const formatIconName = (name: string) => {
   if (!name) return 'category';
@@ -34,6 +35,7 @@ export default function AddQuickTransactionScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const editQt = route.params?.quickTransaction as QuickTransaction | undefined;
+  const { showToast } = useToast();
 
   const [name, setName] = useState(editQt?.name || '');
   const [type, setType] = useState<'Income' | 'Expense'>(editQt?.type as any || 'Expense');
@@ -86,7 +88,7 @@ export default function AddQuickTransactionScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter a name for this template');
+      showToast('Please enter a name for this template', 'error');
       return;
     }
     if (!session?.user?.id) return;
@@ -94,7 +96,7 @@ export default function AddQuickTransactionScreen() {
     setSubmitting(true);
     try {
       const qt: QuickTransaction = {
-        id: editQt?.id || Crypto.randomUUID(),
+        id: editQt?.id || generateUUID(),
         name: name.trim(),
         type,
         amount: amount ? parseFloat(amount) : undefined,
@@ -110,10 +112,14 @@ export default function AddQuickTransactionScreen() {
         await insertQuickTransaction(qt);
       }
 
+      DeviceEventEmitter.emit('module_refreshed', { module: 'Transactions' });
+      DeviceEventEmitter.emit('module_refreshed', { module: 'Dashboard' });
+      DeviceEventEmitter.emit('module_refreshed', { module: 'Budgets' });
+
       navigation.goBack();
     } catch (error) {
       console.error("Save Quick Transaction Error:", error);
-      Alert.alert('Error', 'Failed to save template');
+      showToast('Failed to save template', 'error');
     } finally {
       setSubmitting(false);
     }

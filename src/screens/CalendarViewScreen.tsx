@@ -1,13 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getTransactionsByDate, getMinTransactionDate } from '../db/queries';
 import { Transaction } from '../models/types';
 import { TransactionCard } from '../components/TransactionCard';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isAfter, isBefore, getDaysInMonth } from 'date-fns';
 import { YearMonthSelector } from '../components/YearMonthSelector';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  isSameDay, 
+  addMonths, 
+  subMonths, 
+  isAfter, 
+  isBefore 
+} from 'date-fns';
+
+import {
+  fetchMinDate,
+  fetchTransactionsForDate,
+  calculateDailyNetTotal,
+  getNewDateForPeriod
+} from '../services/calendarService';
+
+// Modular Components
+import { CalendarGrid } from '../components/calendar/CalendarGrid';
+import { CalendarDaySummary } from '../components/calendar/CalendarDaySummary';
 
 export default function CalendarViewScreen() {
   const { colors } = useTheme();
@@ -18,32 +38,30 @@ export default function CalendarViewScreen() {
   const [data, setData] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [minDate, setMinDate] = useState<Date>(new Date());
-  const [maxDate] = useState<Date>(endOfMonth(new Date()));
+  const maxDate = useMemo(() => endOfMonth(new Date()), []);
 
   useEffect(() => {
-    const fetchMinDate = async () => {
+    const initMinDate = async () => {
       if (session?.user?.id) {
-        const d = await getMinTransactionDate(session.user.id);
-        if (d) setMinDate(new Date(d));
+        const d = await fetchMinDate(session.user.id);
+        setMinDate(d);
       }
     };
-    fetchMinDate();
+    initMinDate();
   }, [session?.user?.id]);
 
-  const daysInMonth = eachDayOfInterval({
-    start: startOfMonth(currentMonth),
-    end: endOfMonth(currentMonth)
-  });
+  const daysInMonth = useMemo(() => {
+    return eachDayOfInterval({
+      start: startOfMonth(currentMonth),
+      end: endOfMonth(currentMonth)
+    });
+  }, [currentMonth]);
 
   const loadData = useCallback(async (date: Date) => {
-    if (!session?.user?.id) {
-      setLoading(false);
-      return;
-    }
+    if (!session?.user?.id) return;
     setLoading(true);
     try {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const txs = await getTransactionsByDate(session.user.id, dateStr);
+      const txs = await fetchTransactionsForDate(session.user.id, date);
       setData(txs);
     } catch (error) {
       console.error("Error loading transactions for date:", error);
@@ -56,12 +74,19 @@ export default function CalendarViewScreen() {
     loadData(selectedDate);
   }, [selectedDate, loadData]);
 
+  const updatePeriod = (year: number, month: number) => {
+    const newDate = getNewDateForPeriod(year, month, selectedDate.getDate());
+    setCurrentMonth(newDate);
+    setSelectedDate(newDate);
+  };
+
   const handlePrevMonth = () => {
     const prev = subMonths(currentMonth, 1);
     if (!isBefore(endOfMonth(prev), startOfMonth(minDate))) {
       updatePeriod(prev.getFullYear(), prev.getMonth());
     }
   };
+
   const handleNextMonth = () => {
     const next = addMonths(currentMonth, 1);
     if (!isAfter(startOfMonth(next), endOfMonth(maxDate))) {
@@ -75,29 +100,17 @@ export default function CalendarViewScreen() {
     setCurrentMonth(today);
   };
 
-  const updatePeriod = (year: number, month: number) => {
-    const currentDay = selectedDate.getDate();
-    const daysInNewMonth = getDaysInMonth(new Date(year, month));
+  const totalForDay = useMemo(() => calculateDailyNetTotal(data), [data]);
 
-    let newDay = currentDay;
-    if (currentDay > daysInNewMonth) {
-      newDay = 1;
-    }
-
-    const newDate = new Date(year, month, newDay);
-    setCurrentMonth(newDate);
-    setSelectedDate(newDate);
-  };
-
-  const totalForDay = data.reduce((sum, tx) => sum + (tx.type === 'Income' ? tx.amount : -tx.amount), 0);
+  const prevDisabled = isBefore(endOfMonth(subMonths(currentMonth, 1)), startOfMonth(minDate));
+  const nextDisabled = isAfter(startOfMonth(addMonths(currentMonth, 1)), endOfMonth(maxDate));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-
       <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.monthHeader}>
-          <TouchableOpacity onPress={handlePrevMonth} disabled={isBefore(endOfMonth(subMonths(currentMonth, 1)), startOfMonth(minDate))}>
-            <MaterialIcons name="chevron-left" size={28} color={isBefore(endOfMonth(subMonths(currentMonth, 1)), startOfMonth(minDate)) ? colors.border : colors.text} />
+          <TouchableOpacity onPress={handlePrevMonth} disabled={prevDisabled}>
+            <MaterialIcons name="chevron-left" size={28} color={prevDisabled ? colors.border : colors.text} />
           </TouchableOpacity>
           <YearMonthSelector
             year={currentMonth.getFullYear().toString()}
@@ -105,50 +118,34 @@ export default function CalendarViewScreen() {
             onYearChange={(y) => updatePeriod(parseInt(y), currentMonth.getMonth())}
             onMonthChange={(m) => updatePeriod(currentMonth.getFullYear(), m)}
           />
-          <TouchableOpacity onPress={handleNextMonth} disabled={isAfter(startOfMonth(addMonths(currentMonth, 1)), endOfMonth(maxDate))}>
-            <MaterialIcons name="chevron-right" size={28} color={isAfter(startOfMonth(addMonths(currentMonth, 1)), endOfMonth(maxDate)) ? colors.border : colors.text} />
+          <TouchableOpacity onPress={handleNextMonth} disabled={nextDisabled}>
+            <MaterialIcons name="chevron-right" size={28} color={nextDisabled ? colors.border : colors.text} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.daysGrid}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-            <Text key={d} style={[styles.dayLabel, { color: colors.textSecondary }]}>{d}</Text>
-          ))}
-          {daysInMonth.map(day => {
-            const isSelected = isSameDay(day, selectedDate);
-            return (
-              <TouchableOpacity
-                key={day.toISOString()}
-                style={[
-                  styles.dayCell,
-                  isSelected && { backgroundColor: colors.primary, borderRadius: 12 }
-                ]}
-                onPress={() => setSelectedDate(day)}
-              >
-                <Text style={[
-                  styles.dayText,
-                  { color: isSelected ? '#fff' : colors.text }
-                ]}>
-                  {format(day, 'd')}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <CalendarGrid
+          days={daysInMonth}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          colors={colors}
+        />
+
         {!isSameDay(selectedDate, new Date()) && (
-          <TouchableOpacity style={[styles.todayBtn, { borderColor: colors.primary + '40', backgroundColor: colors.primary + '05' }]} onPress={goToToday}>
+          <TouchableOpacity 
+            style={[styles.todayBtn, { borderColor: colors.primary + '40', backgroundColor: colors.primary + '05' }]} 
+            onPress={goToToday}
+          >
              <MaterialIcons name="today" size={16} color={colors.primary} />
              <Text style={[styles.todayBtnText, { color: colors.primary }]}>Go to Today</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <View style={styles.daySummary}>
-        <Text style={[styles.summaryDate, { color: colors.text }]}>{format(selectedDate, 'EEE, MMM d, yyyy')}</Text>
-        <Text style={[styles.summaryAmount, { color: totalForDay >= 0 ? colors.success : colors.danger }]}>
-          {totalForDay >= 0 ? '+' : ''}₹{totalForDay.toLocaleString()}
-        </Text>
-      </View>
+      <CalendarDaySummary
+        selectedDate={selectedDate}
+        totalForDay={totalForDay}
+        colors={colors}
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
@@ -184,34 +181,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dayLabel: {
-    width: '14.28%',
-    textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  dayCell: {
-    width: '14.28%',
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  dayText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   todayBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
-    paddingVertical: 8,
+    marginTop: 24,
+    paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
     gap: 8,
@@ -220,15 +195,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  daySummary: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  summaryDate: { fontSize: 15, fontWeight: 'bold' },
-  summaryAmount: { fontSize: 16, fontWeight: 'bold' },
   listContent: { paddingBottom: 40 },
   emptyContainer: { alignItems: 'center', marginTop: 40 },
   emptyText: { fontSize: 15, marginTop: 12 },

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { SegmentedControl } from './SegmentedControl';
-import { YearMonthSelector } from './YearMonthSelector';
+import { SegmentedControl } from '../SegmentedControl';
+import { YearMonthSelector } from '../YearMonthSelector';
 import { isBefore, isAfter, endOfMonth, startOfMonth, subMonths, subYears, addMonths, addYears } from 'date-fns';
 
 interface ReportSelectorsProps {
