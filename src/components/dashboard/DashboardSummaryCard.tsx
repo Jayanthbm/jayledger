@@ -4,6 +4,8 @@ import { View, Text, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { DashboardCard } from './DashboardCard';
 
+import { CircularProgress } from '../CircularProgress';
+
 interface DashboardSummaryCardProps {
   title: string;
   subtitle: string;
@@ -81,27 +83,15 @@ export const DashboardSummaryCard = React.memo(
           </View>
 
           <View style={styles.circularContainer}>
-            <View
-              style={[
-                styles.progressCircle,
-                {
-                  borderColor: colors.border,
-                  borderTopColor: colors.danger,
-                  borderRightColor: expense / (income || 1) > 0.25 ? colors.danger : colors.border,
-                  borderBottomColor: expense / (income || 1) > 0.5 ? colors.danger : colors.border,
-                  borderLeftColor: expense / (income || 1) > 0.75 ? colors.danger : colors.border,
-                },
-              ]}
-            >
-              <View style={[styles.progressInner, { backgroundColor: colors.danger + '05' }]}>
-                <Text
-                  style={[styles.progressText, styles.progressTextSmall, { color: colors.text }]}
-                >
-                  {usedPercent.toFixed(0)}%
-                </Text>
-                <Text style={[styles.progressSub, { color: colors.textSecondary }]}>USED</Text>
-              </View>
-            </View>
+            <CircularProgress
+              percentage={usedPercent}
+              progressColor={colors.danger}
+              borderColor={colors.border}
+              value={`${usedPercent.toFixed(0)}%`}
+              label="USED"
+              textColor={colors.text}
+              fontSize={16}
+            />
           </View>
         </View>
       </DashboardCard>
@@ -115,26 +105,8 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, marginBottom: 4 },
   rowValue: { fontSize: 20, fontWeight: '800' },
   circularContainer: { marginLeft: 16, alignItems: 'center', justifyContent: 'center' },
-  progressCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressInner: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressText: { fontSize: 20, fontWeight: '800' },
-  progressSub: { fontSize: 8, fontWeight: '800', letterSpacing: 1 },
   trendText: { fontSize: 10, fontWeight: '700' },
   flex1: { flex: 1 },
   sectionMargin: { marginBottom: 16 },
   trendRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  progressTextSmall: { fontSize: 16 },
 });

@@ -5,6 +5,8 @@ import { DashboardCard } from './DashboardCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import type { AppNavigation } from '../../navigation/navigationTypes';
 
+import { CircularProgress } from '../CircularProgress';
+
 interface DashboardDailyLimitProps {
   dailyLimitCalc: {
     limit: number;
@@ -47,33 +49,14 @@ export const DashboardDailyLimit = React.memo(
           </View>
 
           <View style={styles.rightProgress}>
-            <View
-              style={[
-                styles.progressCircle,
-                {
-                  borderColor: colors.border,
-                  borderTopColor: remainingPercentage > 0 ? progressColor : colors.border,
-                  borderRightColor: remainingPercentage > 25 ? progressColor : colors.border,
-                  borderBottomColor: remainingPercentage > 50 ? progressColor : colors.border,
-                  borderLeftColor: remainingPercentage > 75 ? progressColor : colors.border,
-                  transform: [{ rotate: '0deg' }],
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.progressInner,
-                  {
-                    backgroundColor: progressColor + '08',
-                  },
-                ]}
-              >
-                <Text style={[styles.percentageText, { color: colors.text }]}>
-                  {Math.round(remainingPercentage)}%
-                </Text>
-                <Text style={[styles.percentageLabel, { color: colors.textSecondary }]}>LEFT</Text>
-              </View>
-            </View>
+            <CircularProgress
+              percentage={remainingPercentage}
+              progressColor={progressColor}
+              borderColor={colors.border}
+              value={`${Math.round(remainingPercentage)}%`}
+              label="LEFT"
+              textColor={colors.text}
+            />
           </View>
         </View>
       </DashboardCard>
@@ -114,29 +97,5 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  progressCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressInner: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  percentageText: {
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  percentageLabel: {
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
 });

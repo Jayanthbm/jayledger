@@ -5,6 +5,8 @@ import { DashboardCard } from './DashboardCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import type { AppNavigation } from '../../navigation/navigationTypes';
 
+import { CircularProgress } from '../CircularProgress';
+
 interface DashboardPayDayProps {
   payDayInfo: {
     daysInMonth: number;
@@ -19,6 +21,9 @@ interface DashboardPayDayProps {
 
 export const DashboardPayDay = React.memo(
   ({ payDayInfo, isDark, navigation, colors }: DashboardPayDayProps) => {
+    const percentage =
+      ((payDayInfo.daysInMonth - payDayInfo.remaining) / payDayInfo.daysInMonth) * 100;
+
     return (
       <DashboardCard
         colors={colors}
@@ -53,34 +58,14 @@ export const DashboardPayDay = React.memo(
           </View>
 
           <View style={styles.circularContainer}>
-            <View
-              style={[
-                styles.progressCircle,
-                {
-                  borderColor: colors.border,
-                  borderTopColor: colors.primary,
-                  borderRightColor: 30 - payDayInfo.remaining > 7 ? colors.primary : colors.border,
-                  borderBottomColor:
-                    30 - payDayInfo.remaining > 15 ? colors.primary : colors.border,
-                  borderLeftColor: 30 - payDayInfo.remaining > 22 ? colors.primary : colors.border,
-                  transform: [{ rotate: '0deg' }],
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.progressInner,
-                  {
-                    backgroundColor: colors.primary + '08',
-                  },
-                ]}
-              >
-                <Text style={[styles.progressText, { color: colors.text }]}>
-                  {payDayInfo.remaining}
-                </Text>
-                <Text style={[styles.progressSub, { color: colors.textSecondary }]}>DAYS</Text>
-              </View>
-            </View>
+            <CircularProgress
+              percentage={percentage}
+              progressColor={colors.primary}
+              borderColor={colors.border}
+              value={payDayInfo.remaining}
+              label="DAYS"
+              textColor={colors.text}
+            />
           </View>
         </View>
       </DashboardCard>
@@ -97,21 +82,4 @@ const styles = StyleSheet.create({
   dotGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 100, gap: 5 },
   dot: { width: 8, height: 8, borderRadius: 4, marginBottom: 5 },
   circularContainer: { marginLeft: 16, alignItems: 'center', justifyContent: 'center' },
-  progressCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressInner: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressText: { fontSize: 20, fontWeight: '800' },
-  progressSub: { fontSize: 8, fontWeight: '800', letterSpacing: 1 },
 });
