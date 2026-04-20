@@ -311,16 +311,25 @@ export default function TransactionsScreen() {
         </View>
 
         {search.length > 0 && listData.length === 0 && !loading && (
-          <View style={styles.noResultsSearchContainer}>
-            <Text style={[styles.noResultsSearchText, { color: colors.textSecondary }]}>
-              No transactions found matching &quot;{search}&quot;
-            </Text>
-            <TouchableOpacity
-              onPress={() => setSearch('')}
-              style={[styles.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+          <View style={common.ph16}>
+            <View
+              style={[
+                common.noResultsSearchContainer,
+                { borderColor: colors.border, backgroundColor: colors.card + '50' },
+              ]}
             >
-              <Text style={[styles.clearSearchText, { color: colors.primary }]}>Clear Search</Text>
-            </TouchableOpacity>
+              <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
+                No transactions found matching &quot;{search}&quot;
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSearch('')}
+                style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+              >
+                <Text style={[common.clearSearchText, { color: colors.primary }]}>
+                  Clear Search
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -362,6 +371,7 @@ export default function TransactionsScreen() {
             keyExtractor: (item: FlashListItem) =>
               item.itemType === 'header' ? `header-${item.date}` : item.id,
             estimatedItemSize: 100,
+            keyboardShouldPersistTaps: 'always',
             renderItem: ({ item }: { item: FlashListItem }) => {
               if (item.itemType === 'header') {
                 return (
@@ -525,25 +535,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  noResultsSearchContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  noResultsSearchText: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    marginBottom: 12,
-  },
-  clearSearchButton: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  clearSearchText: {
-    fontSize: 13,
-    fontWeight: '700',
   },
   emptyLoader: {
     marginTop: 40,

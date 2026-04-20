@@ -107,6 +107,11 @@ export default function PayeesScreen() {
             style={common.headerTitleContainer}
           >
             <Text style={[common.navHeaderTitle, { color: colors.text }]}>Payees</Text>
+            {lastSynced && (
+              <Text style={[common.navHeaderSubtitle, { color: colors.textSecondary }]}>
+                Synced: {getRelativeTime(lastSynced)}
+              </Text>
+            )}
           </TouchableOpacity>
         ),
         headerTitleAlign: 'left',
@@ -127,7 +132,16 @@ export default function PayeesScreen() {
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [navigation, handleManualSync, syncing, colors.text, colors.primary, scrollToTop]);
+  }, [
+    navigation,
+    handleManualSync,
+    syncing,
+    colors.text,
+    colors.textSecondary,
+    colors.primary,
+    scrollToTop,
+    lastSynced,
+  ]);
 
   const handleAddPayeeSubmit = async (name: string, logo: string) => {
     if (!user?.id) return;
@@ -202,16 +216,6 @@ export default function PayeesScreen() {
         </View>
 
         <View style={common.captionRow}>
-          <View style={common.flex1}>
-            {lastSynced && (
-              <View style={common.syncFooter}>
-                <MaterialIcons name="cloud-done" size={12} color={colors.textSecondary + '80'} />
-                <Text style={[common.syncText, { color: colors.textSecondary + '80' }]}>
-                  Synced {getRelativeTime(lastSynced)}
-                </Text>
-              </View>
-            )}
-          </View>
           <Text style={[common.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
         </View>
       </View>

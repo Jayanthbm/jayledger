@@ -6,6 +6,7 @@ import { SearchBar } from '../SearchBar';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { Category, Payee, MaterialIconName } from '../../models/types';
 import { useTheme } from '../../store/ThemeContext';
+import { common } from '../../styles/common';
 
 const formatIconName = (name: string) => {
   if (!name) return 'category';
@@ -68,6 +69,7 @@ export const ItemSelectorModal = ({
           numColumns={4}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.modalListContent}
+          keyboardShouldPersistTaps="always"
           renderItem={({ item }) => {
             const isSelected = selectedItemId === item.id;
             const isPayee = type === 'Payee';
@@ -135,8 +137,24 @@ export const ItemSelectorModal = ({
             );
           }}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No {type.toLowerCase()} found</Text>
+            <View
+              style={[
+                common.noResultsSearchContainer,
+                styles.emptyMarginTop,
+                { borderColor: colors.border },
+              ]}
+            >
+              <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
+                No {type.toLowerCase()} found matching &quot;{searchQuery}&quot;
+              </Text>
+              <TouchableOpacity
+                onPress={() => onSearchChange('')}
+                style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+              >
+                <Text style={[common.clearSearchText, { color: colors.primary }]}>
+                  Clear Search
+                </Text>
+              </TouchableOpacity>
             </View>
           }
           style={styles.modalList}
@@ -151,8 +169,7 @@ const styles = StyleSheet.create({
   modalSearchContainer: { paddingBottom: 16 },
   modalListContent: { paddingBottom: 40, paddingHorizontal: 10 },
   modalList: { maxHeight: 400 },
-  emptyContainer: { alignItems: 'center', marginTop: 40 },
-  emptyText: { color: '#666' },
+  emptyMarginTop: { marginTop: 40 },
   gridItem: {
     flex: 1,
     alignItems: 'center',

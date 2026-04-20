@@ -112,6 +112,11 @@ export default function CategoriesScreen() {
             style={common.headerTitleContainer}
           >
             <Text style={[common.navHeaderTitle, { color: colors.text }]}>Categories</Text>
+            {lastSynced && (
+              <Text style={[common.navHeaderSubtitle, { color: colors.textSecondary }]}>
+                Synced: {getRelativeTime(lastSynced)}
+              </Text>
+            )}
           </TouchableOpacity>
         ),
         headerTitleAlign: 'left',
@@ -132,7 +137,16 @@ export default function CategoriesScreen() {
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [navigation, handleManualSync, syncing, colors.text, colors.primary, scrollToTop]);
+  }, [
+    navigation,
+    handleManualSync,
+    syncing,
+    colors.text,
+    colors.textSecondary,
+    colors.primary,
+    scrollToTop,
+    lastSynced,
+  ]);
 
   const handleAddCategorySubmit = async (
     name: string,
@@ -222,16 +236,6 @@ export default function CategoriesScreen() {
         </View>
 
         <View style={common.captionRow}>
-          <View style={common.flex1}>
-            {lastSynced && (
-              <View style={common.syncFooter}>
-                <MaterialIcons name="cloud-done" size={12} color={colors.textSecondary + '80'} />
-                <Text style={[common.syncText, { color: colors.textSecondary + '80' }]}>
-                  Synced {getRelativeTime(lastSynced)}
-                </Text>
-              </View>
-            )}
-          </View>
           <Text style={[common.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
         </View>
       </View>

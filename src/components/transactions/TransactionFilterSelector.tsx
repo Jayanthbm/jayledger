@@ -61,9 +61,26 @@ export const TransactionFilterSelector = React.memo(
             onClear={() => setModalSearch('')}
           />
           {modalSearch.length > 0 && data.length === 0 && (
-            <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
-              No {type.toLowerCase()}s found matching &quot;{modalSearch}&quot;
-            </Text>
+            <View style={[common.ph10, common.mt8]}>
+              <View
+                style={[
+                  common.noResultsSearchContainer,
+                  { borderColor: colors.border, backgroundColor: colors.card + '50' },
+                ]}
+              >
+                <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
+                  No {type.toLowerCase()}s found matching &quot;{modalSearch}&quot;
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setModalSearch('')}
+                  style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+                >
+                  <Text style={[common.clearSearchText, { color: colors.primary }]}>
+                    Clear Search
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
         </View>
 
@@ -71,6 +88,7 @@ export const TransactionFilterSelector = React.memo(
           data={data}
           keyExtractor={(item) => item.id}
           numColumns={4}
+          keyboardShouldPersistTaps="always"
           renderItem={({ item }: { item: Category | Payee }) => {
             const isSelected = tempSelectedItems.includes(item.id);
             const isPayee = type === 'Payee';
@@ -183,12 +201,6 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 20,
     fontWeight: '700',
-  },
-  noResultsText: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 8,
-    paddingHorizontal: 4,
   },
   modalDone: {
     padding: 18,
