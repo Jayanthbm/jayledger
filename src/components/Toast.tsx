@@ -23,7 +23,7 @@ export const Toast = ({ visible, message, type, onHide }: ToastProps) => {
     if (visible) {
       Animated.parallel([
         Animated.spring(translateY, {
-          toValue: insets.top + 10,
+          toValue: insets.top + 24,
           useNativeDriver: true,
           tension: 80,
           friction: 10,

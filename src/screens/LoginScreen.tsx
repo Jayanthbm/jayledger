@@ -18,23 +18,23 @@ import { useAuth } from '../store/AuthContext';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import appConfig from '../../app.json';
+import { useToast } from '../store/ToastContext';
 
 const { height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const { colors, isDark } = useTheme();
+  const { showToast } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    setErrorMsg(null);
     if (!email || !password) {
-      setErrorMsg('Please enter both email and password.');
+      showToast('Please enter both email and password.', 'error');
       return;
     }
     setLoading(true);
@@ -42,7 +42,7 @@ export default function LoginScreen() {
       await signIn(email, password);
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : 'An error occurred during login.';
-      setErrorMsg(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -113,12 +113,6 @@ export default function LoginScreen() {
                     />
                   </TouchableOpacity>
                 </View>
-
-                {errorMsg && (
-                  <View style={styles.errorContainer}>
-                    <Text style={[styles.errorText, { color: colors.danger }]}>{errorMsg}</Text>
-                  </View>
-                )}
 
                 <TouchableOpacity
                   style={[styles.loginBtn, styles.loginBtnBlue]}
@@ -200,14 +194,6 @@ const styles = StyleSheet.create({
   },
   eyeBtn: {
     padding: 10,
-  },
-  errorContainer: {
-    marginBottom: 16,
-    paddingHorizontal: 8,
-  },
-  errorText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
   loginBtn: {
     height: 70,

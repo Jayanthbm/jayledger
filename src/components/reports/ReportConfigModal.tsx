@@ -35,6 +35,12 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
     [bottomInset],
   );
 
+  const filteredCategories = React.useMemo(
+    () =>
+      allCategories.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase().trim())),
+    [allCategories, searchQuery],
+  );
+
   return (
     <BottomSheet visible={visible} onClose={onClose} title="Configure Living Costs" isFullScreen>
       <View style={common.flex1}>
@@ -48,12 +54,32 @@ export const ReportConfigModal: React.FC<ReportConfigModalProps> = ({
         </View>
 
         <FlatList
-          data={allCategories.filter((c) =>
-            c.name.toLowerCase().includes(searchQuery.toLowerCase()),
-          )}
+          data={filteredCategories}
           keyExtractor={(item) => item.id}
           numColumns={3}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          ListEmptyComponent={
+            searchQuery ? (
+              <View
+                style={[
+                  common.noResultsSearchContainer,
+                  { borderColor: colors.border, backgroundColor: colors.card + '50' },
+                ]}
+              >
+                <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
+                  No categories found matching &quot;{searchQuery}&quot;
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+                >
+                  <Text style={[common.clearSearchText, { color: colors.primary }]}>
+                    Clear Search
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[
