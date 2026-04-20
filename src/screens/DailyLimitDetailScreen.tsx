@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { formatCurrency } from '../utils/formatters';
+import { logger } from '../utils/logger';
 
 export default function DailyLimitDetailScreen() {
   const { colors } = useTheme();
@@ -28,7 +29,7 @@ export default function DailyLimitDetailScreen() {
       const txs = await getTransactionsByDate(session.user.id, todayStr);
       setData(txs);
     } catch (error) {
-      console.error("Error loading today's transactions:", error);
+      logger.error("Error loading today's transactions:", error);
     } finally {
       setLoading(false);
     }

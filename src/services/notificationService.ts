@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '../utils/logger';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -51,7 +52,7 @@ export const scheduleReminder = async (timeOfDay: string) => {
       },
     });
   } catch (error) {
-    console.warn("Notifications aren't fully supported in Expo Go SDK 54+:", error);
+    logger.warn("Notifications aren't fully supported in Expo Go SDK 54+:", error);
     // Suppress crash to allow other settings changes in Expo Go
   }
 };

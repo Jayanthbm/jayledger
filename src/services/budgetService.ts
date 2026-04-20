@@ -2,6 +2,7 @@ import { getBudgets, getBudgetSpending, getTransactionsByDateRange } from '../db
 import { Budget, Transaction } from '../models/types';
 import { syncBudgets } from './syncService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '../utils/logger';
 
 export interface EnrichedBudget extends Budget {
   spent: number;
@@ -21,7 +22,7 @@ export const fetchBudgetsWithSpending = async (
       try {
         categoryIds = JSON.parse(b.categories);
       } catch (_e) {
-        console.error('Error parsing budget categories:', _e);
+        logger.error('Error parsing budget categories:', _e);
       }
       const spent = await getBudgetSpending(userId, categoryIds, startDateStr, endDateStr);
       return { ...b, spent };

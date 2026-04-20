@@ -6,6 +6,7 @@ import { getMinTransactionDate } from '../db/queries';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { startOfMonth, endOfMonth, isBefore, isAfter } from 'date-fns';
 import { BottomSheet } from './BottomSheet';
+import { logger } from '../utils/logger';
 
 interface YearMonthSelectorProps {
   year: string;
@@ -50,7 +51,7 @@ export function YearMonthSelector({
           const d = await getMinTransactionDate(session.user.id);
           if (d) setMinDate(new Date(d));
         } catch (error) {
-          console.error('Error fetching min transaction date:', error);
+          logger.error('Error fetching min transaction date:', error);
         }
       }
     };

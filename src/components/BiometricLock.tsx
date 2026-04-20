@@ -5,6 +5,7 @@ import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { common } from '../styles/common';
+import { logger } from '../utils/logger';
 
 interface BiometricLockProps {
   onUnlock: () => void;
@@ -32,7 +33,7 @@ export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
       }
     } catch (e) {
       setError('An error occurred during authentication');
-      console.error(e);
+      logger.error(e);
     } finally {
       setIsAuthenticating(false);
     }

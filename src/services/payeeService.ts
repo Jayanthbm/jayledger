@@ -3,6 +3,7 @@ import { getPayees, insertPayee } from '../db/queries';
 import { syncPayees } from '../services/syncService';
 import { Payee } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
+import { logger } from '../utils/logger';
 
 const VIEW_MODE_KEY = (userId: string) => `@payee_view_mode_${userId}`;
 
@@ -32,7 +33,7 @@ export const addPayee = async (userId: string, name: string, logo: string) => {
   await insertPayee(newPayee);
 
   // Background sync
-  syncPayees(userId).catch((err) => console.error('Payee sync failed', err));
+  syncPayees(userId).catch((err) => logger.error('Payee sync failed', err));
 
   return newPayee;
 };

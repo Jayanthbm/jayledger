@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useToast } from '../store/ToastContext';
+import { logger } from '../utils/logger';
 
 export const useBiometrics = () => {
   const [useBiometrics, setUseBiometrics] = useState(false);
@@ -12,7 +13,7 @@ export const useBiometrics = () => {
       const biometrics = await AsyncStorage.getItem('use_biometrics');
       setUseBiometrics(biometrics === 'true');
     } catch (e) {
-      console.warn('Error loading biometrics pref', e);
+      logger.warn('Error loading biometrics pref', e);
     }
   }, []);
 

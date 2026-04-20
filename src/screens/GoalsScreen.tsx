@@ -29,6 +29,7 @@ import { GoalAddEditModal } from '../components/goals/GoalAddEditModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
+import { logger } from '../utils/logger';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
@@ -82,7 +83,7 @@ export default function GoalsScreen() {
         }
       }
     } catch (e) {
-      console.error('Load Goals Error:', e);
+      logger.error('Load Goals Error:', e);
     } finally {
       setLoading(false);
     }
@@ -116,7 +117,7 @@ export default function GoalsScreen() {
       await loadData();
       showToast('Goals synced successfully', 'success');
     } catch (e) {
-      console.error('Manual sync error:', e);
+      logger.error('Manual sync error:', e);
       showToast('Sync failed', 'error');
     } finally {
       setIsSyncing(false);
@@ -256,7 +257,7 @@ export default function GoalsScreen() {
           setIsModalOpen(false);
           loadData();
           handleGoalSync(user.id).catch((err) =>
-            console.error('Auto-sync after goal save failed', err),
+            logger.error('Auto-sync after goal save failed', err),
           );
           showToast(`Goal ${editingGoal ? 'updated' : 'added'} successfully`, 'success');
         }}
@@ -283,7 +284,7 @@ export default function GoalsScreen() {
           setIsModalOpen(false);
           loadData();
           handleGoalSync(user.id).catch((err) =>
-            console.error('Auto-sync after goal deletion failed', err),
+            logger.error('Auto-sync after goal deletion failed', err),
           );
           showToast('Goal deleted', 'success');
         }}

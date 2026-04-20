@@ -3,6 +3,7 @@ import { getDb } from '../../db/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isOnline, syncLog } from './baseSync';
 import { STORAGE_KEYS, TABLES } from '../../constants';
+import { logger } from '../../utils/logger';
 
 /**
  * Pushes unsynced local budgets to Supabase.
@@ -34,7 +35,7 @@ export const pushLocalBudgets = async (userId: string) => {
       if (!error) {
         await db.execAsync(`DELETE FROM budgets WHERE id = '${budget.id}'`);
       } else {
-        console.error(`[Sync:Budgets] Error deleting budget ${budget.id}:`, error);
+        logger.error(`[Sync:Budgets] Error deleting budget ${budget.id}:`, error);
       }
       continue;
     }

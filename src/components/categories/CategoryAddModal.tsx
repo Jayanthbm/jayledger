@@ -12,6 +12,7 @@ import {
 import { BottomSheet } from '../BottomSheet';
 import { SegmentedControl } from '../SegmentedControl';
 import { common } from '../../styles/common';
+import { logger } from '../../utils/logger';
 
 interface CategoryAddModalProps {
   visible: boolean;
@@ -41,7 +42,7 @@ export const CategoryAddModal: React.FC<CategoryAddModalProps> = ({
       setAppIcon('');
       onClose();
     } catch (error) {
-      console.error('Add category error:', error);
+      logger.error('Add category error:', error);
     } finally {
       setIsSaving(false);
     }

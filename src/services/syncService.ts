@@ -7,6 +7,7 @@ import { pushLocalBudgets, syncBudgets } from './sync/budgetSync';
 import { pushLocalGoals, syncGoals } from './sync/goalSync';
 import { pushLocalPayees, syncPayees } from './sync/payeeSync';
 import { supabase } from './supabase';
+import { logger } from '../utils/logger';
 
 export { isOnline };
 
@@ -48,14 +49,14 @@ export const needsTransactionSync = async (userId: string) => {
       .limit(1);
 
     if (error) {
-      console.error('[Sync] Supabase error checking needsTransactionSync:', error);
+      logger.error('[Sync] Supabase error checking needsTransactionSync:', error);
       return false;
     }
 
     const maxSupabaseTid = supabaseMax?.[0]?.tid || 0;
     return maxLocalTid < maxSupabaseTid;
   } catch (error) {
-    console.error('[Sync] Error checking if transaction sync is needed:', error);
+    logger.error('[Sync] Error checking if transaction sync is needed:', error);
     return false;
   }
 };
@@ -101,7 +102,7 @@ export const runFullSync = async (userId: string, onProgress?: (msg: string) => 
     await AsyncStorage.setItem(`@last_sync_master_${userId}`, Date.now().toString());
     syncLog('Coordinator', '*** Full Sync complete ***');
   } catch (error) {
-    console.error('[Sync:Coordinator] Full Sync error:', error);
+    logger.error('[Sync:Coordinator] Full Sync error:', error);
     if (onProgress) onProgress('Error');
   } finally {
     isSyncingData = false;

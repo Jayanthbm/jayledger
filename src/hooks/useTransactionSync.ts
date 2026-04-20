@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session } from '@supabase/supabase-js';
 import { syncTransactions, needsTransactionSync } from '../services/syncService';
 import { getRelativeTime } from '../utils/dateUtils';
+import { logger } from '../utils/logger';
 
 export const useTransactionSync = (session: Session | null, onSyncComplete: () => void) => {
   const [isSyncing, setIsSyncing] = useState(false);
@@ -23,7 +24,7 @@ export const useTransactionSync = (session: Session | null, onSyncComplete: () =
         if (lastTxSync) setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
         if (manual) onSyncComplete(); // Only reload the list aggressively on manual sync
       } catch (e) {
-        console.error(`${manual ? 'Manual' : 'Auto'} sync error:`, e);
+        logger.error(`${manual ? 'Manual' : 'Auto'} sync error:`, e);
       } finally {
         if (manual) setIsSyncing(false);
         else setIsAutoSyncing(false);

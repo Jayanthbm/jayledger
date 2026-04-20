@@ -1,7 +1,9 @@
 import type { MaterialIconName, ThemeColors } from '../../models/types';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+import { cardStyles } from '../../styles/cardStyles';
 
 interface DashboardCardProps {
   children: React.ReactNode;
@@ -31,8 +33,8 @@ export const DashboardCard = ({
   return (
     <Container
       style={[
-        styles.card,
-        isMain && styles.mainCard,
+        cardStyles.container,
+        isMain && cardStyles.main,
         { backgroundColor: colors.card, borderColor: colors.border },
         style,
       ]}
@@ -40,15 +42,17 @@ export const DashboardCard = ({
       activeOpacity={onPress ? 0.7 : 1}
     >
       {(title || icon) && (
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
+        <View style={cardStyles.header}>
+          <View style={cardStyles.headerLeft}>
             {icon && <MaterialIcons name={icon} size={20} color={colors.primary} />}
             <View>
               {title && (
-                <Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{title}</Text>
+                <Text style={[cardStyles.title, { color: colors.textSecondary }]}>{title}</Text>
               )}
               {subtitle && (
-                <Text style={[styles.cardSub, { color: colors.textSecondary }]}>{subtitle}</Text>
+                <Text style={[cardStyles.subtitle, { color: colors.textSecondary }]}>
+                  {subtitle}
+                </Text>
               )}
             </View>
           </View>
@@ -59,44 +63,3 @@ export const DashboardCard = ({
     </Container>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  mainCard: {
-    padding: 24,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    gap: 8,
-  },
-  headerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  cardSub: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-});

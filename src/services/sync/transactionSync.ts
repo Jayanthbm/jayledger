@@ -4,6 +4,7 @@ import { getUnsyncedTransactions, updateTransactionSyncStatus } from '../../db/q
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isOnline, syncLog } from './baseSync';
 import { STORAGE_KEYS, TABLES } from '../../constants';
+import { logger } from '../../utils/logger';
 
 /**
  * Pushes unsynced local transactions to Supabase.
@@ -24,7 +25,7 @@ export const pushLocalTransactions = async (userId: string) => {
       if (!error) {
         await db.execAsync(`DELETE FROM transactions WHERE id = '${tx.id}'`);
       } else {
-        console.error(`[Sync:Transactions] Error deleting transaction ${tx.id}:`, error);
+        logger.error(`[Sync:Transactions] Error deleting transaction ${tx.id}:`, error);
       }
       continue;
     }
@@ -51,7 +52,7 @@ export const pushLocalTransactions = async (userId: string) => {
       .select('tid');
 
     if (error) {
-      console.error(`[Sync:Transactions] Error pushing transaction ${tx.id}:`, error);
+      logger.error(`[Sync:Transactions] Error pushing transaction ${tx.id}:`, error);
     } else {
       const newTid = data?.[0]?.tid;
       if (newTid) {
@@ -100,7 +101,7 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
     });
 
     if (error) {
-      console.error('[Sync:Transactions] Error pulling transactions:', error);
+      logger.error('[Sync:Transactions] Error pulling transactions:', error);
       break;
     }
 

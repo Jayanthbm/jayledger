@@ -7,6 +7,7 @@ import {
   fetchStatsBreakdown,
 } from '../services/transactionService';
 import { FlashListItem } from '../utils/dataMappers';
+import { logger } from '../utils/logger';
 
 interface UseTransactionFiltersProps {
   session: Session | null;
@@ -89,7 +90,7 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
       );
       setStatsBreakdown(stats);
     } catch (e) {
-      console.error('Error loading stats breakdown:', e);
+      logger.error('Error loading stats breakdown:', e);
     } finally {
       setLoadingStats(false);
     }
@@ -110,6 +111,11 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
     }, 0);
     return () => clearTimeout(timer);
   }, [params]);
+
+  useEffect(() => {
+    const timeout = setTimeout(loadData, 300);
+    return () => clearTimeout(timeout);
+  }, [loadData]);
 
   useEffect(() => {
     if (!showFilterModal) {

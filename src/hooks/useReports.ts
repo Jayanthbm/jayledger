@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import {
   getReportMonthlySummary,
   getReportSummaryByCategory,
@@ -36,7 +37,7 @@ export const useReports = (
           setByPayee(payeeData);
         }
       } catch (err) {
-        console.error('[useReports] Error fetching report data:', err);
+        logger.error('[useReports] Error fetching report data:', err);
       } finally {
         if (active) setLoading(false);
       }

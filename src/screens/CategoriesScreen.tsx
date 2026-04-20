@@ -22,6 +22,7 @@ import { CategoryAddModal } from '../components/categories/CategoryAddModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
+import { logger } from '../utils/logger';
 
 export default function CategoriesScreen() {
   const { colors } = useTheme();
@@ -58,7 +59,7 @@ export default function CategoriesScreen() {
       // We still handle the initial sync check locally for now as it involves multiple AsyncStorage checks
       // but the core data loading is via service.
     } catch (err) {
-      console.error('[Categories] loadData error:', err);
+      logger.error('[Categories] loadData error:', err);
     } finally {
       setLoading(false);
     }
@@ -87,7 +88,7 @@ export default function CategoriesScreen() {
       setCategories(updatedCats);
       showToast('Categories synced successfully', 'success');
     } catch (e) {
-      console.error('Sync error:', e);
+      logger.error('Sync error:', e);
     } finally {
       setSyncing(false);
     }

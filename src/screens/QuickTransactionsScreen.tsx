@@ -20,6 +20,7 @@ import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
 
 import { formatCurrency } from '../utils/formatters';
+import { logger } from '../utils/logger';
 
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
@@ -65,7 +66,7 @@ export default function QuickTransactionsScreen() {
       const qts = await getQuickTransactions(session.user.id);
       setData(qts);
     } catch (error) {
-      console.error('Load Quick Transactions Error:', error);
+      logger.error('Load Quick Transactions Error:', error);
     } finally {
       setLoading(false);
     }

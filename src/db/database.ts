@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { logger } from '../utils/logger';
 
 const DB_NAME = 'jayledger.db';
 
@@ -7,26 +8,26 @@ let dbInstance: SQLite.SQLiteDatabase | null = null;
 export const getDb = () => {
   try {
     if (!dbInstance) {
-      console.log('[DB] Opening database sync...');
+      logger.log('[DB] Opening database sync...');
       dbInstance = SQLite.openDatabaseSync(DB_NAME);
-      console.log('[DB] Database opened successfully.');
+      logger.log('[DB] Database opened successfully.');
     }
     return dbInstance;
   } catch (error) {
-    console.error('[DB] Failed to open database:', error);
+    logger.error('[DB] Failed to open database:', error);
     throw error;
   }
 };
 
 export const initDB = async () => {
   const db = getDb();
-  console.log('[DB] Starting initDB migrations...');
+  logger.log('[DB] Starting initDB migrations...');
 
   try {
-    console.log('[DB] Setting journal_mode = WAL...');
+    logger.log('[DB] Setting journal_mode = WAL...');
     await db.execAsync('PRAGMA journal_mode = WAL;');
 
-    console.log('[DB] Creating tables...');
+    logger.log('[DB] Creating tables...');
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY NOT NULL,
@@ -116,7 +117,7 @@ export const initDB = async () => {
       );
     `);
 
-    console.log('[DB] Running migrations...');
+    logger.log('[DB] Running migrations...');
     const coreTables = ['transactions', 'goals', 'budgets', 'categories', 'payees'];
     for (const table of coreTables) {
       try {
@@ -151,7 +152,7 @@ export const initDB = async () => {
       }
     }
 
-    console.log('[DB] Creating indexes...');
+    logger.log('[DB] Creating indexes...');
     try {
       await db.execAsync(`
         CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
@@ -163,12 +164,12 @@ export const initDB = async () => {
         CREATE INDEX IF NOT EXISTS idx_transactions_tid ON transactions(tid);
       `);
     } catch (e) {
-      console.warn('[DB] Index creation warning:', e);
+      logger.warn('[DB] Index creation warning:', e);
     }
 
-    console.log('[DB] initDB completed successfully.');
+    logger.log('[DB] initDB completed successfully.');
   } catch (error) {
-    console.error('[DB] initDB critical error:', error);
+    logger.error('[DB] initDB critical error:', error);
     throw error;
   }
 };

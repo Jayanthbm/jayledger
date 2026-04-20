@@ -34,6 +34,7 @@ import {
 // Modular Components
 import { CalendarGrid } from '../components/calendar/CalendarGrid';
 import { CalendarDaySummary } from '../components/calendar/CalendarDaySummary';
+import { logger } from '../utils/logger';
 
 export default function CalendarViewScreen() {
   const { colors } = useTheme();
@@ -71,7 +72,7 @@ export default function CalendarViewScreen() {
         const txs = await fetchTransactionsForDate(session.user.id, date);
         setData(txs);
       } catch (error) {
-        console.error('Error loading transactions for date:', error);
+        logger.error('Error loading transactions for date:', error);
       } finally {
         setLoading(false);
       }

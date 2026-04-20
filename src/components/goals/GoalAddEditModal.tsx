@@ -15,6 +15,8 @@ import { useTheme } from '../../store/ThemeContext';
 import { Goal } from '../../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { common } from '../../styles/common';
+import { validateGoal } from '../../utils/validators';
+import { useToast } from '../../store/ToastContext';
 
 interface GoalAddEditModalProps {
   visible: boolean;
@@ -32,6 +34,7 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
   onDeleteRequest,
 }) => {
   const { colors } = useTheme();
+  const { showToast } = useToast();
   const [name, setName] = useState('');
   const [logo, setLogo] = useState('');
   const [goalAmount, setGoalAmount] = useState('');
@@ -58,8 +61,20 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
   }, [visible, editingGoal]);
 
   const handleSave = async () => {
-    if (!name.trim()) return;
     Keyboard.dismiss();
+
+    const validation = validateGoal({
+      name: name.trim(),
+      targetAmount: goalAmount,
+      currentAmount: currentAmount,
+    });
+
+    if (!validation.valid) {
+      const firstErrorKey = Object.keys(validation.errors)[0];
+      showToast(validation.errors[firstErrorKey], 'error');
+      return;
+    }
+
     setIsSaving(true);
     await onSave({
       name: name.trim(),

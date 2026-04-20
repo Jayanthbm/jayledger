@@ -51,6 +51,7 @@ import { BudgetAddEditModal } from '../components/budgets/BudgetAddEditModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
+import { logger } from '../utils/logger';
 
 const currentYearNum = new Date().getFullYear();
 
@@ -146,7 +147,7 @@ export default function BudgetsScreen() {
         }
       }
     } catch (e) {
-      console.error('Load Budgets Error:', e);
+      logger.error('Load Budgets Error:', e);
     } finally {
       setLoading(false);
     }
@@ -162,7 +163,7 @@ export default function BudgetsScreen() {
       loadData();
       showToast('Budgets synced successfully', 'success');
     } catch (e) {
-      console.error('Manual sync error:', e);
+      logger.error('Manual sync error:', e);
       showToast('Sync failed', 'error');
     } finally {
       setIsSyncing(false);
@@ -254,7 +255,7 @@ export default function BudgetsScreen() {
       );
       setDrillDownData(transactions);
     } catch (e) {
-      console.error('Drill down error:', e);
+      logger.error('Drill down error:', e);
     } finally {
       setDrillDownLoading(false);
     }
@@ -364,7 +365,7 @@ export default function BudgetsScreen() {
           setShowAddEdit(false);
           loadData();
           handleBudgetSync(session.user.id).catch((err) =>
-            console.error('Auto-sync after budget save failed', err),
+            logger.error('Auto-sync after budget save failed', err),
           );
           showToast(`Budget ${editingBudget ? 'updated' : 'added'} successfully`, 'success');
         }}
@@ -377,7 +378,7 @@ export default function BudgetsScreen() {
           if (deleteConfirmId && session?.user?.id) {
             await deleteBudget(deleteConfirmId);
             handleBudgetSync(session.user.id).catch((err) =>
-              console.error('Auto-sync after budget deletion failed', err),
+              logger.error('Auto-sync after budget deletion failed', err),
             );
             setDeleteConfirmId(null);
             setShowAddEdit(false);

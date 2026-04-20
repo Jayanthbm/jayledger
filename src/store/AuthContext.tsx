@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import { Session } from '@supabase/supabase-js';
 import { runFullSync } from '../services/syncService';
+import { logger } from '../utils/logger';
 
 interface AuthContextProps {
   session: Session | null;
@@ -27,10 +28,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [loading]);
 
   useEffect(() => {
-    console.log('[Auth] Initializing session...');
+    logger.log('[Auth] Initializing session...');
     const timeout = setTimeout(() => {
       if (loadingRef.current) {
-        console.warn('[Auth] Session initialization timed out. Forcing loading false.');
+        logger.warn('[Auth] Session initialization timed out. Forcing loading false.');
         setLoading(false);
       }
     }, 7000);
@@ -39,25 +40,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .getSession()
       .then(({ data: { session } }) => {
         clearTimeout(timeout);
-        console.log('[Auth] Session fetched:', session?.user?.id ? 'Logged In' : 'Not Logged In');
+        logger.log('[Auth] Session fetched:', session?.user?.id ? 'Logged In' : 'Not Logged In');
         setSession(session);
         setLoading(false);
         if (session?.user?.id) {
-          console.log(
+          logger.log(
             '[Auth] User logged in, skipping boot sync to allow Dashboard to handle logic.',
           );
         }
       })
       .catch((err) => {
         clearTimeout(timeout);
-        console.error('[Auth] getSession error:', err);
+        logger.error('[Auth] getSession error:', err);
         setLoading(false);
       });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('[Auth] Auth state changed:', _event, session?.user?.id);
+      logger.log('[Auth] Auth state changed:', _event, session?.user?.id);
       setSession(session);
       setLoading(false);
     });

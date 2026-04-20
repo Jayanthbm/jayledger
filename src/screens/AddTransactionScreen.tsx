@@ -26,10 +26,12 @@ import { Category, Payee, Transaction } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { syncTransactions } from '../services/syncService';
 import { common } from '../styles/common';
+import { validateTransaction } from '../utils/validators';
 import { useTransactionDateTime } from '../hooks/useTransactionDateTime';
 import { TransactionFormFields } from '../components/transactions/TransactionFormFields';
 import { TransactionSelectorRow } from '../components/transactions/TransactionSelectorRow';
 import { ItemSelectorModal } from '../components/transactions/ItemSelectorModal';
+import { logger } from '../utils/logger';
 
 export default function AddTransactionScreen() {
   const { colors } = useTheme();
@@ -135,15 +137,20 @@ export default function AddTransactionScreen() {
   }, [type, editTx, categories, route.params]);
 
   const handleSave = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      showToast('Please enter a valid amount', 'error');
-      return;
-    }
-    if (!selectedCategory) {
-      showToast('Please select a category', 'error');
-      return;
-    }
     if (!session?.user?.id) return;
+
+    const validation = validateTransaction({
+      amount,
+      description,
+      categoryId: selectedCategory?.id || '',
+    });
+
+    if (!validation.valid || !selectedCategory) {
+      // Find the first error and display it
+      const firstErrorKey = Object.keys(validation.errors)[0];
+      showToast(firstErrorKey ? validation.errors[firstErrorKey] : 'Category is required', 'error');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -171,7 +178,7 @@ export default function AddTransactionScreen() {
 
       await insertOrUpdateTransaction(newTx, 1);
       syncTransactions(session.user.id, true).catch((err) =>
-        console.error('Background sync failed', err),
+        logger.error('Background sync failed', err),
       );
 
       DeviceEventEmitter.emit('module_refreshed', { module: 'Transactions' });
@@ -181,7 +188,7 @@ export default function AddTransactionScreen() {
       showToast('Transaction saved successfully', 'success');
       navigation.goBack();
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       showToast('Failed to save transaction', 'error');
     } finally {
       setSubmitting(false);

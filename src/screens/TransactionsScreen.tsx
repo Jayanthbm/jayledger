@@ -35,6 +35,7 @@ import { useTransactionFilters } from '../hooks/useTransactionFilters';
 import { useTransactionSync } from '../hooks/useTransactionSync';
 
 import { formatCurrency } from '../utils/formatters';
+import { logger } from '../utils/logger';
 
 export default function TransactionsScreen() {
   const { colors } = useTheme();
@@ -167,7 +168,7 @@ export default function TransactionsScreen() {
     if (!deleteConfirmTx || !session?.user?.id) return;
     await deleteTransactionAsync(deleteConfirmTx.id, session.user.id);
     syncTransactions(session.user.id, true).catch((err) =>
-      console.error('Auto-sync after deletion failed', err),
+      logger.error('Auto-sync after deletion failed', err),
     );
     setDeleteConfirmTx(null);
     loadData();
@@ -176,11 +177,6 @@ export default function TransactionsScreen() {
   const handleEditTransaction = (tx: Transaction) => {
     navigation.navigate('AddTransaction', { transaction: tx });
   };
-
-  useEffect(() => {
-    const timeout = setTimeout(loadData, 300);
-    return () => clearTimeout(timeout);
-  }, [loadData]);
 
   // Auto-scroll to top when data updates due to filter changes
   useEffect(() => {

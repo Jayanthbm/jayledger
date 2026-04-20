@@ -8,6 +8,8 @@ import { ProgressBar } from '../ProgressBar';
 
 import { formatCurrency } from '../../utils/formatters';
 
+import { cardStyles } from '../../styles/cardStyles';
+
 interface GoalCardProps {
   item: Goal;
   onPress: (goal: Goal) => void;
@@ -23,7 +25,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      style={[cardStyles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
       activeOpacity={0.7}
       onPress={() => onPress(item)}
     >
@@ -42,15 +44,15 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
         </View>
       </View>
 
-      <View style={styles.statsRow}>
-        <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Saved</Text>
-        <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Target</Text>
+      <View style={cardStyles.statsRow}>
+        <Text style={[cardStyles.amountLabel, { color: colors.textSecondary }]}>Saved</Text>
+        <Text style={[cardStyles.amountLabel, { color: colors.textSecondary }]}>Target</Text>
       </View>
-      <View style={styles.statsRow}>
-        <Text style={[styles.amountValue, { color: colors.success }]}>
+      <View style={cardStyles.statsRow}>
+        <Text style={[cardStyles.amountValue, { color: colors.success }]}>
           {formatCurrency(item.current_amount)}
         </Text>
-        <Text style={[styles.amountValue, { color: colors.text }]}>
+        <Text style={[cardStyles.amountValue, { color: colors.text }]}>
           {formatCurrency(item.goal_amount)}
         </Text>
       </View>
@@ -63,7 +65,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
         style={styles.progressWrapperSpaced}
       />
 
-      <View style={styles.statsRow}>
+      <View style={cardStyles.statsRow}>
         <Text style={[styles.percentLabel, { color: colors.primary }]}>
           {progressDisplay}% Complete
         </Text>
@@ -76,12 +78,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -111,21 +107,6 @@ const styles = StyleSheet.create({
   progressWrapperSpaced: {
     marginTop: 12,
     marginBottom: 8,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  amountLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  amountValue: {
-    fontSize: 15,
-    fontWeight: 'bold',
   },
   percentLabel: {
     fontSize: 13,

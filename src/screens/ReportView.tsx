@@ -30,6 +30,7 @@ import { ReportConfigModal } from '../components/reports/ReportConfigModal';
 import { SearchBar } from '../components/SearchBar';
 import { common } from '../styles/common';
 import { RootStackParamList } from '../navigation/navigationTypes';
+import { logger } from '../utils/logger';
 
 const { width } = Dimensions.get('window');
 const currentYear = new Date().getFullYear();
@@ -114,7 +115,7 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
       const result = await fetchReportData(session.user.id, reportType, type, monthStr, year);
       setData(result);
     } catch (error) {
-      console.error('Report Load Error:', error);
+      logger.error('Report Load Error:', error);
     } finally {
       setLoading(false);
     }
@@ -136,7 +137,7 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
       setDrillDownTitle(item.category_name || item.payee_name || item.name || 'Transactions');
       setShowDrillDown(true);
     } catch (e) {
-      console.error('Drilldown error:', e);
+      logger.error('Drilldown error:', e);
     } finally {
       setLoading(false);
     }
@@ -164,7 +165,7 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
           const d = await getMinTransactionDate(session.user.id);
           if (d) setMinDate(new Date(d));
         } catch (error) {
-          console.error('Error fetching min transaction date:', error);
+          logger.error('Error fetching min transaction date:', error);
         }
       }
     };

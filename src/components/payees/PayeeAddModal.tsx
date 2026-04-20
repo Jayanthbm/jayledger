@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { common } from '../../styles/common';
+import { logger } from '../../utils/logger';
 
 interface PayeeAddModalProps {
   visible: boolean;
@@ -39,7 +40,7 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
       setLogo('');
       onClose();
     } catch (error) {
-      console.error('Add payee error:', error);
+      logger.error('Add payee error:', error);
     } finally {
       setIsSaving(false);
     }

@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { resetAppData } from '../db/queries';
 import { Session } from '@supabase/supabase-js';
+import { logger } from '../utils/logger';
 
 export const useAppSettings = (
   session: Session | null,
@@ -25,7 +26,7 @@ export const useAppSettings = (
       const last = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
       if (last) setLastSynced(parseInt(last, 10));
     } catch (e) {
-      console.warn('Error loading settings data', e);
+      logger.warn('Error loading settings data', e);
     }
   }, [session]);
 
@@ -44,7 +45,7 @@ export const useAppSettings = (
       const last = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
       if (last) setLastSynced(parseInt(last, 10));
     } catch (e) {
-      console.warn('Manual sync error', e);
+      logger.warn('Manual sync error', e);
     } finally {
       setIsSyncing(false);
     }
@@ -77,7 +78,7 @@ export const useAppSettings = (
           routes: [{ name: 'Main' }],
         });
       } catch (e) {
-        console.error('Reset error', e);
+        logger.error('Reset error', e);
       } finally {
         setIsResetting(false);
       }

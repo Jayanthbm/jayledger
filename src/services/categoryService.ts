@@ -3,6 +3,7 @@ import { getCategories, insertCategory } from '../db/queries';
 import { syncCategories } from '../services/syncService';
 import { Category } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
+import { logger } from '../utils/logger';
 
 const VIEW_MODE_KEY = (userId: string) => `@category_view_mode_${userId}`;
 
@@ -39,7 +40,7 @@ export const addCategory = async (
   await insertCategory(newCategory);
 
   // Background sync
-  syncCategories(userId).catch((err) => console.error('Category sync failed', err));
+  syncCategories(userId).catch((err) => logger.error('Category sync failed', err));
 
   return newCategory;
 };

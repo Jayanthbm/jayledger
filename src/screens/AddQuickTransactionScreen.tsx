@@ -31,6 +31,8 @@ import { RootStackParamList } from '../navigation/navigationTypes';
 import { Category, MaterialIconName, Payee, QuickTransaction } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { common } from '../styles/common';
+import { validateAmount } from '../utils/validators';
+import { logger } from '../utils/logger';
 
 const formatIconName = (name: string) => {
   if (!name) return 'category';
@@ -111,6 +113,14 @@ export default function AddQuickTransactionScreen() {
     }
     if (!session?.user?.id) return;
 
+    if (amount) {
+      const amountValidation = validateAmount(amount);
+      if (!amountValidation.valid) {
+        showToast(amountValidation.errors.amount || 'Invalid amount', 'error');
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const qt: QuickTransaction = {
@@ -136,7 +146,7 @@ export default function AddQuickTransactionScreen() {
 
       navigation.goBack();
     } catch (error) {
-      console.error('Save Quick Transaction Error:', error);
+      logger.error('Save Quick Transaction Error:', error);
       showToast('Failed to save template', 'error');
     } finally {
       setSubmitting(false);

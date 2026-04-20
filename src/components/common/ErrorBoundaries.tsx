@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemeColors } from '../../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
+import { logger } from '../../utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -29,7 +30,7 @@ export class DataErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[DataErrorBoundary] Uncaught error:', error, errorInfo);
+    logger.error('[DataErrorBoundary] Uncaught error:', error, errorInfo);
   }
 
   private handleReset = () => {

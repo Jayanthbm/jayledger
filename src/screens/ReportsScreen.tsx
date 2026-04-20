@@ -9,6 +9,7 @@ import { syncTransactions } from '../services/syncService';
 import { ActivityIndicator } from 'react-native';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
+import { logger } from '../utils/logger';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2;
@@ -91,7 +92,7 @@ export default function ReportsScreen() {
         setViewMode(savedMode);
       }
     } catch (e) {
-      console.error('Error loading view mode', e);
+      logger.error('Error loading view mode', e);
     }
   }, []);
 
@@ -101,7 +102,7 @@ export default function ReportsScreen() {
     try {
       await syncTransactions(session.user.id, true);
     } catch (e) {
-      console.error('Manual sync error:', e);
+      logger.error('Manual sync error:', e);
     } finally {
       setIsSyncing(false);
     }
@@ -149,7 +150,7 @@ export default function ReportsScreen() {
     try {
       await AsyncStorage.setItem('reports_view_mode', newMode);
     } catch (e) {
-      console.error('Error saving view mode', e);
+      logger.error('Error saving view mode', e);
     }
   };
 

@@ -18,6 +18,7 @@ export interface BudgetCardProps {
 
 import { ProgressBar } from './ProgressBar';
 import { formatCurrency } from '../utils/formatters';
+import { cardStyles } from '../styles/cardStyles';
 
 export const BudgetCard = ({
   name,
@@ -58,7 +59,12 @@ export const BudgetCard = ({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      style={[
+        cardStyles.container,
+        cardStyles.main,
+        { backgroundColor: colors.card, borderColor: colors.border },
+        styles.cardMargin,
+      ]}
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.7}
@@ -136,17 +142,9 @@ export const BudgetCard = ({
 };
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    padding: 20,
+  cardMargin: {
     marginHorizontal: 16,
     marginVertical: 10,
-    borderWidth: 1,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
   },
   header: {
     marginBottom: 20,

@@ -6,6 +6,8 @@ import { useAuth } from '../../store/AuthContext';
 import { Budget, Category } from '../../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { format } from 'date-fns';
+import { validateBudget } from '../../utils/validators';
+import { useToast } from '../../store/ToastContext';
 
 interface BudgetForm {
   name: string;
@@ -34,6 +36,7 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
 }) => {
   const { colors } = useTheme();
   const { session } = useAuth();
+  const { showToast } = useToast();
   const [form, setForm] = useState<BudgetForm>({
     name: '',
     amount: '',
@@ -76,6 +79,18 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
   }, [visible, editingBudget]);
 
   const handleSave = () => {
+    const validation = validateBudget({
+      name: form.name,
+      amount: form.amount,
+      categories: form.categories,
+    });
+
+    if (!validation.valid) {
+      const firstErrorKey = Object.keys(validation.errors)[0];
+      showToast(validation.errors[firstErrorKey], 'error');
+      return;
+    }
+
     const budgetData = {
       user_id: session?.user?.id || '',
       name: form.name,

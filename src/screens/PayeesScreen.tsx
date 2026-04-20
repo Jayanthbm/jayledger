@@ -21,6 +21,7 @@ import { PayeeAddModal } from '../components/payees/PayeeAddModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
+import { logger } from '../utils/logger';
 
 export default function PayeesScreen() {
   const { colors } = useTheme();
@@ -53,7 +54,7 @@ export default function PayeesScreen() {
       setPayees(fetchedPayees);
       setViewMode(savedMode);
     } catch (err) {
-      console.error('[Payees] loadData error:', err);
+      logger.error('[Payees] loadData error:', err);
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,7 @@ export default function PayeesScreen() {
       setPayees(updatedPayees);
       showToast('Payees synced successfully', 'success');
     } catch (e) {
-      console.error('Sync error:', e);
+      logger.error('Sync error:', e);
     } finally {
       setSyncing(false);
     }
