@@ -1,138 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Switch,
-} from 'react-native';
-import * as LocalAuthentication from 'expo-local-authentication';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { useToast } from '../store/ToastContext';
-import { scheduleReminder } from '../services/notificationService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { runFullSync } from '../services/syncService';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
-import { resetAppData } from '../db/queries';
 import { getRelativeTime } from '../utils/dateUtils';
 import { BottomSheet } from '../components/BottomSheet';
+import { ConfirmationSheet } from '../components/common/ConfirmationSheet';
 import { AppNavigation } from '../navigation/navigationTypes';
-
-const SettingRow = ({
-  icon,
-  title,
-  value,
-  onPress,
-  showArrow = true,
-  color,
-  isLoading,
-}: {
-  icon: keyof typeof Icon.glyphMap;
-  title: string;
-  value?: string;
-  onPress?: () => void;
-  showArrow?: boolean;
-  color?: string;
-  isLoading?: boolean;
-}) => {
-  const { colors } = useTheme();
-  return (
-    <TouchableOpacity
-      style={styles.settingRow}
-      onPress={onPress}
-      activeOpacity={0.6}
-      disabled={!onPress || isLoading}
-    >
-      <View style={[styles.iconBox, { backgroundColor: (color || colors.primary) + '15' }]}>
-        <Icon name={icon} size={22} color={color || colors.primary} />
-      </View>
-      <View style={styles.settingInfo}>
-        <Text style={[styles.settingTitle, { color: colors.text }]}>{title}</Text>
-        {value && (
-          <Text style={[styles.settingValue, { color: colors.textSecondary }]}>{value}</Text>
-        )}
-      </View>
-      {isLoading ? (
-        <ActivityIndicator size="small" color={colors.primary} style={styles.loader} />
-      ) : (
-        showArrow && <Icon name="chevron-right" size={24} color={colors.textSecondary + '60'} />
-      )}
-    </TouchableOpacity>
-  );
-};
+import { SettingRow } from '../components/common/SettingRow';
+import { useBiometrics } from '../hooks/useBiometrics';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const { session, signOut } = useAuth();
   const user = session?.user;
   const navigation = useNavigation<AppNavigation>();
-  const { showToast } = useToast();
 
-  const [notificationPref, setNotificationPref] = useState('None');
+  const {
+    useBiometrics: biometricsEnabled,
+    loadBiometricsPref,
+    handleBiometricToggle,
+  } = useBiometrics();
+  const {
+    notificationPref,
+    isSyncing,
+    isResetting,
+    lastSynced,
+    loadSettingsData,
+    handleNotificationChange,
+    handleManualSync,
+    handleResetData,
+  } = useAppSettings(session, navigation);
+
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [resetModalVisible, setResetModalVisible] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  const [lastSynced, setLastSynced] = useState<number | null>(null);
-  const [useBiometrics, setUseBiometrics] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      if (!user?.id) return;
-      try {
-        const pref = await AsyncStorage.getItem('notification_pref');
-        if (pref) setNotificationPref(pref);
-
-        const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
-        if (last) setLastSynced(parseInt(last, 10));
-
-        const biometrics = await AsyncStorage.getItem('use_biometrics');
-        setUseBiometrics(biometrics === 'true');
-      } catch (e) {
-        console.warn('Error loading settings', e);
-      }
-    };
-    loadData();
-  }, [user?.id]);
-
-  const handleBiometricToggle = async (value: boolean) => {
-    if (value) {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-      if (!hasHardware || !isEnrolled) {
-        showToast(
-          'Biometrics Unavailable: Your device does not support biometrics or no fingerprints/faces enrolled.',
-          'error',
-        );
-        return;
-      }
-
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Verify biometrics to enable app lock',
-      });
-
-      if (result.success) {
-        setUseBiometrics(true);
-        await AsyncStorage.setItem('use_biometrics', 'true');
-      }
-    } else {
-      setUseBiometrics(false);
-      await AsyncStorage.setItem('use_biometrics', 'false');
-    }
-  };
-
-  const handleNotificationChange = async (val: string) => {
-    setNotificationPref(val);
-    await AsyncStorage.setItem('notification_pref', val);
-    await scheduleReminder(val);
-    setReminderModalVisible(false);
-  };
+    loadSettingsData();
+    loadBiometricsPref();
+  }, [loadSettingsData, loadBiometricsPref]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -143,52 +52,6 @@ export default function SettingsScreen() {
   const setAppTheme = (mode: 'Light' | 'Dark') => {
     if (mode === 'Light' && isDark) toggleTheme();
     if (mode === 'Dark' && !isDark) toggleTheme();
-  };
-
-  const handleManualSync = async () => {
-    if (!user?.id) return;
-    setIsSyncing(true);
-    try {
-      await runFullSync(user.id);
-      const last = await AsyncStorage.getItem(`@last_sync_master_${user.id}`);
-      if (last) setLastSynced(parseInt(last, 10));
-    } catch (e) {
-      console.warn('Manual sync error', e);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleResetData = async () => {
-    if (!user?.id) return;
-    setIsResetting(true);
-    try {
-      await resetAppData(user.id);
-      const keysToClear = [
-        'notification_pref',
-        `@last_sync_master_${user.id}`,
-        `@last_sync_transactions_${user.id}`,
-        `@last_sync_budgets_${user.id}`,
-        `@last_sync_goals_${user.id}`,
-        `@last_sync_categories_${user.id}`,
-        `@last_sync_payees_${user.id}`,
-        `@initial_budget_sync_checked_${user.id}`,
-        `@initial_goals_sync_checked_${user.id}`,
-        `@initial_categories_sync_checked_${user.id}`,
-        `@initial_payees_sync_checked_${user.id}`,
-        'reports_view_mode',
-      ];
-      await AsyncStorage.multiRemove(keysToClear);
-      setResetModalVisible(false);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
-    } catch (e) {
-      console.error('Reset error', e);
-    } finally {
-      setIsResetting(false);
-    }
   };
 
   return (
@@ -273,10 +136,10 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <Switch
-                value={useBiometrics}
+                value={biometricsEnabled}
                 onValueChange={handleBiometricToggle}
                 trackColor={{ false: colors.border, true: colors.primary + '80' }}
-                thumbColor={useBiometrics ? colors.primary : '#f4f3f4'}
+                thumbColor={biometricsEnabled ? colors.primary : '#f4f3f4'}
               />
             </View>
           </View>
@@ -370,7 +233,9 @@ export default function SettingsScreen() {
             <TouchableOpacity
               key={item.label}
               style={[styles.radioRow, { borderBottomColor: colors.border }]}
-              onPress={() => handleNotificationChange(item.label)}
+              onPress={() =>
+                handleNotificationChange(item.label, () => setReminderModalVisible(false))
+              }
             >
               <View style={styles.radioContent}>
                 <Icon
@@ -423,18 +288,12 @@ export default function SettingsScreen() {
         onClose={() => setLogoutModalVisible(false)}
         title="Sign Out"
       >
-        <View>
-          <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>
-            Are you sure you want to securely log out? Local data remains safe.
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.sheetButton, styles.sheetButtonDanger]}
-            onPress={signOut}
-          >
-            <Text style={styles.sheetButtonText}>Yes, Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+        <ConfirmationSheet
+          message="Are you sure you want to securely log out? Local data remains safe."
+          confirmLabel="Yes, Sign Out"
+          onConfirm={signOut}
+          isDanger={true}
+        />
       </BottomSheet>
 
       {/* Reset Confirmation Bottom Sheet */}
@@ -443,24 +302,13 @@ export default function SettingsScreen() {
         onClose={() => setResetModalVisible(false)}
         title="Reset Data"
       >
-        <View>
-          <Text style={[styles.sheetMessage, { color: colors.textSecondary }]}>
-            This will permanently delete all your Transactions, Budgets, Goals, and Categories. This
-            action cannot be undone. Account info remains safe.
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.sheetButton, styles.sheetButtonDanger]}
-            onPress={handleResetData}
-            disabled={isResetting}
-          >
-            {isResetting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.sheetButtonText}>Yes, Reset Everything</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <ConfirmationSheet
+          message="This will permanently delete all your Transactions, Budgets, Goals, and Categories. This action cannot be undone. Account info remains safe."
+          confirmLabel="Yes, Reset Everything"
+          onConfirm={() => handleResetData(() => setResetModalVisible(false))}
+          isLoading={isResetting}
+          isDanger={true}
+        />
       </BottomSheet>
     </View>
   );
@@ -535,19 +383,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   radioInner: { width: 12, height: 12, borderRadius: 6 },
-
-  sheetMessage: {
-    fontSize: 16,
-    marginBottom: 32,
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
-  },
-  sheetButton: { padding: 18, borderRadius: 16, alignItems: 'center', marginBottom: 12 },
-  sheetButtonDanger: { backgroundColor: '#ef4444' },
-  loader: {
-    marginRight: 4,
-  },
   reminderSheetContent: {
     marginTop: 10,
   },
@@ -563,5 +398,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   themeOptionActive: { backgroundColor: '#374151' },
-  sheetButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

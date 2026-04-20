@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  FlatList,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
@@ -24,21 +22,14 @@ import { format } from 'date-fns';
 import { getCategories, getPayees, insertOrUpdateTransaction } from '../db/queries';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { SearchBar } from '../components/SearchBar';
-import { Category, MaterialIconName, Payee, Transaction } from '../models/types';
+import { Category, Payee, Transaction } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { syncTransactions } from '../services/syncService';
 import { common } from '../styles/common';
-
-const formatIconName = (name: string) => {
-  if (!name) return 'category';
-  let formatted = name.trim();
-  if (formatted.startsWith('Md')) {
-    formatted = formatted.substring(2);
-    formatted = formatted.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-  }
-  return formatted;
-};
+import { useTransactionDateTime } from '../hooks/useTransactionDateTime';
+import { TransactionFormFields } from '../components/transactions/TransactionFormFields';
+import { TransactionSelectorRow } from '../components/transactions/TransactionSelectorRow';
+import { ItemSelectorModal } from '../components/transactions/ItemSelectorModal';
 
 export default function AddTransactionScreen() {
   const { colors } = useTheme();
@@ -53,9 +44,15 @@ export default function AddTransactionScreen() {
   const [type, setType] = useState<'Expense' | 'Income'>(
     editTx ? (editTx.type as 'Expense' | 'Income') : 'Expense',
   );
-  const [date, setDate] = useState(editTx ? new Date(editTx.transaction_timestamp) : new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const {
+    date,
+    showDatePicker,
+    setShowDatePicker,
+    handleDateChange,
+    showTimePicker,
+    setShowTimePicker,
+    handleTimeChange,
+  } = useTransactionDateTime(editTx ? new Date(editTx.transaction_timestamp) : new Date());
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPayee, setSelectedPayee] = useState<Payee | null>(null);
@@ -191,106 +188,6 @@ export default function AddTransactionScreen() {
     }
   };
 
-  const renderModal = (modalType: 'Category' | 'Payee') => {
-    const rawData = modalType === 'Category' ? categories.filter((c) => c.type === type) : payees;
-
-    // Add "None" option for Payees
-    const displayData =
-      modalType === 'Payee'
-        ? ([{ id: 'none', name: 'None' }, ...rawData] as (Category | Payee)[])
-        : rawData;
-
-    const filteredData = displayData.filter((item) =>
-      item.name.toLowerCase().includes(modalSearch.toLowerCase()),
-    );
-    const iconColor = type === 'Income' ? colors.success : colors.danger;
-    const iconBg = type === 'Income' ? colors.success + '15' : colors.danger + '15';
-
-    return (
-      <BottomSheet
-        visible={showModal === modalType}
-        onClose={() => setShowModal(null)}
-        title={`Select ${modalType}`}
-      >
-        <View style={styles.modalInner}>
-          {/* Search Bar */}
-          <View style={styles.modalSearchContainer}>
-            <SearchBar
-              value={modalSearch}
-              onChangeText={setModalSearch}
-              placeholder={`Search ${modalType.toLowerCase()}...`}
-              size="medium"
-              onClear={() => setModalSearch('')}
-            />
-          </View>
-
-          <FlatList
-            data={filteredData}
-            keyExtractor={(item) => item.id}
-            numColumns={4}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.modalListContent}
-            renderItem={({ item }: { item: Category | Payee }) => {
-              const isSelected =
-                (modalType === 'Category'
-                  ? (selectedCategory as Category)?.id
-                  : (selectedPayee as Payee)?.id) === item.id;
-              return (
-                <TouchableOpacity
-                  style={styles.gridItem}
-                  onPress={() => {
-                    if (modalType === 'Category') {
-                      setSelectedCategory(item as Category);
-                    } else {
-                      setSelectedPayee(item.id === 'none' ? null : (item as Payee));
-                    }
-                    setShowModal(null);
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.gridIconBox,
-                      {
-                        backgroundColor: isSelected ? iconColor : iconBg,
-                        borderColor: isSelected ? iconColor : colors.border,
-                      },
-                    ]}
-                  >
-                    <Icon
-                      name={
-                        formatIconName(
-                          (item as Category).app_icon ||
-                            (modalType === 'Category' ? 'category' : 'person'),
-                        ) as MaterialIconName
-                      }
-                      size={24}
-                      color={isSelected ? 'white' : iconColor}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.gridLabel,
-                      { color: isSelected ? colors.primary : colors.textSecondary },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            }}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No {modalType.toLowerCase()} found</Text>
-              </View>
-            }
-            style={styles.modalList}
-          />
-        </View>
-      </BottomSheet>
-    );
-  };
-
   const currentIconColor = type === 'Income' ? colors.success : colors.danger;
   const currentIconBg = type === 'Income' ? colors.success + '20' : colors.danger + '20';
 
@@ -353,88 +250,25 @@ export default function AddTransactionScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Amount & Description Row */}
-              <View
-                style={[
-                  styles.mainFormCard,
-                  { backgroundColor: colors.background, borderColor: colors.border },
-                ]}
-              >
-                <View style={styles.amountRow}>
-                  <Text style={[styles.currencySymbol, { color: currentIconColor }]}>₹</Text>
-                  <TextInput
-                    style={[styles.amountInput, { color: currentIconColor }]}
-                    placeholder="0"
-                    placeholderTextColor={colors.border}
-                    keyboardType="decimal-pad"
-                    value={amount}
-                    onChangeText={setAmount}
-                    autoFocus={!editTx}
-                  />
-                </View>
+              <TransactionFormFields
+                amount={amount}
+                setAmount={setAmount}
+                description={description}
+                setDescription={setDescription}
+                iconColor={currentIconColor}
+                colors={colors}
+                autoFocus={!editTx}
+              />
 
-                <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-                <TextInput
-                  style={[styles.descInput, { color: colors.text }]}
-                  placeholder="Add a note..."
-                  placeholderTextColor={colors.textSecondary + '70'}
-                  value={description}
-                  onChangeText={setDescription}
-                  maxLength={255}
-                />
-              </View>
-
-              {/* Selector Row */}
-              <View style={styles.selectorRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.selectorBtn,
-                    { backgroundColor: colors.background, borderColor: colors.border },
-                  ]}
-                  onPress={() => setShowModal('Payee')}
-                >
-                  <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
-                    <Icon name="person-outline" size={18} color={colors.textSecondary} />
-                  </View>
-                  <View style={styles.flex1}>
-                    <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>
-                      Payee
-                    </Text>
-                    <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
-                      {selectedPayee?.name || 'Select'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.selectorBtn,
-                    { backgroundColor: colors.background, borderColor: colors.border },
-                  ]}
-                  onPress={() => setShowModal('Category')}
-                >
-                  <View style={[styles.selectorIconBg, { backgroundColor: currentIconBg }]}>
-                    <Icon
-                      name={
-                        formatIconName(
-                          selectedCategory?.app_icon || selectedCategory?.icon || 'grid-view',
-                        ) as MaterialIconName
-                      }
-                      size={18}
-                      color={currentIconColor}
-                    />
-                  </View>
-                  <View style={styles.flex1}>
-                    <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>
-                      Category
-                    </Text>
-                    <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
-                      {selectedCategory?.name || 'Select'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
+              <TransactionSelectorRow
+                selectedPayee={selectedPayee}
+                selectedCategory={selectedCategory}
+                onPressPayee={() => setShowModal('Payee')}
+                onPressCategory={() => setShowModal('Category')}
+                colors={colors}
+                currentIconBg={currentIconBg}
+                currentIconColor={currentIconColor}
+              />
             </ScrollView>
 
             {/* Save Button */}
@@ -460,10 +294,7 @@ export default function AddTransactionScreen() {
                 value={date}
                 mode="date"
                 display="default"
-                onChange={(_, d) => {
-                  setShowDatePicker(false);
-                  if (d) setDate(d);
-                }}
+                onChange={handleDateChange}
               />
             )}
             {showTimePicker && (
@@ -471,15 +302,38 @@ export default function AddTransactionScreen() {
                 value={date}
                 mode="time"
                 display="default"
-                onChange={(_, t) => {
-                  setShowTimePicker(false);
-                  if (t) setDate(t);
-                }}
+                onChange={handleTimeChange}
               />
             )}
 
-            {renderModal('Category')}
-            {renderModal('Payee')}
+            <ItemSelectorModal
+              visible={showModal === 'Category'}
+              onClose={() => setShowModal(null)}
+              type="Category"
+              data={categories.filter((c) => c.type === type)}
+              searchQuery={modalSearch}
+              onSearchChange={setModalSearch}
+              selectedItemId={selectedCategory?.id}
+              onSelect={(item) => {
+                setSelectedCategory(item as Category);
+                setShowModal(null);
+              }}
+              transactionType={type}
+            />
+            <ItemSelectorModal
+              visible={showModal === 'Payee'}
+              onClose={() => setShowModal(null)}
+              type="Payee"
+              data={[{ id: 'none', name: 'None' }, ...payees] as (Category | Payee)[]}
+              searchQuery={modalSearch}
+              onSearchChange={setModalSearch}
+              selectedItemId={selectedPayee?.id}
+              onSelect={(item) => {
+                setSelectedPayee(item.id === 'none' ? null : (item as Payee));
+                setShowModal(null);
+              }}
+              transactionType={type}
+            />
           </View>
         </TouchableWithoutFeedback>
       </BottomSheet>
@@ -490,34 +344,7 @@ export default function AddTransactionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-  flex1: { flex: 1 },
-  modalInner: { maxHeight: 500 },
-  modalSearchContainer: { paddingBottom: 16 },
-  modalListContent: { paddingBottom: 40, paddingHorizontal: 10 },
-  modalList: { maxHeight: 400 },
-  emptyContainer: { alignItems: 'center', marginTop: 40 },
-  emptyText: { color: '#666' },
   submitting: { opacity: 0.7 },
-  gridItem: {
-    flex: 1,
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 4,
-  },
-  gridIconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    borderWidth: 1,
-  },
-  gridLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
   dateTimeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -534,68 +361,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dateTimeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  mainFormCard: {
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 20,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  currencySymbol: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginRight: 8,
-  },
-  amountInput: {
-    fontSize: 36,
-    fontWeight: '700',
-    flex: 1,
-    padding: 0,
-  },
-  divider: {
-    height: 1,
-    width: '100%',
-    marginBottom: 16,
-  },
-  descInput: {
-    fontSize: 16,
-    padding: 0,
-  },
-  selectorRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-  selectorBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 10,
-  },
-  selectorIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectorLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  selectorValue: {
     fontSize: 14,
     fontWeight: '600',
   },

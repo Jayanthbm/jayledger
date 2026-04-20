@@ -218,7 +218,7 @@ export default function CategoriesScreen() {
       </View>
 
       {filteredData.length === 0 ? (
-        <View style={common.emptyCenterPaddedMt60}>
+        <View style={common.emptyCenterPadded}>
           <MaterialIcons name="storefront" size={64} color={colors.border} />
           <Text style={[common.emptyTitle20Bold, { color: colors.textSecondary }]}>
             {searchQuery ? 'No Categories Found' : `No ${activeTab} Categories`}

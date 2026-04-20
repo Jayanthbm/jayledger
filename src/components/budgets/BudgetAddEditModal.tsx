@@ -6,7 +6,6 @@ import { useAuth } from '../../store/AuthContext';
 import { Budget, Category } from '../../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { format } from 'date-fns';
-import { common } from '../../styles/common';
 
 interface BudgetForm {
   name: string;
@@ -170,7 +169,7 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
         >
           <Text style={styles.saveBtnText}>Save Budget</Text>
         </TouchableOpacity>
-        <View style={common.h40} />
+        <View style={styles.bottomSpacer} />
       </View>
     </BottomSheet>
   );
@@ -229,5 +228,8 @@ const styles = StyleSheet.create({
   catChipActive: {
     backgroundColor: '#3b82f6', // primary
     borderColor: '#3b82f6',
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });

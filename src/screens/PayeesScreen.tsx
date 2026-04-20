@@ -198,7 +198,7 @@ export default function PayeesScreen() {
       </View>
 
       {filteredPayees.length === 0 ? (
-        <View style={common.emptyCenterPaddedMt60}>
+        <View style={common.emptyCenterPadded}>
           <MaterialIcons name="storefront" size={64} color={colors.border} />
           <Text style={[common.emptyTitle20Bold, { color: colors.textSecondary }]}>
             {searchQuery ? 'No Payees Found' : 'No Payees Yet'}

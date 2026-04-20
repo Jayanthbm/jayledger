@@ -1,0 +1,66 @@
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Session } from '@supabase/supabase-js';
+import { syncTransactions, needsTransactionSync } from '../services/syncService';
+import { getRelativeTime } from '../utils/dateUtils';
+
+export const useTransactionSync = (session: Session | null, onSyncComplete: () => void) => {
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+
+  const performSync = useCallback(
+    async (manual: boolean) => {
+      if (!session?.user?.id || isSyncing || (isAutoSyncing && !manual)) return;
+
+      if (manual) setIsSyncing(true);
+      else setIsAutoSyncing(true);
+
+      try {
+        await syncTransactions(session.user.id, manual);
+        const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+        if (lastTxSync) setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+        if (manual) onSyncComplete(); // Only reload the list aggressively on manual sync
+      } catch (e) {
+        console.error(`${manual ? 'Manual' : 'Auto'} sync error:`, e);
+      } finally {
+        if (manual) setIsSyncing(false);
+        else setIsAutoSyncing(false);
+      }
+    },
+    [session, isSyncing, isAutoSyncing, onSyncComplete],
+  );
+
+  const handleManualSync = useCallback(() => performSync(true), [performSync]);
+
+  // Auto Sync Check on Focus
+  useFocusEffect(
+    useCallback(() => {
+      const autoSync = async () => {
+        if (session?.user?.id) {
+          const needsSync = await needsTransactionSync(session.user.id);
+          if (needsSync) {
+            performSync(false);
+          }
+
+          const lastTxSync = await AsyncStorage.getItem(
+            `@last_sync_transactions_${session.user.id}`,
+          );
+          if (lastTxSync) {
+            setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+          }
+        }
+      };
+
+      const timer = setTimeout(autoSync, 500);
+      return () => clearTimeout(timer);
+    }, [session, performSync]),
+  );
+
+  return {
+    isSyncing,
+    lastSyncTime,
+    handleManualSync,
+  };
+};

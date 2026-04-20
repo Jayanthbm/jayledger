@@ -328,7 +328,6 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
           setSortBy(b);
           setSortAsc(a);
         }}
-        colors={colors}
       />
 
       <ReportDrillDownModal
