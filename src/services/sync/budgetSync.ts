@@ -21,6 +21,7 @@ export const pushLocalBudgets = async (userId: string) => {
     categories: string;
     user_id: string;
     sync_status: number;
+    deleted: number;
   }>(`SELECT * FROM budgets WHERE user_id = '${userId}' AND sync_status = 1`);
 
   if (unsyncedBudgets.length === 0) return;
@@ -28,7 +29,17 @@ export const pushLocalBudgets = async (userId: string) => {
   syncLog('Budgets', `Pushing ${unsyncedBudgets.length} unsynced budgets...`);
 
   for (const budget of unsyncedBudgets) {
-    const { sync_status: _sync, ...budgetToPush } = budget;
+    if (budget.deleted === 1) {
+      const { error } = await supabase.from(TABLES.BUDGETS).delete().eq('id', budget.id);
+      if (!error) {
+        await db.execAsync(`DELETE FROM budgets WHERE id = '${budget.id}'`);
+      } else {
+        console.error(`[Sync:Budgets] Error deleting budget ${budget.id}:`, error);
+      }
+      continue;
+    }
+
+    const { sync_status: _sync, deleted: _del, ...budgetToPush } = budget;
     const { error } = await supabase
       .from(TABLES.BUDGETS)
       .upsert([budgetToPush], { onConflict: 'id' });

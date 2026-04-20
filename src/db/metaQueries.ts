@@ -17,7 +17,7 @@ export const getPayees = async (userId: string) => {
   return db.getAllAsync<Payee>(`SELECT * FROM payees WHERE user_id = '${userId}' ORDER BY name`);
 };
 
-export const insertCategory = async (category: Category, syncStatus: number = 0) => {
+export const insertCategory = async (category: Category, syncStatus: number = 1) => {
   const db = getDb();
   const name = (category.name || '').replace(/'/g, "''");
   const icon = (category.icon || '').replace(/'/g, "''");
@@ -28,7 +28,7 @@ export const insertCategory = async (category: Category, syncStatus: number = 0)
   );
 };
 
-export const insertPayee = async (payee: Payee, syncStatus: number = 0) => {
+export const insertPayee = async (payee: Payee, syncStatus: number = 1) => {
   const db = getDb();
   const name = (payee.name || '').replace(/'/g, "''");
   const logo = (payee.logo || '').replace(/'/g, "''");
@@ -38,19 +38,21 @@ export const insertPayee = async (payee: Payee, syncStatus: number = 0) => {
   );
 };
 
-export const insertGoal = async (goal: Goal, syncStatus: number = 0) => {
+export const insertGoal = async (goal: Goal, syncStatus: number = 1) => {
   const db = getDb();
   const name = (goal.name || '').replace(/'/g, "''");
   const logo = (goal.logo || '').replace(/'/g, "''");
   await db.execAsync(
-    `INSERT OR REPLACE INTO goals (id, name, logo, goal_amount, current_amount, user_id, sync_status)
-     VALUES ('${goal.id}', '${name}', '${logo}', ${goal.goal_amount}, ${goal.current_amount}, '${goal.user_id}', ${syncStatus})`,
+    `INSERT OR REPLACE INTO goals (id, name, logo, goal_amount, current_amount, user_id, sync_status, deleted)
+     VALUES ('${goal.id}', '${name}', '${logo}', ${goal.goal_amount}, ${goal.current_amount}, '${goal.user_id}', ${syncStatus}, 0)`,
   );
 };
 
 export const deleteGoalAsync = async (id: string, userId: string) => {
   const db = getDb();
-  await db.execAsync(`DELETE FROM goals WHERE id = '${id}' AND user_id = '${userId}'`);
+  await db.execAsync(
+    `UPDATE goals SET deleted = 1, sync_status = 1 WHERE id = '${id}' AND user_id = '${userId}'`,
+  );
 };
 
 export const toggleCategoryLivingCost = async (categoryId: string, isLivingCost: boolean) => {

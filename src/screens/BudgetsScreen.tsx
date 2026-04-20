@@ -363,6 +363,9 @@ export default function BudgetsScreen() {
           else await addBudget(finalData);
           setShowAddEdit(false);
           loadData();
+          handleBudgetSync(session.user.id).catch((err) =>
+            console.error('Auto-sync after budget save failed', err),
+          );
           showToast(`Budget ${editingBudget ? 'updated' : 'added'} successfully`, 'success');
         }}
       />
@@ -371,8 +374,11 @@ export default function BudgetsScreen() {
         visible={!!deleteConfirmId}
         onClose={() => setDeleteConfirmId(null)}
         onConfirm={async () => {
-          if (deleteConfirmId) {
+          if (deleteConfirmId && session?.user?.id) {
             await deleteBudget(deleteConfirmId);
+            handleBudgetSync(session.user.id).catch((err) =>
+              console.error('Auto-sync after budget deletion failed', err),
+            );
             setDeleteConfirmId(null);
             setShowAddEdit(false);
             loadData();

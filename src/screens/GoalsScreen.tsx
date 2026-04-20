@@ -255,6 +255,9 @@ export default function GoalsScreen() {
           await insertGoal(newGoal);
           setIsModalOpen(false);
           loadData();
+          handleGoalSync(user.id).catch((err) =>
+            console.error('Auto-sync after goal save failed', err),
+          );
           showToast(`Goal ${editingGoal ? 'updated' : 'added'} successfully`, 'success');
         }}
       />
@@ -279,6 +282,9 @@ export default function GoalsScreen() {
           setIsDeleteModalOpen(false);
           setIsModalOpen(false);
           loadData();
+          handleGoalSync(user.id).catch((err) =>
+            console.error('Auto-sync after goal deletion failed', err),
+          );
           showToast('Goal deleted', 'success');
         }}
       />

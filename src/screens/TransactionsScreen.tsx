@@ -261,6 +261,9 @@ export default function TransactionsScreen() {
   const confirmDelete = async () => {
     if (!deleteConfirmTx || !session?.user?.id) return;
     await deleteTransactionAsync(deleteConfirmTx.id, session.user.id);
+    syncTransactions(session.user.id, true).catch((err) =>
+      console.error('Auto-sync after deletion failed', err),
+    );
     setDeleteConfirmTx(null);
     loadData();
   };

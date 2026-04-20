@@ -17,14 +17,14 @@ export const addBudget = async (budget: Omit<Budget, 'id'>) => {
   const id = Math.random().toString(36).substr(2, 9);
   await db.execAsync(
     `INSERT INTO budgets (id, user_id, name, amount, categories, interval, logo, start_date, deleted, sync_status)
-         VALUES ('${id}', '${budget.user_id}', '${budget.name.replace(/'/g, "''")}', ${budget.amount}, '${budget.categories}', '${budget.interval}', '${budget.logo}', '${budget.start_date}', 0, 0)`,
+         VALUES ('${id}', '${budget.user_id}', '${budget.name.replace(/'/g, "''")}', ${budget.amount}, '${budget.categories}', '${budget.interval}', '${budget.logo}', '${budget.start_date}', 0, 1)`,
   );
   return id;
 };
 
 export const updateBudget = async (id: string, budget: Partial<Budget>) => {
   const db = getDb();
-  let query = `UPDATE budgets SET sync_status = 0`;
+  let query = `UPDATE budgets SET sync_status = 1`;
   if (budget.name) query += `, name = '${budget.name.replace(/'/g, "''")}'`;
   if (budget.amount !== undefined) query += `, amount = ${budget.amount}`;
   if (budget.categories) query += `, categories = '${budget.categories}'`;
@@ -37,7 +37,7 @@ export const updateBudget = async (id: string, budget: Partial<Budget>) => {
 
 export const deleteBudget = async (id: string) => {
   const db = getDb();
-  await db.execAsync(`UPDATE budgets SET deleted = 1, sync_status = 0 WHERE id = '${id}'`);
+  await db.execAsync(`UPDATE budgets SET deleted = 1, sync_status = 1 WHERE id = '${id}'`);
 };
 
 export const getBudgetSpending = async (

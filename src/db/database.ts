@@ -60,7 +60,8 @@ export const initDB = async () => {
         goal_amount REAL NOT NULL,
         current_amount REAL NOT NULL,
         user_id TEXT NOT NULL,
-        sync_status INTEGER DEFAULT 0
+        sync_status INTEGER DEFAULT 0,
+        deleted INTEGER DEFAULT 0
       );
     `);
 
@@ -139,6 +140,7 @@ export const initDB = async () => {
       'ALTER TABLE payees ADD COLUMN user_id TEXT;',
       'ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;',
       'ALTER TABLE budgets ADD COLUMN deleted INTEGER DEFAULT 0;',
+      'ALTER TABLE goals ADD COLUMN deleted INTEGER DEFAULT 0;',
     ];
 
     for (const m of migrations) {

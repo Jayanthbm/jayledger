@@ -21,7 +21,7 @@ export const getTransactionsByDateRange = async (
 export const getUnsyncedTransactions = async (userId: string) => {
   const db = getDb();
   return db.getAllAsync<Transaction>(
-    `SELECT * FROM transactions WHERE user_id = ? AND sync_status = 1 AND deleted = 0`,
+    `SELECT * FROM transactions WHERE user_id = ? AND sync_status = 1`,
     [userId],
   );
 };

@@ -19,6 +19,7 @@ export const pushLocalGoals = async (userId: string) => {
     current_amount: number;
     user_id: string;
     sync_status: number;
+    deleted: number;
   }>(`SELECT * FROM goals WHERE user_id = '${userId}' AND sync_status = 1`);
 
   if (unsyncedGoals.length === 0) return;
@@ -26,10 +27,24 @@ export const pushLocalGoals = async (userId: string) => {
   syncLog('Goals', `Pushing ${unsyncedGoals.length} unsynced goals...`);
 
   for (const goal of unsyncedGoals) {
-    const { sync_status: _sync, ...goalToPush } = goal;
-    const { error } = await supabase.from(TABLES.GOALS).upsert([goalToPush], { onConflict: 'id' });
-    if (!error) {
-      await db.execAsync(`UPDATE goals SET sync_status = 0 WHERE id = '${goal.id}'`);
+    let success = false;
+    if (goal.deleted === 1) {
+      const { error } = await supabase.from(TABLES.GOALS).delete().eq('id', goal.id);
+      if (!error) success = true;
+    } else {
+      const { sync_status: _sync, deleted: _del, ...goalToPush } = goal;
+      const { error } = await supabase
+        .from(TABLES.GOALS)
+        .upsert([goalToPush], { onConflict: 'id' });
+      if (!error) success = true;
+    }
+
+    if (success) {
+      if (goal.deleted === 1) {
+        await db.execAsync(`DELETE FROM goals WHERE id = '${goal.id}'`);
+      } else {
+        await db.execAsync(`UPDATE goals SET sync_status = 0 WHERE id = '${goal.id}'`);
+      }
     }
   }
 };
@@ -56,8 +71,8 @@ export const syncGoals = async (userId: string) => {
         const name = (item.name || '').replace(/'/g, "''");
         const logo = (item.logo || '').replace(/'/g, "''");
         await db.execAsync(
-          `INSERT OR REPLACE INTO goals (id, name, logo, goal_amount, current_amount, user_id, sync_status)
-           VALUES ('${item.id}', '${name}', '${logo}', ${item.goal_amount || 0}, ${item.current_amount || 0}, '${item.user_id}', 0)`,
+          `INSERT OR REPLACE INTO goals (id, name, logo, goal_amount, current_amount, user_id, sync_status, deleted)
+           VALUES ('${item.id}', '${name}', '${logo}', ${item.goal_amount || 0}, ${item.current_amount || 0}, '${item.user_id}', 0, 0)`,
         );
       }
     });
