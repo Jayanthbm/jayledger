@@ -17,8 +17,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TransactionCard } from '../components/TransactionCard';
 import { SearchBar } from '../components/SearchBar';
 import { deleteTransactionAsync, getQuickTransactions } from '../db/queries';
-import { FlashList, FlashListRef } from '@shopify/flash-list';
+import { FlashList as ShopifyFlashList, FlashListRef } from '@shopify/flash-list';
 import { FlashListItem } from '../utils/dataMappers';
+
+const FlashList: React.ElementType = ShopifyFlashList;
 import { TransactionFilterSelector } from '../components/transactions/TransactionFilterSelector';
 import { TransactionDeleteModal } from '../components/transactions/TransactionDeleteModal';
 import { TransactionQuickModal } from '../components/transactions/TransactionQuickModal';
@@ -33,6 +35,7 @@ import { SyncFeedback } from '../components/common/SyncFeedback';
 import { FeedbackPlaceholder } from '../components/common/FeedbackPlaceholder';
 import { useTransactionFilters } from '../hooks/useTransactionFilters';
 import { useTransactionSync } from '../hooks/useTransactionSync';
+import { useToast } from '../store/ToastContext';
 
 import { formatCurrency } from '../utils/formatters';
 import { logger } from '../utils/logger';
@@ -40,6 +43,7 @@ import { logger } from '../utils/logger';
 export default function TransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
+  const { showToast } = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<MainTabParamList, 'Transactions'>>();
   const params = route.params;
@@ -86,9 +90,6 @@ export default function TransactionsScreen() {
     loadFilterData,
     loadData,
     loadStatsBreakdown,
-    handleFilterCategory,
-    handleFilterPayee,
-    clearFilters,
   } = filters;
 
   const scrollToTop = useCallback(() => {
@@ -170,8 +171,13 @@ export default function TransactionsScreen() {
     syncTransactions(session.user.id, true).catch((err) =>
       logger.error('Auto-sync after deletion failed', err),
     );
+    // Refresh relevant modules
+    DeviceEventEmitter.emit('module_refreshed', { module: 'Dashboard' });
+    DeviceEventEmitter.emit('module_refreshed', { module: 'Budgets' });
+
     setDeleteConfirmTx(null);
     loadData();
+    showToast('Transaction deleted', 'success');
   };
 
   const handleEditTransaction = (tx: Transaction) => {
@@ -358,57 +364,56 @@ export default function TransactionsScreen() {
                   {totalFiltered >= 0 ? '+' : ''}
                   {formatCurrency(totalFiltered)}
                 </Text>
-                <Icon name="bar-chart" size={16} color={colors.primary} />
               </View>
+              <Icon name="arrow-forward-ios" size={12} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
         )}
 
         <FlashList
-          {...({
-            ref: listRef,
-            data: listData,
-            keyExtractor: (item: FlashListItem) =>
-              item.itemType === 'header' ? `header-${item.date}` : item.id,
-            estimatedItemSize: 100,
-            keyboardShouldPersistTaps: 'always',
-            renderItem: ({ item }: { item: FlashListItem }) => {
-              if (item.itemType === 'header') {
-                return (
-                  <TransactionSectionHeader date={item.date} total={item.total} colors={colors} />
-                );
-              }
+          ref={listRef}
+          data={listData}
+          renderItem={({ item }: { item: FlashListItem }) => {
+            if (item.itemType === 'header') {
               return (
-                <TransactionCard
-                  transaction={item}
-                  onEdit={handleEditTransaction}
-                  onDelete={handleDeleteTransaction}
-                  onFilterCategory={handleFilterCategory}
-                  onFilterPayee={handleFilterPayee}
-                />
+                <TransactionSectionHeader date={item.date} total={item.total} colors={colors} />
               );
-            },
-            getItemType: (item: FlashListItem) => item.itemType,
-            stickyHeaderIndices: stickyHeaderIndices,
-            ListEmptyComponent: loading ? (
-              <ActivityIndicator style={styles.emptyLoader} color={colors.primary} />
-            ) : search.length > 0 ? null : ( // When searching, we show the high-visibility caption instead of this centered placeholder
-              <FeedbackPlaceholder
-                title="No transactions found"
-                subtitle="Try adjusting your filters or search terms"
-                actionLabel="Clear All Filters"
-                onAction={clearFilters}
+            }
+            return (
+              <TransactionCard
+                transaction={item}
+                onEdit={handleEditTransaction}
+                onDelete={handleDeleteTransaction}
               />
-            ),
-            contentContainerStyle: styles.listContent,
-            /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-          } as any)}
+            );
+          }}
+          keyExtractor={(item: FlashListItem) =>
+            item.itemType === 'header' ? `h-${item.date}` : item.id
+          }
+          stickyHeaderIndices={stickyHeaderIndices}
+          getItemType={(item: FlashListItem) => item.itemType}
+          estimatedItemSize={70}
+          ListEmptyComponent={
+            !loading && search.length === 0 ? (
+              <FeedbackPlaceholder
+                icon="receipt"
+                title="No Transactions"
+                subtitle="Start tracking your finances by adding your first transaction!"
+                onAction={() => navigation.navigate('AddTransaction')}
+                actionLabel="Add Transaction"
+              />
+            ) : null
+          }
+          contentContainerStyle={styles.listContent}
         />
 
         <TransactionFilterSelector
           type="Category"
           visible={showFilterModal === 'Category'}
-          onClose={() => setShowFilterModal(null)}
+          onClose={() => {
+            setShowFilterModal(null);
+            setModalSearch('');
+          }}
           categories={categories}
           payees={payees}
           tempSelectedItems={tempSelectedCats}
@@ -425,7 +430,10 @@ export default function TransactionsScreen() {
         <TransactionFilterSelector
           type="Payee"
           visible={showFilterModal === 'Payee'}
-          onClose={() => setShowFilterModal(null)}
+          onClose={() => {
+            setShowFilterModal(null);
+            setModalSearch('');
+          }}
           categories={categories}
           payees={payees}
           tempSelectedItems={tempSelectedPayees}
@@ -480,67 +488,93 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  searchContainer: { padding: 16, paddingBottom: 8 },
-  filterRow: {
-    flexDirection: 'row',
+  searchContainer: {
     paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  filterRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    backgroundColor: 'transparent',
-  },
-  filterChipText: { fontSize: 13, fontWeight: '700' },
-  smallClose: { padding: 2, marginLeft: 8 },
-  statsRow: { paddingHorizontal: 16, marginBottom: 12, alignItems: 'flex-end' },
-  statsPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
-  statsLabel: { fontSize: 10, fontWeight: '800' },
-  statsValue: { fontSize: 14, fontWeight: '800' },
-  quickFab: {
-    position: 'absolute',
-    right: 24,
-    bottom: Platform.OS === 'ios' ? 200 : 104,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    borderWidth: 1.5,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 10,
-    flex: 1,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   filterChipButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   filterIcon: {
     marginRight: 4,
   },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  smallClose: {
+    padding: 6,
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0,0,0,0.05)',
+  },
+  listContent: {
+    paddingBottom: 100,
+  },
+  statsRow: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  statsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
   statsPillContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  emptyLoader: {
-    marginTop: 40,
+  statsLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  statsValue: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  quickFab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 110 : 94,
+    right: 16,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 8,
+    zIndex: 10,
   },
   fab: {
-    bottom: Platform.OS === 'ios' ? 120 : 24,
+    bottom: Platform.OS === 'ios' ? 40 : 24,
   },
-  listContent: { paddingBottom: 100 },
 });

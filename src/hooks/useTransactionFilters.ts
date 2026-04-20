@@ -98,14 +98,6 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (params?.initialSelectedCats) {
-        setSelectedCats(params.initialSelectedCats);
-        setSelectedPayees([]);
-      }
-      if (params?.initialSelectedPayees) {
-        setSelectedPayees(params.initialSelectedPayees);
-        setSelectedCats([]);
-      }
       if (params?.initialStartDate) setStartDate(params.initialStartDate);
       if (params?.initialEndDate) setEndDate(params.initialEndDate);
     }, 0);

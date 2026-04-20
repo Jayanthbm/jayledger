@@ -11,6 +11,12 @@ interface ReportSummaryProps {
     expense: number;
     saved?: number;
     spentPercent?: number;
+    prevIncome?: number;
+    prevExpense?: number;
+    prevSaved?: number;
+    incomeDiff?: number;
+    expenseDiff?: number;
+    savedDiff?: number;
   } | null;
   totalAmount: number;
   type: string;
@@ -30,6 +36,26 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
   sortedDataLength,
   colors,
 }) => {
+  const renderTrend = (diff: number, isIncome: boolean) => {
+    if (Math.round(diff) === 0) return null;
+    const isPositive = diff > 0;
+    const color = isPositive
+      ? isIncome
+        ? colors.success
+        : colors.danger
+      : isIncome
+        ? colors.danger
+        : colors.success;
+    const icon = isPositive ? 'trending-up' : 'trending-down';
+
+    return (
+      <View style={styles.trendRow}>
+        <Icon name={icon} size={14} color={color} />
+        <Text style={[styles.trendText, { color }]}>{Math.abs(diff).toFixed(0)}%</Text>
+      </View>
+    );
+  };
+
   if (isSummary && summaryMetrics) {
     return (
       <View style={styles.summaryGrid}>
@@ -40,7 +66,10 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
             <Icon name="trending-up" size={24} color={colors.success} />
           </View>
           <View style={styles.summaryTextColumn}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>INCOME</Text>
+            <View style={styles.labelRow}>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>INCOME</Text>
+              {renderTrend(summaryMetrics.incomeDiff || 0, true)}
+            </View>
             <Text style={[styles.summaryValue, { color: colors.success }]}>
               {formatCurrency(summaryMetrics.income)}
             </Text>
@@ -53,7 +82,10 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
             <Icon name="trending-down" size={24} color={colors.danger} />
           </View>
           <View style={styles.summaryTextColumn}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
+            <View style={styles.labelRow}>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
+              {renderTrend(summaryMetrics.expenseDiff || 0, false)}
+            </View>
             <Text style={[styles.summaryValue, { color: colors.danger }]}>
               {formatCurrency(summaryMetrics.expense)}
             </Text>
@@ -62,12 +94,34 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
         <View
           style={[styles.summaryBox, { backgroundColor: colors.card, borderColor: colors.border }]}
         >
-          <View style={[styles.summaryIconBox, { backgroundColor: colors.primary + '15' }]}>
-            <Icon name="account-balance-wallet" size={24} color={colors.primary} />
+          <View
+            style={[
+              styles.summaryIconBox,
+              {
+                backgroundColor:
+                  (summaryMetrics.saved || 0) >= 0 ? colors.primary + '15' : colors.danger + '15',
+              },
+            ]}
+          >
+            <Icon
+              name={(summaryMetrics.saved || 0) >= 0 ? 'account-balance-wallet' : 'warning'}
+              size={24}
+              color={(summaryMetrics.saved || 0) >= 0 ? colors.primary : colors.danger}
+            />
           </View>
           <View style={styles.summaryTextColumn}>
-            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>SAVED</Text>
-            <Text style={[styles.summaryValue, { color: colors.primary }]}>
+            <View style={styles.labelRow}>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+                {(summaryMetrics.saved || 0) >= 0 ? 'SAVED' : 'DEFICIT'}
+              </Text>
+              {renderTrend(summaryMetrics.savedDiff || 0, true)}
+            </View>
+            <Text
+              style={[
+                styles.summaryValue,
+                { color: (summaryMetrics.saved || 0) >= 0 ? colors.primary : colors.danger },
+              ]}
+            >
               {formatCurrency(summaryMetrics.saved || 0)}
             </Text>
           </View>
@@ -145,6 +199,21 @@ const styles = StyleSheet.create({
   },
   summaryTextColumn: {
     flex: 1,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  trendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  trendText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   summaryValue: {
     fontSize: 18,

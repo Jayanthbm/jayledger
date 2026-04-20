@@ -59,8 +59,10 @@ export const pushLocalTransactions = async (userId: string) => {
         await db.execAsync(
           `UPDATE transactions SET tid = ${newTid}, sync_status = 0 WHERE id = '${tx.id}'`,
         );
+        logger.info(`[Sync:Transactions] Pushed ${tx.id}, new tid: ${newTid}`);
       } else {
         await updateTransactionSyncStatus(tx.id, 0);
+        logger.info(`[Sync:Transactions] Pushed ${tx.id} (no tid change)`);
       }
     }
   }
@@ -127,6 +129,7 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
     });
 
     syncLog('Transactions', `Saved ${data.length} transactions to local DB.`);
+    logger.info(`[Sync:Transactions] Successfully pulled and saved ${data.length} items`);
     offset += CHUNK_SIZE;
   }
 

@@ -8,8 +8,10 @@ import {
 } from '../services/syncService';
 import { getRelativeTime } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
+import { useToast } from '../store/ToastContext';
 
 export const useDashboardSync = (userId: string | undefined, onRefresh: () => void) => {
+  const { showToast } = useToast();
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>('Syncing Transactions');
   const [isSyncing, setIsSyncing] = useState(false);
@@ -86,12 +88,14 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
         setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
       }
       onRefresh();
+      showToast('Dashboard synced successfully', 'success');
     } catch (e) {
       logger.error('Manual sync error:', e);
+      showToast('Sync failed', 'error');
     } finally {
       setIsSyncing(false);
     }
-  }, [userId, isSyncing, onRefresh]);
+  }, [userId, isSyncing, onRefresh, showToast]);
 
   useEffect(() => {
     if (userId) {

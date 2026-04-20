@@ -1,5 +1,12 @@
 import React, { useCallback, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  DeviceEventEmitter,
+} from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { format } from 'date-fns';
@@ -39,6 +46,13 @@ export default function DashboardScreen() {
     handleInitialSync,
     handleManualSync,
   } = useDashboardSync(session?.user?.id, loadData);
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('module_refreshed', (data: { module: string }) => {
+      if (data.module === 'Dashboard') loadData();
+    });
+    return () => sub.remove();
+  }, [loadData]);
 
   useEffect(() => {
     navigation.setOptions({

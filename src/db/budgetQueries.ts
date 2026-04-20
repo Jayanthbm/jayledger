@@ -1,6 +1,7 @@
 import { getDb } from './database';
 import { Budget } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
+import { logger } from '../utils/logger';
 
 /**
  * Budget CRUD and Spending Logic.
@@ -16,6 +17,7 @@ export const getBudgets = async (userId: string) => {
 export const addBudget = async (budget: Omit<Budget, 'id'>) => {
   const db = getDb();
   const id = generateUUID();
+  logger.info(`[DB:Budget] adding: ${budget.name}`);
   await db.execAsync(
     `INSERT INTO budgets (id, user_id, name, amount, categories, interval, logo, start_date, deleted, sync_status)
          VALUES ('${id}', '${budget.user_id}', '${budget.name.replace(/'/g, "''")}', ${budget.amount}, '${budget.categories}', '${budget.interval}', '${budget.logo}', '${budget.start_date}', 0, 1)`,
@@ -25,6 +27,7 @@ export const addBudget = async (budget: Omit<Budget, 'id'>) => {
 
 export const updateBudget = async (id: string, budget: Partial<Budget>) => {
   const db = getDb();
+  logger.info(`[DB:Budget] updating: ${id}`);
   let query = `UPDATE budgets SET sync_status = 1`;
   if (budget.name) query += `, name = '${budget.name.replace(/'/g, "''")}'`;
   if (budget.amount !== undefined) query += `, amount = ${budget.amount}`;

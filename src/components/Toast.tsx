@@ -76,8 +76,6 @@ export const Toast = ({ visible, message, type, onHide }: ToastProps) => {
     }
   };
 
-  if (!visible) return null;
-
   const backgroundColor = getBackgroundColor();
   const themedStyles = {
     container: {

@@ -1,6 +1,7 @@
 import { getDb } from './database';
 import { Transaction } from '../models/types';
 import { format } from 'date-fns';
+import { logger } from '../utils/logger';
 
 /**
  * Basic Transaction CRUD and Lookups.
@@ -33,40 +34,47 @@ export const updateTransactionSyncStatus = async (id: string, status: number) =>
 
 export const insertOrUpdateTransaction = async (tx: Transaction, syncStatus: number = 0) => {
   const db = getDb();
-  await db.runAsync(
-    `INSERT OR REPLACE INTO transactions (
-      id, amount, description, transaction_timestamp, date,
-      category_id, category_name, category_icon, category_app_icon,
-      payee_id, payee_name, payee_logo, type, user_id,
-      product_link, tid, sync_status, created_at, updated_at, deleted
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      tx.id,
-      tx.amount,
-      tx.description || '',
-      tx.transaction_timestamp,
-      tx.date,
-      tx.category_id,
-      tx.category_name || '',
-      tx.category_icon || '',
-      tx.category_app_icon || null,
-      tx.payee_id || null,
-      tx.payee_name || null,
-      tx.payee_logo || null,
-      tx.type,
-      tx.user_id,
-      tx.product_link || null,
-      tx.tid || 0,
-      syncStatus,
-      tx.created_at || new Date().toISOString(),
-      tx.updated_at || new Date().toISOString(),
-      0,
-    ],
-  );
+  logger.info(`[DB:Transaction] upsert: ${tx.id} (${tx.description})`);
+  try {
+    await db.runAsync(
+      `INSERT OR REPLACE INTO transactions (
+        id, amount, description, transaction_timestamp, date,
+        category_id, category_name, category_icon, category_app_icon,
+        payee_id, payee_name, payee_logo, type, user_id,
+        product_link, tid, sync_status, created_at, updated_at, deleted
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        tx.id,
+        tx.amount,
+        tx.description || '',
+        tx.transaction_timestamp,
+        tx.date,
+        tx.category_id,
+        tx.category_name || '',
+        tx.category_icon || '',
+        tx.category_app_icon || null,
+        tx.payee_id || null,
+        tx.payee_name || null,
+        tx.payee_logo || null,
+        tx.type,
+        tx.user_id,
+        tx.product_link || null,
+        tx.tid || 0,
+        syncStatus,
+        tx.created_at || new Date().toISOString(),
+        tx.updated_at || new Date().toISOString(),
+        0,
+      ],
+    );
+  } catch (err) {
+    logger.error(`[DB:Transaction] upsert failed: ${tx.id}`, err);
+    throw err;
+  }
 };
 
 export const deleteTransactionAsync = async (id: string, userId: string) => {
   const db = getDb();
+  logger.info(`[DB:Transaction] deleting: ${id}`);
   await db.runAsync(
     `UPDATE transactions SET deleted = 1, sync_status = 1 WHERE id = ? AND user_id = ?`,
     [id, userId],

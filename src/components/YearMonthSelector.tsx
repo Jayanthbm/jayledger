@@ -159,12 +159,14 @@ export function YearMonthSelector({
             )}
           </View>
 
-          <TouchableOpacity
-            style={[styles.doneBtn, { backgroundColor: colors.primary }]}
-            onPress={() => setShowPicker(false)}
-          >
-            <Text style={styles.doneBtnText}>Confirm Selection</Text>
-          </TouchableOpacity>
+          <View style={styles.pickerFooter}>
+            <TouchableOpacity
+              style={[styles.doneBtn, { backgroundColor: colors.primary }]}
+              onPress={() => setShowPicker(false)}
+            >
+              <Text style={styles.doneBtnText}>Confirm Selection</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </BottomSheet>
     </>
@@ -226,12 +228,16 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 24,
     alignItems: 'center',
-    marginTop: 'auto',
+    width: '100%',
   },
   doneBtnText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '800',
+  },
+  pickerFooter: {
+    paddingTop: 16,
+    marginTop: 'auto',
   },
   pickerItemActive: {
     backgroundColor: 'rgba(59, 130, 246, 0.15)', // Default primary + 15

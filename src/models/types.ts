@@ -100,6 +100,8 @@ export interface ReportItem {
   expense?: number;
   category_app_icon?: string;
   payee_logo?: string;
+  prevAmount?: number;
+  diffPercentage?: number;
 }
 
 export type ThemeColors = typeof Colors.light;

@@ -114,7 +114,6 @@ export const BudgetHeader: React.FC<BudgetHeaderProps> = ({
           </View>
         </TouchableOpacity>
       </View>
-
       <View style={styles.captionRow}>
         <Text style={[styles.sortCaption, { color: colors.textSecondary }]}>
           Sorted by {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}

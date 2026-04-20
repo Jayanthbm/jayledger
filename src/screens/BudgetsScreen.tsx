@@ -77,7 +77,7 @@ export default function BudgetsScreen() {
   const [showAddEdit, setShowAddEdit] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmBudget, setDeleteConfirmBudget] = useState<Budget | null>(null);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -356,7 +356,7 @@ export default function BudgetsScreen() {
         onClose={() => setShowAddEdit(false)}
         editingBudget={editingBudget}
         allCategories={allCategories}
-        onDeleteRequest={setDeleteConfirmId}
+        onDeleteRequest={() => setDeleteConfirmBudget(editingBudget)}
         onSave={async (budgetData) => {
           if (!session?.user?.id) return;
           const finalData = { ...budgetData, user_id: session.user.id };
@@ -372,15 +372,15 @@ export default function BudgetsScreen() {
       />
 
       <BudgetDeleteModal
-        visible={!!deleteConfirmId}
-        onClose={() => setDeleteConfirmId(null)}
+        budget={deleteConfirmBudget}
+        onCancel={() => setDeleteConfirmBudget(null)}
         onConfirm={async () => {
-          if (deleteConfirmId && session?.user?.id) {
-            await deleteBudget(deleteConfirmId);
+          if (deleteConfirmBudget && session?.user?.id) {
+            await deleteBudget(deleteConfirmBudget.id);
             handleBudgetSync(session.user.id).catch((err) =>
               logger.error('Auto-sync after budget deletion failed', err),
             );
-            setDeleteConfirmId(null);
+            setDeleteConfirmBudget(null);
             setShowAddEdit(false);
             loadData();
             showToast('Budget deleted', 'success');

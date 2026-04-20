@@ -40,7 +40,7 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
   const [form, setForm] = useState<BudgetForm>({
     name: '',
     amount: '',
-    interval: 'Monthly',
+    interval: 'Month',
     categories: [],
     logo: 'account-balance-wallet',
   });
@@ -53,8 +53,11 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
     [colors.background, colors.border, colors.textSecondary],
   );
 
+  const lastVisible = React.useRef(false);
+
   useEffect(() => {
-    if (visible) {
+    if (visible && !lastVisible.current) {
+      // Defer state update to next tick to avoid cascading render warning
       const timer = setTimeout(() => {
         if (editingBudget) {
           setForm({
@@ -68,7 +71,7 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
           setForm({
             name: '',
             amount: '',
-            interval: 'Monthly',
+            interval: 'Month',
             categories: [],
             logo: 'account-balance-wallet',
           });
@@ -76,6 +79,7 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
       }, 0);
       return () => clearTimeout(timer);
     }
+    lastVisible.current = visible;
   }, [visible, editingBudget]);
 
   const handleSave = () => {
@@ -120,7 +124,11 @@ export const BudgetAddEditModal: React.FC<BudgetAddEditModalProps> = ({
       }
     >
       <View>
-        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContainer}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={styles.scrollContainer}
+          keyboardShouldPersistTaps="always"
+        >
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>BUDGET NAME</Text>
             <TextInput

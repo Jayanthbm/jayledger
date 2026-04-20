@@ -105,7 +105,33 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
     const saved = income - expense;
     const spentPercent = income > 0 ? (expense / income) * 100 : 0;
 
-    return { income, expense, saved, spentPercent };
+    // Comparison data
+    const prevIncome = Number(incomeObj?.prevAmount || 0);
+    const prevExpense = Number(expenseObj?.prevAmount || 0);
+    const prevSaved = prevIncome - prevExpense;
+
+    const incomeDiff = incomeObj?.diffPercentage || 0;
+    const expenseDiff = expenseObj?.diffPercentage || 0;
+
+    let savedDiff = 0;
+    if (prevSaved !== 0) {
+      savedDiff = ((saved - prevSaved) / Math.abs(prevSaved)) * 100;
+    } else if (saved !== 0) {
+      savedDiff = 100;
+    }
+
+    return {
+      income,
+      expense,
+      saved,
+      spentPercent,
+      prevIncome,
+      prevExpense,
+      prevSaved,
+      incomeDiff,
+      expenseDiff,
+      savedDiff,
+    };
   }, [data, isSummary]);
 
   const loadData = useCallback(async () => {

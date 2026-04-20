@@ -8,11 +8,118 @@ import {
   getReportPayeesOverview,
   getReportCategoriesOverview,
   getTransactionsByDateRange,
+  getAggregatedDataForPeriod,
+  getIncomeExpenseSummary,
 } from '../db/queries';
 import { Transaction, ReportItem } from '../models/types';
-import { format, endOfMonth } from 'date-fns';
+import { format, endOfMonth, startOfMonth, subMonths, isSameMonth } from 'date-fns';
+import { logger } from '../utils/logger';
 
 export const fetchReportData = async (
+  userId: string,
+  reportType: string,
+  type: 'Expense' | 'Income',
+  monthStr: string, // 01 to 12
+  year: string,
+): Promise<ReportItem[]> => {
+  let currentData: ReportItem[] = [];
+  try {
+    currentData = await fetchBaseReportData(userId, reportType, type, monthStr, year);
+  } catch (baseError) {
+    logger.error('Report Base Load Failed:', baseError);
+    return [];
+  }
+  const isSummary = ['monthlySummary', 'yearlySummary'].includes(reportType);
+
+  // Comparison Logic
+  const comparisonTypes = [
+    'summaryByPayee',
+    'summaryByCategory',
+    'monthlyLivingCosts',
+    'subscriptionAndBills',
+    'monthlySummary',
+    'yearlySummary',
+  ];
+  if (comparisonTypes.includes(reportType)) {
+    const selectedDate = new Date(parseInt(year), parseInt(monthStr) - 1, 1);
+    const isYearly = reportType === 'yearlySummary';
+    const now = new Date();
+
+    let prevStart = '';
+    let prevEnd = '';
+
+    try {
+      if (isYearly) {
+        const isCurrentYear = parseInt(year) === now.getFullYear();
+        const prevYear = parseInt(year) - 1;
+        if (isCurrentYear) {
+          // YTD vs YTD comparison
+          prevStart = `${prevYear}-01-01`;
+          prevEnd = format(new Date(prevYear, now.getMonth(), now.getDate()), 'yyyy-MM-dd');
+        } else {
+          // Full Year vs Full Year
+          prevStart = `${prevYear}-01-01`;
+          prevEnd = `${prevYear}-12-31`;
+        }
+      } else {
+        const isCurrentMonth = isSameMonth(selectedDate, now);
+        const prevMonthDate = subMonths(selectedDate, 1);
+        const prevMonthYear = prevMonthDate.getFullYear();
+        const prevMonth = prevMonthDate.getMonth();
+
+        if (isCurrentMonth) {
+          // MTD vs MTD comparison
+          prevStart = format(startOfMonth(prevMonthDate), 'yyyy-MM-dd');
+          prevEnd = format(new Date(prevMonthYear, prevMonth, now.getDate()), 'yyyy-MM-dd');
+        } else {
+          // Full vs Full
+          prevStart = format(startOfMonth(prevMonthDate), 'yyyy-MM-dd');
+          prevEnd = format(endOfMonth(prevMonthDate), 'yyyy-MM-dd');
+        }
+      }
+    } catch {
+      return currentData;
+    }
+
+    let prevData: ReportItem[] = [];
+    try {
+      if (isSummary) {
+        prevData = await getIncomeExpenseSummary(userId, prevStart, prevEnd);
+      } else {
+        let groupBy: 'payee' | 'category' = 'category';
+        if (reportType === 'summaryByPayee') groupBy = 'payee';
+        prevData = await getAggregatedDataForPeriod(userId, type, prevStart, prevEnd, groupBy);
+      }
+    } catch {
+      return currentData; // Fallback
+    }
+
+    return currentData.map((item: ReportItem) => {
+      const name = item.name || item.category_name || item.payee_name || item.type;
+      const prevItem = prevData.find((p) => (p.name || p.type) === name);
+
+      const prevAmount = prevItem?.amount || prevItem?.totalAmount || 0;
+      const currentAmount = item.amount || item.totalAmount || 0;
+
+      let diffPercentage = 0;
+      if (prevAmount > 0) {
+        diffPercentage = ((currentAmount - prevAmount) / prevAmount) * 100;
+      } else if (currentAmount > 0) {
+        diffPercentage = 100;
+      }
+
+      return {
+        ...item,
+        prevAmount,
+        diffPercentage,
+      };
+    });
+  }
+
+  return currentData;
+};
+
+const fetchBaseReportData = async (
   userId: string,
   reportType: string,
   type: 'Expense' | 'Income',

@@ -6,6 +6,7 @@ import { common } from '../../styles/common';
 import { formatCurrency } from '../../utils/formatters';
 import { ProgressBar } from '../ProgressBar';
 import { FinancialListItem } from '../common/FinancialListItem';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 interface ReportListItemProps {
   item: ReportItem;
@@ -32,6 +33,9 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
   const isPayee = !!(item.payee_name || item.payee_id);
   const name = item.category_name || item.payee_name || item.name || 'Unknown';
 
+  const diff = item.diffPercentage || 0;
+  const hasDiff = item.prevAmount !== undefined;
+
   let leftNode;
   if (isPayee) {
     if (item.payee_logo) {
@@ -53,14 +57,47 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
         </View>
       );
     }
-  } else if (item.category_app_icon) {
-    // If it's a category and has an app_icon, we could also use leftNode,
-    // but FinancialListItem handles the icon prop well for standard MaterialIcons.
   }
 
   return (
     <FinancialListItem
       title={name}
+      subtitle={
+        hasDiff && Math.round(diff) !== 0 ? (
+          <View style={styles.trendRow}>
+            <MaterialIcons
+              name={diff >= 0 ? 'trending-up' : 'trending-down'}
+              size={14}
+              color={
+                diff >= 0
+                  ? isIncome
+                    ? colors.success
+                    : colors.danger
+                  : isIncome
+                    ? colors.danger
+                    : colors.success
+              }
+            />
+            <Text
+              style={[
+                styles.trendText,
+                {
+                  color:
+                    diff >= 0
+                      ? isIncome
+                        ? colors.success
+                        : colors.danger
+                      : isIncome
+                        ? colors.danger
+                        : colors.success,
+                },
+              ]}
+            >
+              {Math.abs(diff).toFixed(0)}% ({formatCurrency(item.prevAmount || 0)})
+            </Text>
+          </View>
+        ) : undefined
+      }
       icon={
         (!leftNode
           ? item.category_app_icon || item.app_icon || 'receipt'
@@ -120,5 +157,15 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 16,
     fontWeight: '800',
+  },
+  trendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  trendText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

@@ -40,12 +40,29 @@ export const pushLocalBudgets = async (userId: string) => {
       continue;
     }
 
-    const { sync_status: _sync, deleted: _del, ...budgetToPush } = budget;
+    const { sync_status: _sync, deleted: _del, categories, ...rest } = budget;
+    // Standardize interval for Supabase constraint (Month vs Monthly)
+    const interval = budget.interval === 'Monthly' ? 'Month' : budget.interval;
+
+    const categoriesArray = JSON.parse(categories || '[]');
+    if (categoriesArray.length === 0) {
+      logger.error(`[Sync:Budgets] Skipping budget ${budget.id} due to empty categories array`);
+      continue;
+    }
+
+    const budgetToPush = {
+      ...rest,
+      interval,
+      categories: categoriesArray,
+    };
     const { error } = await supabase
       .from(TABLES.BUDGETS)
       .upsert([budgetToPush], { onConflict: 'id' });
     if (!error) {
       await db.execAsync(`UPDATE budgets SET sync_status = 0 WHERE id = '${budget.id}'`);
+      logger.info(`[Sync:Budgets] Successfully pushed budget: ${budget.name}`);
+    } else {
+      logger.error(`[Sync:Budgets] Failed to push budget ${budget.id}:`, error);
     }
   }
 };
@@ -81,6 +98,9 @@ export const syncBudgets = async (userId: string) => {
       }
     });
     syncLog('Budgets', `Saved ${budgets.length} budgets to local DB.`);
+    logger.info(`[Sync:Budgets] Pulled ${budgets.length} budgets from Supabase`);
     await AsyncStorage.setItem(`${STORAGE_KEYS.LAST_SYNC_BUDGETS}${userId}`, Date.now().toString());
+  } else if (error) {
+    logger.error(`[Sync:Budgets] Pull failed:`, error);
   }
 };

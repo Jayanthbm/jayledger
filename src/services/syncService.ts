@@ -82,6 +82,7 @@ export const runFullSync = async (userId: string, onProgress?: (msg: string) => 
       return;
     }
     syncLog('Coordinator', '*** runFullSync Initiation ***');
+    logger.info(`[SyncMaster] Starting full sync for user: ${userId}`);
 
     if (onProgress) onProgress('Syncing Transactions (Full)');
     await forceTransactionsSync(userId);
@@ -101,6 +102,7 @@ export const runFullSync = async (userId: string, onProgress?: (msg: string) => 
     if (onProgress) onProgress('Finalizing');
     await AsyncStorage.setItem(`@last_sync_master_${userId}`, Date.now().toString());
     syncLog('Coordinator', '*** Full Sync complete ***');
+    logger.info(`[SyncMaster] Full sync completed for user: ${userId}`);
   } catch (error) {
     logger.error('[Sync:Coordinator] Full Sync error:', error);
     if (onProgress) onProgress('Error');

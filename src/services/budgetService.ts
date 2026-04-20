@@ -58,6 +58,8 @@ export const fetchBudgetDrillDown = async (
 };
 
 export const handleBudgetSync = async (userId: string) => {
+  logger.info(`[BudgetService] Triggering sync for user: ${userId}`);
   await syncBudgets(userId);
   await AsyncStorage.setItem(`@initial_budget_sync_checked_${userId}`, 'true');
+  logger.info(`[BudgetService] Sync completed for user: ${userId}`);
 };

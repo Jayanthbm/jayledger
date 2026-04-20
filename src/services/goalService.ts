@@ -2,6 +2,7 @@ import { getDb } from '../db/database';
 import { Goal } from '../models/types';
 import { syncGoals } from './syncService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '../utils/logger';
 
 export const fetchGoals = async (userId: string): Promise<Goal[]> => {
   const db = getDb();
@@ -11,8 +12,10 @@ export const fetchGoals = async (userId: string): Promise<Goal[]> => {
 };
 
 export const handleGoalSync = async (userId: string) => {
+  logger.info(`[GoalService] Triggering sync for user: ${userId}`);
   await syncGoals(userId);
   await AsyncStorage.setItem(`@initial_goals_sync_checked_${userId}`, 'true');
+  logger.info(`[GoalService] Sync completed for user: ${userId}`);
 };
 
 export const sortGoals = (

@@ -213,3 +213,36 @@ export const getMonthlyFilteredStats = async (
   }
   return stats;
 };
+
+export const getAggregatedDataForPeriod = async (
+  userId: string,
+  type: 'Expense' | 'Income',
+  startDate: string,
+  endDate: string,
+  groupBy: 'category' | 'payee',
+) => {
+  const db = getDb();
+  const groupCol = groupBy === 'category' ? 'category_name' : 'payee_name';
+  const idCol = groupBy === 'category' ? 'category_id' : 'payee_id';
+  const iconCol = groupBy === 'category' ? 'category_app_icon' : 'payee_logo';
+
+  const query = `
+    SELECT 
+      ${idCol} as id, 
+      ${groupCol} as name, 
+      ${iconCol} as icon,
+      SUM(amount) as amount
+    FROM transactions
+    WHERE user_id = ? AND type = ? AND date >= ? AND date <= ? AND deleted = 0
+    AND ${idCol} IS NOT NULL AND ${idCol} != 'null'
+    GROUP BY ${groupCol}
+    ORDER BY amount DESC
+  `;
+
+  return db.getAllAsync<{ id: string; name: string; icon: string; amount: number }>(query, [
+    userId,
+    type,
+    startDate,
+    endDate,
+  ]);
+};

@@ -5,8 +5,10 @@ import { Session } from '@supabase/supabase-js';
 import { syncTransactions, needsTransactionSync } from '../services/syncService';
 import { getRelativeTime } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
+import { useToast } from '../store/ToastContext';
 
 export const useTransactionSync = (session: Session | null, onSyncComplete: () => void) => {
+  const { showToast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
@@ -22,15 +24,20 @@ export const useTransactionSync = (session: Session | null, onSyncComplete: () =
         await syncTransactions(session.user.id, manual);
         const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
         if (lastTxSync) setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
-        if (manual) onSyncComplete(); // Only reload the list aggressively on manual sync
+
+        if (manual) {
+          onSyncComplete(); // Only reload the list aggressively on manual sync
+          showToast('Transactions synced successfully', 'success');
+        }
       } catch (e) {
         logger.error(`${manual ? 'Manual' : 'Auto'} sync error:`, e);
+        if (manual) showToast('Sync failed', 'error');
       } finally {
         if (manual) setIsSyncing(false);
         else setIsAutoSyncing(false);
       }
     },
-    [session, isSyncing, isAutoSyncing, onSyncComplete],
+    [session, isSyncing, isAutoSyncing, onSyncComplete, showToast],
   );
 
   const handleManualSync = useCallback(() => performSync(true), [performSync]);

@@ -1,10 +1,8 @@
-import { Platform } from 'react-native';
-
 declare const __DEV__: boolean;
 
 // Provide a safe fallback for Jest / testing environments
 const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production';
-const IS_PRODUCTION = Platform.OS === 'android' || (Platform.OS === 'ios' && !isDev);
+const IS_PRODUCTION = !isDev;
 
 type LogLevel = 'log' | 'warn' | 'error';
 
@@ -16,6 +14,7 @@ const internalLog = (level: LogLevel, ...args: unknown[]) => {
 
 export const logger = {
   log: (...args: unknown[]) => internalLog('log', ...args),
+  info: (...args: unknown[]) => internalLog('log', ...args),
   warn: (...args: unknown[]) => internalLog('warn', ...args),
   error: (...args: unknown[]) => internalLog('error', ...args),
 };

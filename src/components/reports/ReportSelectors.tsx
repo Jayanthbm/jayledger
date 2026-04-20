@@ -1,6 +1,6 @@
 import type { ThemeColors } from '../../models/types';
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { SegmentedControl } from '../SegmentedControl';
 import { YearMonthSelector } from '../YearMonthSelector';
@@ -125,6 +125,27 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
           </TouchableOpacity>
         </View>
       )}
+
+      {((reportType === 'yearlySummary' && parseInt(year) !== new Date().getFullYear()) ||
+        (reportType !== 'payees' &&
+          reportType !== 'categories' &&
+          reportType !== 'yearlySummary' &&
+          (month !== new Date().getMonth() || parseInt(year) !== new Date().getFullYear()))) && (
+        <View style={styles.backToCurrentContainer}>
+          <TouchableOpacity
+            style={[styles.backToCurrentBtn, { backgroundColor: colors.primary + '15' }]}
+            onPress={() => {
+              setYear(new Date().getFullYear().toString());
+              setMonth(new Date().getMonth());
+            }}
+          >
+            <Icon name="today" size={14} color={colors.primary} style={styles.backToCurrentIcon} />
+            <Text style={[styles.backToCurrentText, { color: colors.primary }]}>
+              {reportType === 'yearlySummary' ? 'Back to Current Year' : 'Back to Current Month'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 };
@@ -146,5 +167,25 @@ const styles = StyleSheet.create({
     width: 140,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  backToCurrentContainer: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  backToCurrentBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  backToCurrentIcon: {
+    marginRight: 6,
+  },
+  backToCurrentText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });
