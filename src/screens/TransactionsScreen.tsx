@@ -310,6 +310,20 @@ export default function TransactionsScreen() {
           </View>
         </View>
 
+        {search.length > 0 && listData.length === 0 && !loading && (
+          <View style={styles.noResultsSearchContainer}>
+            <Text style={[styles.noResultsSearchText, { color: colors.textSecondary }]}>
+              No transactions found matching &quot;{search}&quot;
+            </Text>
+            <TouchableOpacity
+              onPress={() => setSearch('')}
+              style={[styles.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+            >
+              <Text style={[styles.clearSearchText, { color: colors.primary }]}>Clear Search</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
           <View style={styles.statsRow}>
             <TouchableOpacity
@@ -368,7 +382,7 @@ export default function TransactionsScreen() {
             stickyHeaderIndices: stickyHeaderIndices,
             ListEmptyComponent: loading ? (
               <ActivityIndicator style={styles.emptyLoader} color={colors.primary} />
-            ) : (
+            ) : search.length > 0 ? null : ( // When searching, we show the high-visibility caption instead of this centered placeholder
               <FeedbackPlaceholder
                 title="No transactions found"
                 subtitle="Try adjusting your filters or search terms"
@@ -511,6 +525,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  noResultsSearchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  noResultsSearchText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  clearSearchButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  clearSearchText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   emptyLoader: {
     marginTop: 40,

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { Goal } from '../../models/types';
 import { useTheme } from '../../store/ThemeContext';
 import { common } from '../../styles/common';
@@ -32,7 +33,13 @@ export const GoalCard: React.FC<GoalCardProps> = ({ item, onPress }) => {
       <View style={styles.topRow}>
         <View style={common.flexRowFlex1}>
           {item.logo && item.logo.startsWith('http') ? (
-            <Image source={{ uri: item.logo }} style={styles.goalLogo} />
+            <Image
+              source={{ uri: item.logo }}
+              style={styles.goalLogo}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="disk"
+            />
           ) : (
             <View style={[styles.goalLogoFallback, { backgroundColor: colors.border }]}>
               <Text style={styles.emojiText}>🎯</Text>

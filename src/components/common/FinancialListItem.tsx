@@ -9,6 +9,7 @@ export interface FinancialListItemProps {
   subtitle?: string | React.ReactNode;
   icon?: MaterialIconName;
   iconColor?: string;
+  leftNode?: React.ReactNode;
   amountText: string;
   amountColor?: string;
   metaText?: string;
@@ -25,6 +26,7 @@ export const FinancialListItem: React.FC<FinancialListItemProps> = ({
   subtitle,
   icon,
   iconColor,
+  leftNode,
   amountText,
   amountColor,
   metaText,
@@ -50,18 +52,30 @@ export const FinancialListItem: React.FC<FinancialListItemProps> = ({
       activeOpacity={onPress ? 0.7 : 1}
     >
       <View style={styles.mainRow}>
-        {icon && (
-          <TouchableOpacity
+        {leftNode ? (
+          <View
             style={[
               styles.iconContainer,
               { backgroundColor: colors.background },
               compact && styles.iconContainerCompact,
             ]}
-            onPress={onIconPress}
-            disabled={!onIconPress}
           >
-            <Icon name={icon} size={compact ? 20 : 24} color={iconColor || colors.primary} />
-          </TouchableOpacity>
+            {leftNode}
+          </View>
+        ) : (
+          icon && (
+            <TouchableOpacity
+              style={[
+                styles.iconContainer,
+                { backgroundColor: colors.background },
+                compact && styles.iconContainerCompact,
+              ]}
+              onPress={onIconPress}
+              disabled={!onIconPress}
+            >
+              <Icon name={icon} size={compact ? 20 : 24} color={iconColor || colors.primary} />
+            </TouchableOpacity>
+          )
         )}
 
         <View style={styles.contentMiddle}>
@@ -92,10 +106,17 @@ export const FinancialListItem: React.FC<FinancialListItemProps> = ({
             </View>
           )}
 
-          {metaText && (
-            <Text style={[styles.metaText, { color: colors.textSecondary + '80' }]}>
-              {metaText}
-            </Text>
+          {(metaText || rightBottomNode) && (
+            <View style={[styles.footerContainer, compact && styles.footerContainerCompact]}>
+              {metaText && (
+                <View style={styles.footerRow}>
+                  <Text style={[styles.metaText, { color: colors.textSecondary + '80' }]}>
+                    {metaText}
+                  </Text>
+                </View>
+              )}
+              {rightBottomNode && <View style={styles.footerRow}>{rightBottomNode}</View>}
+            </View>
           )}
         </View>
 
@@ -109,7 +130,6 @@ export const FinancialListItem: React.FC<FinancialListItemProps> = ({
           >
             {amountText}
           </Text>
-          {rightBottomNode && <View style={styles.rightBottom}>{rightBottomNode}</View>}
         </View>
       </View>
       {children && <View style={styles.childrenContainer}>{children}</View>}
@@ -190,8 +210,16 @@ const styles = StyleSheet.create({
   amountCompact: {
     fontSize: 15,
   },
-  rightBottom: {
-    marginTop: 8,
+  footerContainer: {
+    marginTop: 1,
+  },
+  footerContainerCompact: {
+    marginTop: 1,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    marginTop: 2,
+    marginBottom: 4,
   },
   childrenContainer: {
     marginTop: 12,

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { Image } from 'expo-image';
 import { Transaction, MaterialIconName } from '../models/types';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -63,7 +64,13 @@ export const TransactionCard = React.memo(
         activeOpacity={0.6}
       >
         {transaction.payee_logo ? (
-          <Image source={{ uri: transaction.payee_logo }} style={styles.payeeLogo} />
+          <Image
+            source={{ uri: transaction.payee_logo }}
+            style={styles.payeeLogo}
+            contentFit="contain"
+            transition={200}
+            cachePolicy="disk"
+          />
         ) : (
           <View style={[styles.payeeLogoPlaceholder, { backgroundColor: colors.border }]}>
             <Icon name="person" size={10} color={colors.textSecondary} />

@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const fetchGoals = async (userId: string): Promise<Goal[]> => {
   const db = getDb();
   return await db.getAllAsync<Goal>(
-    `SELECT * FROM goals WHERE user_id = '${userId}' ORDER BY name ASC`,
+    `SELECT * FROM goals WHERE user_id = '${userId}' AND deleted = 0 ORDER BY name ASC`,
   );
 };
 

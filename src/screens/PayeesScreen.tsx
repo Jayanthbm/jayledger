@@ -7,6 +7,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import { SearchBar } from '../components/SearchBar';
 import { useToast } from '../store/ToastContext';
+import { getRelativeTime } from '../utils/dateUtils';
 
 import {
   fetchPayeesData,
@@ -39,6 +40,7 @@ export default function PayeesScreen() {
   const [sortAsc, setSortAsc] = useState(true);
 
   const [isAddModalVisible, setAddModalVisible] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
 
   const listRef = useRef<FlatList>(null);
 
@@ -50,9 +52,14 @@ export default function PayeesScreen() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const { payees: fetchedPayees, viewMode: savedMode } = await fetchPayeesData(user.id);
+      const {
+        payees: fetchedPayees,
+        viewMode: savedMode,
+        lastSynced: synced,
+      } = await fetchPayeesData(user.id);
       setPayees(fetchedPayees);
       setViewMode(savedMode);
+      setLastSynced(synced);
     } catch (err) {
       logger.error('[Payees] loadData error:', err);
     } finally {
@@ -79,8 +86,9 @@ export default function PayeesScreen() {
     if (!user?.id) return;
     setSyncing(true);
     try {
-      const updatedPayees = await performPayeeSync(user.id);
+      const { payees: updatedPayees, lastSynced: synced } = await performPayeeSync(user.id);
       setPayees(updatedPayees);
+      setLastSynced(synced);
       showToast('Payees synced successfully', 'success');
     } catch (e) {
       logger.error('Sync error:', e);
@@ -194,9 +202,40 @@ export default function PayeesScreen() {
         </View>
 
         <View style={common.captionRow}>
+          <View style={common.flex1}>
+            {lastSynced && (
+              <View style={common.syncFooter}>
+                <MaterialIcons name="cloud-done" size={12} color={colors.textSecondary + '80'} />
+                <Text style={[common.syncText, { color: colors.textSecondary + '80' }]}>
+                  Synced {getRelativeTime(lastSynced)}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={[common.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
         </View>
       </View>
+
+      {searchQuery.length > 0 && filteredPayees.length === 0 && (
+        <View style={common.ph16}>
+          <View
+            style={[
+              common.noResultsSearchContainer,
+              { borderColor: colors.border, backgroundColor: colors.card + '50' },
+            ]}
+          >
+            <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
+              No payees found matching &quot;{searchQuery}&quot;
+            </Text>
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+            >
+              <Text style={[common.clearSearchText, { color: colors.primary }]}>Clear Search</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {filteredPayees.length === 0 ? (
         <View style={common.emptyCenterPadded}>

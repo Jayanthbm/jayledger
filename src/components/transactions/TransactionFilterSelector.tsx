@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
@@ -59,6 +60,11 @@ export const TransactionFilterSelector = React.memo(
             size="medium"
             onClear={() => setModalSearch('')}
           />
+          {modalSearch.length > 0 && data.length === 0 && (
+            <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
+              No {type.toLowerCase()}s found matching &quot;{modalSearch}&quot;
+            </Text>
+          )}
         </View>
 
         <FlatList
@@ -67,6 +73,44 @@ export const TransactionFilterSelector = React.memo(
           numColumns={4}
           renderItem={({ item }: { item: Category | Payee }) => {
             const isSelected = tempSelectedItems.includes(item.id);
+            const isPayee = type === 'Payee';
+            const payee = item as Payee;
+
+            let iconNode;
+
+            if (isPayee) {
+              if (payee.logo) {
+                iconNode = (
+                  <Image
+                    source={{ uri: payee.logo }}
+                    style={styles.logoImage}
+                    contentFit="contain"
+                    transition={200}
+                    cachePolicy="disk"
+                  />
+                );
+              } else {
+                const avatarColorStyle = { color: isSelected ? 'white' : colors.textSecondary };
+                iconNode = (
+                  <Text style={[styles.avatarText, avatarColorStyle]}>
+                    {item.name.charAt(0).toUpperCase()}
+                  </Text>
+                );
+              }
+            } else {
+              iconNode = (
+                <Icon
+                  name={
+                    formatIconName(
+                      (item as Category).app_icon || (type === 'Category' ? 'category' : 'person'),
+                    ) as MaterialIconName
+                  }
+                  size={24}
+                  color={isSelected ? 'white' : colors.textSecondary}
+                />
+              );
+            }
+
             return (
               <TouchableOpacity
                 style={styles.gridItem}
@@ -81,16 +125,7 @@ export const TransactionFilterSelector = React.memo(
                     },
                   ]}
                 >
-                  <Icon
-                    name={
-                      formatIconName(
-                        (item as Category).app_icon ||
-                          (type === 'Category' ? 'category' : 'person'),
-                      ) as MaterialIconName
-                    }
-                    size={24}
-                    color={isSelected ? 'white' : colors.textSecondary}
-                  />
+                  {iconNode}
                 </View>
                 <Text
                   style={[
@@ -139,6 +174,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  noResultsText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 8,
+    paddingHorizontal: 4,
   },
   modalDone: {
     padding: 18,

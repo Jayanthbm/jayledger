@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  FlatList,
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
@@ -23,23 +22,16 @@ import {
 } from '../db/queries';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { SearchBar } from '../components/SearchBar';
-import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
-import { Category, MaterialIconName, Payee, QuickTransaction } from '../models/types';
+import { Category, Payee, QuickTransaction } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
-import { common } from '../styles/common';
 import { validateAmount } from '../utils/validators';
+import { TransactionFormFields } from '../components/transactions/TransactionFormFields';
+import { TransactionSelectorRow } from '../components/transactions/TransactionSelectorRow';
+import { ItemSelectorModal } from '../components/transactions/ItemSelectorModal';
 import { logger } from '../utils/logger';
-
-const formatIconName = (name: string) => {
-  if (!name) return 'category';
-  return name.replace('-outline', '').replace('circle', 'radio-button-unchecked');
-};
-
-type ModalPickerItem = Category | Payee | { id: 'none'; name: 'None' };
 
 export default function AddQuickTransactionScreen() {
   const { colors } = useTheme();
@@ -153,92 +145,8 @@ export default function AddQuickTransactionScreen() {
     }
   };
 
-  const renderModal = (modalType: 'Category' | 'Payee') => {
-    const rawData = modalType === 'Category' ? categories.filter((c) => c.type === type) : payees;
-    const displayData: ModalPickerItem[] =
-      modalType === 'Payee' ? [{ id: 'none', name: 'None' }, ...rawData] : rawData;
-    const filteredData = displayData.filter((item) =>
-      item.name.toLowerCase().includes(modalSearch.toLowerCase()),
-    );
-
-    const iconColor = type === 'Income' ? colors.success : colors.danger;
-    const iconBg = type === 'Income' ? colors.success + '15' : colors.danger + '15';
-
-    return (
-      <BottomSheet
-        visible={showModal === modalType}
-        onClose={() => setShowModal(null)}
-        title={`Select ${modalType}`}
-      >
-        <View style={styles.flex1}>
-          <View style={styles.searchContainer}>
-            <SearchBar
-              value={modalSearch}
-              onChangeText={setModalSearch}
-              placeholder={`Search ${modalType.toLowerCase()}...`}
-              size="medium"
-              onClear={() => setModalSearch('')}
-            />
-          </View>
-          <FlatList
-            data={filteredData}
-            keyExtractor={(item) => item.id}
-            numColumns={4}
-            contentContainerStyle={styles.modalContent}
-            renderItem={({ item }: { item: ModalPickerItem }) => {
-              const isSelected =
-                (modalType === 'Category' ? selectedCategory?.id : selectedPayee?.id) === item.id;
-              return (
-                <TouchableOpacity
-                  style={styles.gridItem}
-                  onPress={() => {
-                    if (modalType === 'Category') setSelectedCategory(item as Category);
-                    else setSelectedPayee(item.id === 'none' ? null : (item as Payee));
-                    setShowModal(null);
-                    setModalSearch('');
-                  }}
-                >
-                  <View
-                    style={[
-                      styles.gridIconBox,
-                      {
-                        backgroundColor: isSelected ? iconColor : iconBg,
-                        borderColor: isSelected ? iconColor : colors.border,
-                      },
-                    ]}
-                  >
-                    <Icon
-                      name={
-                        formatIconName(
-                          (item as Category).app_icon ||
-                            (modalType === 'Category' ? 'category' : 'person'),
-                        ) as keyof typeof Icon.glyphMap
-                      }
-                      size={24}
-                      color={isSelected ? 'white' : iconColor}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.gridLabel,
-                      { color: isSelected ? colors.primary : colors.textSecondary },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {item.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            }}
-            columnWrapperStyle={common.justifyStart}
-            style={styles.modalList}
-          />
-        </View>
-      </BottomSheet>
-    );
-  };
-
   const currentIconColor = type === 'Income' ? colors.success : colors.danger;
+  const currentIconBg = type === 'Income' ? colors.success + '20' : colors.danger + '20';
 
   return (
     <View style={styles.container}>
@@ -280,98 +188,24 @@ export default function AddQuickTransactionScreen() {
                 containerStyle={styles.segmentedControl}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>
-                Default Amount (Optional)
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.background,
-                    color: colors.text,
-                    borderColor: colors.border,
-                  },
-                ]}
-                placeholder="0.00"
-                placeholderTextColor={colors.textSecondary + '70'}
-                keyboardType="numeric"
-                value={amount}
-                onChangeText={setAmount}
+              <TransactionFormFields
+                amount={amount}
+                setAmount={setAmount}
+                description={description}
+                setDescription={setDescription}
+                iconColor={currentIconColor}
+                colors={colors}
+                autoFocus={false}
               />
 
-              <View style={styles.row}>
-                <View style={[styles.flex1, common.mr8]}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Category</Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.input,
-                      styles.picker,
-                      { backgroundColor: colors.background, borderColor: colors.border },
-                    ]}
-                    onPress={() => setShowModal('Category')}
-                  >
-                    <Icon
-                      name={
-                        formatIconName(selectedCategory?.app_icon || 'category') as MaterialIconName
-                      }
-                      size={20}
-                      color={selectedCategory ? colors.primary : colors.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.pickerText,
-                        { color: selectedCategory ? colors.text : colors.textSecondary },
-                      ]}
-                    >
-                      {selectedCategory?.name || 'Select'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <View style={[styles.flex1, common.ml8]}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Payee</Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.input,
-                      styles.picker,
-                      { backgroundColor: colors.background, borderColor: colors.border },
-                    ]}
-                    onPress={() => setShowModal('Payee')}
-                  >
-                    <Icon
-                      name="person"
-                      size={20}
-                      color={selectedPayee ? colors.primary : colors.textSecondary}
-                    />
-                    <Text
-                      style={[
-                        styles.pickerText,
-                        { color: selectedPayee ? colors.text : colors.textSecondary },
-                      ]}
-                    >
-                      {selectedPayee?.name || 'Select'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <Text style={[styles.label, { color: colors.textSecondary }]}>
-                Default Description
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.textArea,
-                  {
-                    backgroundColor: colors.background,
-                    color: colors.text,
-                    borderColor: colors.border,
-                  },
-                ]}
-                placeholder="e.g. Daily caffeine fix"
-                placeholderTextColor={colors.textSecondary + '70'}
-                multiline
-                value={description}
-                onChangeText={setDescription}
+              <TransactionSelectorRow
+                selectedPayee={selectedPayee}
+                selectedCategory={selectedCategory}
+                onPressPayee={() => setShowModal('Payee')}
+                onPressCategory={() => setShowModal('Category')}
+                colors={colors}
+                currentIconBg={currentIconBg}
+                currentIconColor={currentIconColor}
               />
             </ScrollView>
 
@@ -393,20 +227,43 @@ export default function AddQuickTransactionScreen() {
             </TouchableOpacity>
           </View>
         </TouchableWithoutFeedback>
-        {renderModal('Category')}
-        {renderModal('Payee')}
       </BottomSheet>
+
+      <ItemSelectorModal
+        visible={showModal === 'Category'}
+        onClose={() => setShowModal(null)}
+        type="Category"
+        data={categories.filter((c) => c.type === type)}
+        searchQuery={modalSearch}
+        onSearchChange={setModalSearch}
+        selectedItemId={selectedCategory?.id}
+        onSelect={(item) => {
+          setSelectedCategory(item as Category);
+          setShowModal(null);
+        }}
+        transactionType={type}
+      />
+      <ItemSelectorModal
+        visible={showModal === 'Payee'}
+        onClose={() => setShowModal(null)}
+        type="Payee"
+        data={[{ id: 'none', name: 'None' }, ...payees] as (Category | Payee)[]}
+        searchQuery={modalSearch}
+        onSearchChange={setModalSearch}
+        selectedItemId={selectedPayee?.id}
+        onSelect={(item) => {
+          setSelectedPayee(item.id === 'none' ? null : (item as Payee));
+          setShowModal(null);
+        }}
+        transactionType={type}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  flex1: { flex: 1 },
   scrollContent: { paddingBottom: 24 },
-  searchContainer: { paddingBottom: 16 },
-  modalContent: { paddingBottom: 40, paddingHorizontal: 10 },
-  modalList: { maxHeight: 400 },
   segmentedControl: { marginTop: 24, marginBottom: 16 },
   submitting: { opacity: 0.7 },
   label: {
@@ -417,10 +274,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   input: { height: 50, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, fontSize: 16 },
-  textArea: { height: 100, paddingTop: 16, textAlignVertical: 'top' },
-  row: { flexDirection: 'row' },
-  picker: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  pickerText: { fontSize: 15, fontWeight: '600' },
   saveBtn: {
     height: 50,
     borderRadius: 25,
@@ -433,16 +286,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-
-  gridItem: { width: '25%', alignItems: 'center', marginBottom: 20 },
-  gridIconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  gridLabel: { fontSize: 12, fontWeight: '600', maxWidth: '90%', textAlign: 'center' },
 });

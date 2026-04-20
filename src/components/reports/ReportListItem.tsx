@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { ThemeColors, ReportItem, MaterialIconName } from '../../models/types';
 import { common } from '../../styles/common';
 import { formatCurrency } from '../../utils/formatters';
@@ -28,11 +29,45 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
   const itemType = item.type || type;
   const isIncome = itemType === 'Income';
 
+  const isPayee = !!(item.payee_name || item.payee_id);
+  const name = item.category_name || item.payee_name || item.name || 'Unknown';
+
+  let leftNode;
+  if (isPayee) {
+    if (item.payee_logo) {
+      leftNode = (
+        <Image
+          source={{ uri: item.payee_logo }}
+          style={styles.logoImage}
+          contentFit="contain"
+          transition={200}
+          cachePolicy="disk"
+        />
+      );
+    } else {
+      leftNode = (
+        <View style={styles.avatarContainer}>
+          <Text style={[styles.avatarText, { color: colors.primary }]}>
+            {name.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+      );
+    }
+  } else if (item.category_app_icon) {
+    // If it's a category and has an app_icon, we could also use leftNode,
+    // but FinancialListItem handles the icon prop well for standard MaterialIcons.
+  }
+
   return (
     <FinancialListItem
-      title={item.category_name || item.payee_name || item.name || item.type || 'Unknown'}
-      icon={(item.category_app_icon || item.app_icon || 'receipt') as MaterialIconName}
+      title={name}
+      icon={
+        (!leftNode
+          ? item.category_app_icon || item.app_icon || 'receipt'
+          : undefined) as MaterialIconName
+      }
       iconColor={colors.primary}
+      leftNode={leftNode}
       amountText={formatCurrency(amount)}
       amountColor={isIncome ? colors.success : colors.danger}
       onPress={onPress}
@@ -69,5 +104,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     width: 35,
+  },
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
+  avatarContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

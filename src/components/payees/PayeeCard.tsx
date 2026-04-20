@@ -1,6 +1,7 @@
 import type { ThemeColors } from '../../models/types';
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Payee } from '../../models/types';
 
 interface PayeeCardProps {
@@ -31,7 +32,13 @@ export const PayeeCard: React.FC<PayeeCardProps> = ({ item, viewMode, colors, on
         ]}
       >
         {item.logo && item.logo.startsWith('http') ? (
-          <Image source={{ uri: item.logo }} style={styles.logoImage} />
+          <Image
+            source={{ uri: item.logo }}
+            style={styles.logoImage}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="disk"
+          />
         ) : (
           <Text
             style={[
@@ -81,7 +88,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginRight: 12,
   },
-  logoImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  logoImage: { width: '100%', height: '100%' },
   logoFallback: { fontWeight: 'bold' },
   logoFallbackLg: { fontSize: 22 },
   logoFallbackSm: { fontSize: 18 },

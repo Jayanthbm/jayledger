@@ -1,17 +1,21 @@
 import { formatCurrency, formatDate, formatTransactionDate } from '../../src/utils/formatters';
 
 describe('formatCurrency', () => {
-  it('should format a positive number correctly', () => {
+  it('should format a positive integer correctly without decimals', () => {
     // Note: Assuming APP_CONFIG prefix is ₹
     expect(formatCurrency(1234)).toBe('₹1,234');
   });
 
-  it('should format zero correctly', () => {
+  it('should format zero correctly without decimals', () => {
     expect(formatCurrency(0)).toBe('₹0');
   });
 
-  it('should format decimals by rounding', () => {
-    expect(formatCurrency(1234.56)).toBe('₹1,235');
+  it('should format decimals with 2 decimal precision', () => {
+    expect(formatCurrency(1234.56)).toBe('₹1,234.56');
+  });
+
+  it('should format numbers with one decimal place into two decimal places', () => {
+    expect(formatCurrency(1234.5)).toBe('₹1,234.50');
   });
 });
 

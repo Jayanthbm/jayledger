@@ -6,15 +6,18 @@ import { generateUUID } from '../utils/commonUtils';
 import { logger } from '../utils/logger';
 
 const VIEW_MODE_KEY = (userId: string) => `@category_view_mode_${userId}`;
+const LAST_SYNC_KEY = (userId: string) => `@last_sync_categories_${userId}`;
 
 export const fetchCategoriesData = async (
   userId: string,
-): Promise<{ categories: Category[]; viewMode: 'list' | 'grid' }> => {
+): Promise<{ categories: Category[]; viewMode: 'list' | 'grid'; lastSynced: string | null }> => {
   const categories = await getCategories(userId);
   const viewMode = await AsyncStorage.getItem(VIEW_MODE_KEY(userId));
+  const lastSynced = await AsyncStorage.getItem(LAST_SYNC_KEY(userId));
   return {
     categories,
     viewMode: viewMode === 'list' || viewMode === 'grid' ? viewMode : 'grid',
+    lastSynced,
   };
 };
 
@@ -40,12 +43,17 @@ export const addCategory = async (
   await insertCategory(newCategory);
 
   // Background sync
-  syncCategories(userId).catch((err) => logger.error('Category sync failed', err));
+  syncCategories(userId)
+    .then(() => AsyncStorage.setItem(LAST_SYNC_KEY(userId), new Date().toISOString()))
+    .catch((err) => logger.error('Category sync failed', err));
 
   return newCategory;
 };
 
 export const performCategorySync = async (userId: string) => {
   await syncCategories(userId);
-  return await getCategories(userId);
+  const now = new Date().toISOString();
+  await AsyncStorage.setItem(LAST_SYNC_KEY(userId), now);
+  const updated = await getCategories(userId);
+  return { categories: updated, lastSynced: now };
 };

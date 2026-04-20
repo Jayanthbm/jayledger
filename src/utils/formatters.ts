@@ -9,7 +9,12 @@ import { APP_CONFIG } from '../constants';
  * @returns A formatted currency string (e.g., ₹1,234.56)
  */
 export const formatCurrency = (amount: number): string => {
-  return `${APP_CONFIG.CURRENCY_SYMBOL}${Math.round(amount).toLocaleString(APP_CONFIG.DEFAULT_LOCALE)}`;
+  const isInteger = amount % 1 === 0;
+  const formattedAmount = Math.abs(amount).toLocaleString(APP_CONFIG.DEFAULT_LOCALE, {
+    minimumFractionDigits: isInteger ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+  return `${APP_CONFIG.CURRENCY_SYMBOL}${formattedAmount}`;
 };
 
 /**

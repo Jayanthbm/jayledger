@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -20,11 +21,11 @@ export interface ItemSelectorModalProps {
   visible: boolean;
   onClose: () => void;
   type: 'Category' | 'Payee';
-  data: (Category | Payee)[];
+  data: (Category | Payee | { id: 'none'; name: string })[];
   searchQuery: string;
   onSearchChange: (text: string) => void;
   selectedItemId?: string;
-  onSelect: (item: Category | Payee | { id: 'none'; name: 'string' }) => void;
+  onSelect: (item: Category | Payee | { id: 'none'; name: string }) => void;
   transactionType: 'Income' | 'Expense';
 }
 
@@ -69,6 +70,45 @@ export const ItemSelectorModal = ({
           contentContainerStyle={styles.modalListContent}
           renderItem={({ item }) => {
             const isSelected = selectedItemId === item.id;
+            const isPayee = type === 'Payee';
+            const isNone = item.id === 'none';
+            const payee = item as Payee;
+
+            let iconNode;
+
+            if (isPayee && !isNone) {
+              if (payee.logo) {
+                iconNode = (
+                  <Image
+                    source={{ uri: payee.logo }}
+                    style={styles.logoImage}
+                    contentFit="contain"
+                    transition={200}
+                    cachePolicy="disk"
+                  />
+                );
+              } else {
+                const avatarColorStyle = { color: isSelected ? 'white' : iconColor };
+                iconNode = (
+                  <Text style={[styles.avatarText, avatarColorStyle]}>
+                    {item.name.charAt(0).toUpperCase()}
+                  </Text>
+                );
+              }
+            } else {
+              iconNode = (
+                <Icon
+                  name={
+                    formatIconName(
+                      (item as Category).app_icon || (isPayee ? 'person' : 'category'),
+                    ) as MaterialIconName
+                  }
+                  size={24}
+                  color={isSelected ? 'white' : iconColor}
+                />
+              );
+            }
+
             return (
               <TouchableOpacity style={styles.gridItem} onPress={() => onSelect(item)}>
                 <View
@@ -80,16 +120,7 @@ export const ItemSelectorModal = ({
                     },
                   ]}
                 >
-                  <Icon
-                    name={
-                      formatIconName(
-                        (item as Category).app_icon ||
-                          (type === 'Category' ? 'category' : 'person'),
-                      ) as MaterialIconName
-                    }
-                    size={24}
-                    color={isSelected ? 'white' : iconColor}
-                  />
+                  {iconNode}
                 </View>
                 <Text
                   style={[
@@ -141,5 +172,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: '700',
   },
 });

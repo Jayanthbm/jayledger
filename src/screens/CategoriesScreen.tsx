@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { SearchBar } from '../components/SearchBar';
 import { useToast } from '../store/ToastContext';
+import { getRelativeTime } from '../utils/dateUtils';
 
 import {
   fetchCategoriesData,
@@ -41,6 +42,7 @@ export default function CategoriesScreen() {
   const [activeTab, setActiveTab] = useState<'Expense' | 'Income'>('Expense');
 
   const [isAddModalVisible, setAddModalVisible] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
 
   const listRef = useRef<FlatList>(null);
 
@@ -52,9 +54,14 @@ export default function CategoriesScreen() {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const { categories: fetchedCats, viewMode: savedMode } = await fetchCategoriesData(user.id);
+      const {
+        categories: fetchedCats,
+        viewMode: savedMode,
+        lastSynced: synced,
+      } = await fetchCategoriesData(user.id);
       setCategories(fetchedCats);
       setViewMode(savedMode);
+      setLastSynced(synced);
 
       // We still handle the initial sync check locally for now as it involves multiple AsyncStorage checks
       // but the core data loading is via service.
@@ -84,8 +91,9 @@ export default function CategoriesScreen() {
     if (!user?.id) return;
     setSyncing(true);
     try {
-      const updatedCats = await performCategorySync(user.id);
+      const { categories: updatedCats, lastSynced: synced } = await performCategorySync(user.id);
       setCategories(updatedCats);
+      setLastSynced(synced);
       showToast('Categories synced successfully', 'success');
     } catch (e) {
       logger.error('Sync error:', e);
@@ -214,9 +222,40 @@ export default function CategoriesScreen() {
         </View>
 
         <View style={common.captionRow}>
+          <View style={common.flex1}>
+            {lastSynced && (
+              <View style={common.syncFooter}>
+                <MaterialIcons name="cloud-done" size={12} color={colors.textSecondary + '80'} />
+                <Text style={[common.syncText, { color: colors.textSecondary + '80' }]}>
+                  Synced {getRelativeTime(lastSynced)}
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={[common.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
         </View>
       </View>
+
+      {searchQuery.length > 0 && filteredData.length === 0 && (
+        <View style={common.ph16}>
+          <View
+            style={[
+              common.noResultsSearchContainer,
+              { borderColor: colors.border, backgroundColor: colors.card + '50' },
+            ]}
+          >
+            <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
+              No categories found matching &quot;{searchQuery}&quot;
+            </Text>
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+            >
+              <Text style={[common.clearSearchText, { color: colors.primary }]}>Clear Search</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {filteredData.length === 0 ? (
         <View style={common.emptyCenterPadded}>

@@ -134,6 +134,44 @@ export const commonStyles = StyleSheet.create({
     paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
   } as ViewStyle,
+  // Search Feedback
+  noResultsSearchContainer: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    backgroundColor: 'transparent',
+  } as ViewStyle,
+  noResultsSearchText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  } as ViewStyle,
+  clearSearchButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  } as ViewStyle,
+  clearSearchText: {
+    fontSize: 13,
+    fontWeight: '700',
+  } as ViewStyle,
+  // Sync Status
+  syncFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  } as ViewStyle,
+  syncText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  } as ViewStyle,
 });
 
 export const common = commonStyles;
