@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
+// import { Image } from 'expo-image'; // Removed to use initials for payees
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
@@ -92,29 +92,16 @@ export const TransactionFilterSelector = React.memo(
           renderItem={({ item }: { item: Category | Payee }) => {
             const isSelected = tempSelectedItems.includes(item.id);
             const isPayee = type === 'Payee';
-            const payee = item as Payee;
 
             let iconNode;
 
             if (isPayee) {
-              if (payee.logo) {
-                iconNode = (
-                  <Image
-                    source={{ uri: payee.logo }}
-                    style={styles.logoImage}
-                    contentFit="contain"
-                    transition={200}
-                    cachePolicy="disk"
-                  />
-                );
-              } else {
-                const avatarColorStyle = { color: isSelected ? 'white' : colors.textSecondary };
-                iconNode = (
-                  <Text style={[styles.avatarText, avatarColorStyle]}>
-                    {item.name.charAt(0).toUpperCase()}
-                  </Text>
-                );
-              }
+              const avatarColorStyle = { color: isSelected ? 'white' : colors.textSecondary };
+              iconNode = (
+                <Text style={[styles.avatarText, avatarColorStyle]}>
+                  {item.name.charAt(0).toUpperCase()}
+                </Text>
+              );
             } else {
               iconNode = (
                 <Icon
@@ -192,11 +179,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
-  },
-  logoImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
   },
   avatarText: {
     fontSize: 20,

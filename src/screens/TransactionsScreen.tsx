@@ -222,6 +222,34 @@ export default function TransactionsScreen() {
           />
         </View>
 
+        {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
+          <View style={styles.statsRow}>
+            <TouchableOpacity
+              style={[
+                styles.statsPill,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40',
+                },
+              ]}
+              onPress={loadStatsBreakdown}
+            >
+              <View style={styles.statsPillContent}>
+                <Text
+                  style={[
+                    styles.statsValue,
+                    { color: totalFiltered >= 0 ? colors.success : colors.danger },
+                  ]}
+                >
+                  {totalFiltered >= 0 ? '+' : ''}
+                  {formatCurrency(totalFiltered)}
+                </Text>
+              </View>
+              <Icon name="arrow-forward-ios" size={12} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.filterRow}>
           <View style={styles.row}>
             <View
@@ -247,6 +275,7 @@ export default function TransactionsScreen() {
                     styles.filterChipText,
                     { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary },
                   ]}
+                  numberOfLines={1}
                 >
                   {selectedCats.length > 0 ? `${selectedCats.length} Mixed` : 'Categories'}
                 </Text>
@@ -292,6 +321,7 @@ export default function TransactionsScreen() {
                     styles.filterChipText,
                     { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary },
                   ]}
+                  numberOfLines={1}
                 >
                   {selectedPayees.length > 0 ? `${selectedPayees.length} Payees` : 'Payees'}
                 </Text>
@@ -316,60 +346,6 @@ export default function TransactionsScreen() {
           </View>
         </View>
 
-        {search.length > 0 && listData.length === 0 && !loading && (
-          <View style={common.ph16}>
-            <View
-              style={[
-                common.noResultsSearchContainer,
-                { borderColor: colors.border, backgroundColor: colors.card + '50' },
-              ]}
-            >
-              <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
-                No transactions found matching &quot;{search}&quot;
-              </Text>
-              <TouchableOpacity
-                onPress={() => setSearch('')}
-                style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
-              >
-                <Text style={[common.clearSearchText, { color: colors.primary }]}>
-                  Clear Search
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
-          <View style={styles.statsRow}>
-            <TouchableOpacity
-              style={[
-                styles.statsPill,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: (totalFiltered >= 0 ? colors.success : colors.danger) + '40',
-                },
-              ]}
-              onPress={loadStatsBreakdown}
-            >
-              <View style={styles.statsPillContent}>
-                <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>
-                  FILTER TOTAL
-                </Text>
-                <Text
-                  style={[
-                    styles.statsValue,
-                    { color: totalFiltered >= 0 ? colors.success : colors.danger },
-                  ]}
-                >
-                  {totalFiltered >= 0 ? '+' : ''}
-                  {formatCurrency(totalFiltered)}
-                </Text>
-              </View>
-              <Icon name="arrow-forward-ios" size={12} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        )}
-
         <FlashList
           ref={listRef}
           data={listData}
@@ -381,9 +357,11 @@ export default function TransactionsScreen() {
             }
             return (
               <TransactionCard
-                transaction={item}
+                transaction={item as Transaction}
                 onEdit={handleEditTransaction}
                 onDelete={handleDeleteTransaction}
+                onFilterPayee={(id) => id && setSelectedPayees([id])}
+                onFilterCategory={(id) => id && setSelectedCats([id])}
               />
             );
           }}
@@ -505,22 +483,23 @@ const styles = StyleSheet.create({
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 1.5,
     overflow: 'hidden',
+    flexShrink: 1,
   },
   filterChipButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   filterIcon: {
-    marginRight: 4,
+    marginRight: 5,
   },
   filterChipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   smallClose: {
     padding: 6,
@@ -533,25 +512,21 @@ const styles = StyleSheet.create({
   statsRow: {
     paddingHorizontal: 16,
     paddingBottom: 12,
+    alignItems: 'flex-end',
   },
   statsPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 1.5,
+    gap: 12,
   },
   statsPillContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  statsLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
   },
   statsValue: {
     fontSize: 15,

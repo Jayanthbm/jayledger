@@ -12,8 +12,8 @@ interface TransactionCardProps {
   transaction: Transaction;
   onEdit?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
-  onFilterCategory?: (catId: string) => void;
   onFilterPayee?: (payeeId: string | null) => void;
+  onFilterCategory?: (categoryId: string | null) => void;
   compact?: boolean;
 }
 
@@ -22,8 +22,8 @@ export const TransactionCard = React.memo(
     transaction,
     onEdit,
     onDelete,
-    onFilterCategory,
     onFilterPayee,
+    onFilterCategory,
     compact = false,
   }: TransactionCardProps) => {
     const { colors } = useTheme();
@@ -92,7 +92,7 @@ export const TransactionCard = React.memo(
         amountColor={isIncome ? colors.success : colors.danger}
         metaText={formatDate(transaction.transaction_timestamp, compact ? 'dd MMM, p' : 'PPp')}
         rightBottomNode={payeeNode}
-        onIconPress={() => onFilterCategory?.(transaction.category_id!)}
+        onIconPress={() => onFilterCategory?.(transaction.category_id)}
         compact={compact}
         containerStyle={compact ? styles.containerCompact : styles.containerNormal}
       />
