@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Switch,
+  Platform,
+} from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -11,6 +19,7 @@ import { AppNavigation } from '../navigation/navigationTypes';
 import { SettingRow } from '../components/common/SettingRow';
 import { useBiometrics } from '../hooks/useBiometrics';
 import { useAppSettings } from '../hooks/useAppSettings';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -37,6 +46,7 @@ export default function SettingsScreen() {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [resetModalVisible, setResetModalVisible] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
     loadSettingsData();
@@ -53,6 +63,26 @@ export default function SettingsScreen() {
     if (mode === 'Light' && isDark) toggleTheme();
     if (mode === 'Dark' && !isDark) toggleTheme();
   };
+
+  const formatTime = (timeStr: string) => {
+    if (!timeStr.includes(':')) return timeStr;
+    const [h, m] = timeStr.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  const onTimeSelect = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      const h = selectedDate.getHours().toString().padStart(2, '0');
+      const m = selectedDate.getMinutes().toString().padStart(2, '0');
+      handleNotificationChange(`${h}:${m}`);
+      setReminderModalVisible(false);
+    }
+  };
+
+  const isCustom = notificationPref.includes(':');
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -120,7 +150,7 @@ export default function SettingsScreen() {
                       ? 'Evening (6:00 PM)'
                       : notificationPref === 'Night'
                         ? 'Night (9:00 PM)'
-                        : notificationPref
+                        : `Custom (${formatTime(notificationPref)})`
               }
               onPress={() => setReminderModalVisible(true)}
             />
@@ -229,19 +259,32 @@ export default function SettingsScreen() {
             { label: 'Morning', time: '9:00 AM', icon: 'access-time' },
             { label: 'Evening', time: '6:00 PM', icon: 'access-time' },
             { label: 'Night', time: '9:00 PM', icon: 'access-time' },
+            {
+              label: 'Custom',
+              time: isCustom ? formatTime(notificationPref) : 'Select Time',
+              icon: 'edit',
+            },
           ].map((item) => (
             <TouchableOpacity
               key={item.label}
               style={[styles.radioRow, { borderBottomColor: colors.border }]}
-              onPress={() =>
-                handleNotificationChange(item.label, () => setReminderModalVisible(false))
-              }
+              onPress={() => {
+                if (item.label === 'Custom') {
+                  setShowTimePicker(true);
+                } else {
+                  handleNotificationChange(item.label, () => setReminderModalVisible(false));
+                }
+              }}
             >
               <View style={styles.radioContent}>
                 <Icon
                   name={item.icon as keyof typeof Icon.glyphMap}
                   size={20}
-                  color={notificationPref === item.label ? colors.primary : colors.textSecondary}
+                  color={
+                    notificationPref === item.label || (item.label === 'Custom' && isCustom)
+                      ? colors.primary
+                      : colors.textSecondary
+                  }
                   style={styles.radioIcon}
                 />
                 <View>
@@ -249,7 +292,10 @@ export default function SettingsScreen() {
                     style={[
                       styles.label,
                       {
-                        color: notificationPref === item.label ? colors.text : colors.textSecondary,
+                        color:
+                          notificationPref === item.label || (item.label === 'Custom' && isCustom)
+                            ? colors.text
+                            : colors.textSecondary,
                       },
                     ]}
                   >
@@ -267,13 +313,13 @@ export default function SettingsScreen() {
                   styles.radioOuter,
                   {
                     borderColor:
-                      notificationPref === item.label
+                      notificationPref === item.label || (item.label === 'Custom' && isCustom)
                         ? colors.primary
                         : colors.textSecondary + '40',
                   },
                 ]}
               >
-                {notificationPref === item.label && (
+                {(notificationPref === item.label || (item.label === 'Custom' && isCustom)) && (
                   <View style={[styles.radioInner, { backgroundColor: colors.primary }]} />
                 )}
               </View>
@@ -281,6 +327,16 @@ export default function SettingsScreen() {
           ))}
         </View>
       </BottomSheet>
+
+      {showTimePicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="time"
+          is24Hour={false}
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={onTimeSelect}
+        />
+      )}
 
       {/* Logout Confirmation Bottom Sheet */}
       <BottomSheet

@@ -37,8 +37,17 @@ export const scheduleReminder = async (timeOfDay: string) => {
     await AsyncStorage.setItem('notification_pref', timeOfDay);
 
     let hour = 9; // Morning default
-    if (timeOfDay === 'Evening') hour = 18; // 6 PM
-    if (timeOfDay === 'Night') hour = 21; // 9 PM
+    let minute = 0;
+
+    if (timeOfDay === 'Evening') {
+      hour = 18; // 6 PM
+    } else if (timeOfDay === 'Night') {
+      hour = 21; // 9 PM
+    } else if (timeOfDay.includes(':')) {
+      const [h, m] = timeOfDay.split(':').map((s) => parseInt(s, 10));
+      hour = h;
+      minute = m;
+    }
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -48,7 +57,7 @@ export const scheduleReminder = async (timeOfDay: string) => {
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
         hour,
-        minute: 0,
+        minute,
       },
     });
   } catch (error) {

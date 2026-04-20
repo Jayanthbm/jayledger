@@ -21,6 +21,7 @@ export const fetchReportData = async (
   type: 'Expense' | 'Income',
   monthStr: string, // 01 to 12
   year: string,
+  useFullPreviousPeriod: boolean = false,
 ): Promise<ReportItem[]> => {
   let currentData: ReportItem[] = [];
   try {
@@ -52,7 +53,7 @@ export const fetchReportData = async (
       if (isYearly) {
         const isCurrentYear = parseInt(year) === now.getFullYear();
         const prevYear = parseInt(year) - 1;
-        if (isCurrentYear) {
+        if (isCurrentYear && !useFullPreviousPeriod) {
           // YTD vs YTD comparison
           prevStart = `${prevYear}-01-01`;
           prevEnd = format(new Date(prevYear, now.getMonth(), now.getDate()), 'yyyy-MM-dd');
@@ -67,7 +68,7 @@ export const fetchReportData = async (
         const prevMonthYear = prevMonthDate.getFullYear();
         const prevMonth = prevMonthDate.getMonth();
 
-        if (isCurrentMonth) {
+        if (isCurrentMonth && !useFullPreviousPeriod) {
           // MTD vs MTD comparison
           prevStart = format(startOfMonth(prevMonthDate), 'yyyy-MM-dd');
           prevEnd = format(new Date(prevMonthYear, prevMonth, now.getDate()), 'yyyy-MM-dd');

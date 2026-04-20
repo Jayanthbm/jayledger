@@ -55,17 +55,28 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
   const [showConfig, setShowConfig] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [allCategories, setAllCategories] = useState<Category[]>([]);
-
   const [drillDownData, setDrillDownData] = useState<Transaction[]>([]);
   const [showDrillDown, setShowDrillDown] = useState(false);
   const [drillDownTitle, setDrillDownTitle] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'amount'>('amount');
   const [sortAsc, setSortAsc] = useState(false);
   const [showSortPicker, setShowSortPicker] = useState(false);
+  const [useFullPreviousPeriod, setUseFullPreviousPeriod] = useState(false);
 
   const insets = useSafeAreaInsets();
   const monthStr = (month + 1).toString().padStart(2, '0');
   const isSummary = ['monthlySummary', 'yearlySummary'].includes(reportType);
+
+  const now = useMemo(() => new Date(), []);
+  const isCurrentPeriod = useMemo(() => {
+    if (reportType === 'monthlySummary') {
+      return parseInt(year) === now.getFullYear() && month === now.getMonth();
+    }
+    if (reportType === 'yearlySummary') {
+      return parseInt(year) === now.getFullYear();
+    }
+    return false;
+  }, [reportType, year, month, now]);
 
   const scrollToTop = useCallback(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -77,20 +88,9 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
       reportType === 'yearlySummary'
         ? year
         : `${
-            [
-              'January',
-              'February',
-              'March',
-              'April',
-              'May',
-              'June',
-              'July',
-              'August',
-              'September',
-              'October',
-              'November',
-              'December',
-            ][month]
+            ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][
+              month
+            ]
           } ${year}`;
     return `${title} | ${dateStr}`;
   }, [reportType, title, month, year, isSummary]);
@@ -138,14 +138,21 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
     if (!session?.user?.id) return;
     setLoading(true);
     try {
-      const result = await fetchReportData(session.user.id, reportType, type, monthStr, year);
+      const result = await fetchReportData(
+        session.user.id,
+        reportType,
+        type,
+        monthStr,
+        year,
+        useFullPreviousPeriod,
+      );
       setData(result);
     } catch (error) {
       logger.error('Report Load Error:', error);
     } finally {
       setLoading(false);
     }
-  }, [session, reportType, monthStr, year, type]);
+  }, [session, reportType, monthStr, year, type, useFullPreviousPeriod]);
 
   const handleDrillDown = async (item: ReportItem) => {
     if (!session?.user?.id) return;
@@ -267,6 +274,36 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
         showMonthSelector={showMonthSelector}
         colors={colors}
       />
+
+      {isSummary && isCurrentPeriod && (
+        <View style={styles.comparisonToggleContainer}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[
+              styles.comparisonToggleBtn,
+              {
+                backgroundColor: useFullPreviousPeriod ? colors.primary + '15' : colors.card,
+                borderColor: useFullPreviousPeriod ? colors.primary : colors.border,
+              },
+            ]}
+            onPress={() => setUseFullPreviousPeriod(!useFullPreviousPeriod)}
+          >
+            <Icon
+              name="history"
+              size={18}
+              color={useFullPreviousPeriod ? colors.primary : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.comparisonToggleText,
+                { color: useFullPreviousPeriod ? colors.primary : colors.textSecondary },
+              ]}
+            >
+              Compare with Full {reportType === 'yearlySummary' ? 'Year' : 'Month'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {(reportType === 'payees' || reportType === 'categories') && (
         <View style={styles.searchContainer}>
@@ -393,4 +430,24 @@ const styles = StyleSheet.create({
   headerLeftContainer: { paddingRight: 12, justifyContent: 'center', alignItems: 'center' },
   headerRightContainer: { paddingRight: 16 },
   loader: { marginTop: 40 },
+  comparisonToggleContainer: {
+    paddingHorizontal: 20,
+    marginTop: -8,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  comparisonToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 8,
+  },
+  comparisonToggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
 });
