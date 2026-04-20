@@ -42,7 +42,13 @@ export const BudgetHeader: React.FC<BudgetHeaderProps> = ({
 
   return (
     <View
-      style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+      style={[
+        styles.header,
+        {
+          backgroundColor: colors.card,
+          borderBottomColor: colors.border,
+        },
+      ]}
     >
       <View style={styles.headerControls}>
         <View style={styles.periodNavigation}>
@@ -129,7 +135,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    borderWidth: 1.5,
   },
   headerControls: {
     flexDirection: 'row',

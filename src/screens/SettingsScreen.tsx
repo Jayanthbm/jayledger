@@ -65,7 +65,7 @@ export default function SettingsScreen() {
           >
             <View style={styles.themeSelector}>
               <TouchableOpacity
-                style={[styles.themeOption, !isDark && styles.themeOptionActive]}
+                style={[styles.themeOption, !isDark && { backgroundColor: colors.primary + '15' }]}
                 onPress={() => setAppTheme('Light')}
               >
                 <Icon
@@ -83,7 +83,7 @@ export default function SettingsScreen() {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.themeOption, isDark && styles.themeOptionActive]}
+                style={[styles.themeOption, isDark && { backgroundColor: colors.primary + '15' }]}
                 onPress={() => setAppTheme('Dark')}
               >
                 <Icon
@@ -397,5 +397,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  themeOptionActive: { backgroundColor: '#374151' },
 });

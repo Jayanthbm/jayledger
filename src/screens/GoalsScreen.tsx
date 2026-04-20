@@ -172,7 +172,7 @@ export default function GoalsScreen() {
 
   return (
     <View style={[common.flex1, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={common.flexRowSpaceBetween}>
           <View style={common.flex1}>
             <Text style={[common.title16Bold, { color: colors.text }]}>Savings Goals</Text>
