@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { logger } from '../utils/logger';
 
 interface UseAsyncOperationOptions<T> {
@@ -15,6 +15,12 @@ export const useAsyncOperation = <T, Args extends unknown[]>(
   const [error, setError] = useState<unknown>(null);
   const [data, setData] = useState<T | null>(null);
 
+  // Use a ref for options to avoid stable function reference issues
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
   const execute = useCallback(
     async (...args: Args) => {
       setLoading(true);
@@ -22,22 +28,22 @@ export const useAsyncOperation = <T, Args extends unknown[]>(
       try {
         const result = await operation(...args);
         setData(result);
-        if (options.onSuccess) {
-          options.onSuccess(result);
+        if (optionsRef.current.onSuccess) {
+          optionsRef.current.onSuccess(result);
         }
         return result;
       } catch (err) {
         setError(err);
         logger.error('[useAsyncOperation]', err);
-        if (options.onError) {
-          options.onError(err);
+        if (optionsRef.current.onError) {
+          optionsRef.current.onError(err);
         }
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [operation, options],
+    [operation], // Only operation is a dependency now
   );
 
   return { execute, loading, error, data, setData };

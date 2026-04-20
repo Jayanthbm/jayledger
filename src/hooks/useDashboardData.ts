@@ -48,7 +48,7 @@ export const useDashboardData = (userId: string | undefined) => {
     return () => sub.remove();
   }, [loadData]);
 
-  // Initial load
+  // Initial load - depend on userId and stable loadData to satisfy lint while avoiding loop
   useEffect(() => {
     if (userId) {
       const timer = setTimeout(() => {
@@ -56,7 +56,7 @@ export const useDashboardData = (userId: string | undefined) => {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [userId, loadData]);
+  }, [userId, loadData]); // Standard dependencies restored
 
   const dailyLimitCalc = useMemo(() => calculateDailyLimit(metrics), [metrics]);
   const payDayInfo = useMemo(() => calculatePayDayInfo(), []);

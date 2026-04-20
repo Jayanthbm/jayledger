@@ -100,7 +100,7 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [userId, checkSyncStatus]);
+  }, [userId, checkSyncStatus]); // Standard dependencies restored
 
   return {
     showSyncModal,
