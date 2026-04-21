@@ -28,6 +28,18 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-sqlite", "@react-native-community/datetimepicker"]
+    "plugins": ["expo-sqlite", "@react-native-community/datetimepicker"],
+    "extra": {
+      "eas": {
+        "projectId": "25ee32ee-663a-430e-a82d-80c111d77823"
+      }
+    },
+    "owner": "jayanthm",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/25ee32ee-663a-430e-a82d-80c111d77823"
+    }
   }
 }
