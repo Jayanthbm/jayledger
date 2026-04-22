@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  LayoutAnimation,
 } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -46,6 +47,13 @@ export default function CalendarViewScreen() {
   const [loading, setLoading] = useState(false);
   const [minDate, setMinDate] = useState<Date>(new Date());
   const maxDate = useMemo(() => endOfMonth(new Date()), []);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // LayoutAnimation works without experimental flags in modern React Native
+  const toggleCollapsed = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsCollapsed(!isCollapsed);
+  };
 
   useEffect(() => {
     const initMinDate = async () => {
@@ -111,6 +119,10 @@ export default function CalendarViewScreen() {
     const today = new Date();
     setSelectedDate(today);
     setCurrentMonth(today);
+    if (isCollapsed) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setIsCollapsed(false);
+    }
   };
 
   const totalForDay = useMemo(() => calculateDailyNetTotal(data), [data]);
@@ -120,54 +132,55 @@ export default function CalendarViewScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View
-        style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-      >
-        <View style={styles.monthHeader}>
-          <TouchableOpacity onPress={handlePrevMonth} disabled={prevDisabled}>
-            <MaterialIcons
-              name="chevron-left"
-              size={28}
-              color={prevDisabled ? colors.border : colors.text}
+      {!isCollapsed && (
+        <View
+          style={[
+            styles.calendarCard,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.monthHeader}>
+            <TouchableOpacity onPress={handlePrevMonth} disabled={prevDisabled}>
+              <MaterialIcons
+                name="chevron-left"
+                size={28}
+                color={prevDisabled ? colors.border : colors.text}
+              />
+            </TouchableOpacity>
+            <YearMonthSelector
+              year={currentMonth.getFullYear().toString()}
+              month={currentMonth.getMonth()}
+              onYearChange={(y) => updatePeriod(parseInt(y), currentMonth.getMonth())}
+              onMonthChange={(m) => updatePeriod(currentMonth.getFullYear(), m)}
             />
-          </TouchableOpacity>
-          <YearMonthSelector
-            year={currentMonth.getFullYear().toString()}
-            month={currentMonth.getMonth()}
-            onYearChange={(y) => updatePeriod(parseInt(y), currentMonth.getMonth())}
-            onMonthChange={(m) => updatePeriod(currentMonth.getFullYear(), m)}
+            <TouchableOpacity onPress={handleNextMonth} disabled={nextDisabled}>
+              <MaterialIcons
+                name="chevron-right"
+                size={28}
+                color={nextDisabled ? colors.border : colors.text}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <CalendarGrid
+            days={daysInMonth}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            colors={colors}
           />
-          <TouchableOpacity onPress={handleNextMonth} disabled={nextDisabled}>
-            <MaterialIcons
-              name="chevron-right"
-              size={28}
-              color={nextDisabled ? colors.border : colors.text}
-            />
-          </TouchableOpacity>
         </View>
+      )}
 
-        <CalendarGrid
-          days={daysInMonth}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          colors={colors}
-        />
-
-        {!isSameDay(selectedDate, new Date()) && (
-          <TouchableOpacity
-            style={[
-              styles.todayBtn,
-              { borderColor: colors.primary + '40', backgroundColor: colors.primary + '05' },
-            ]}
-            onPress={goToToday}
-          >
-            <MaterialIcons name="today" size={16} color={colors.primary} />
-            <Text style={[styles.todayBtnText, { color: colors.primary }]}>Go to Today</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <CalendarDaySummary selectedDate={selectedDate} totalForDay={totalForDay} colors={colors} />
+      <CalendarDaySummary
+        selectedDate={selectedDate}
+        totalForDay={totalForDay}
+        colors={colors}
+        showTodayButton={!isSameDay(selectedDate, new Date())}
+        onGoToToday={goToToday}
+        isCollapsed={isCollapsed}
+        showToggleButton={isCollapsed || data.length > 2}
+        onToggleCalendar={toggleCollapsed}
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
@@ -204,20 +217,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-  },
-  todayBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 24,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 8,
-  },
-  todayBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
   },
   listContent: { paddingBottom: 40 },
   emptyContainer: { alignItems: 'center', marginTop: 40 },
