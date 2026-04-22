@@ -86,6 +86,28 @@ export const getReportSummaryByCategory = async (
   );
 };
 
+export const getReportYearlySummaryByCategory = async (
+  userId: string,
+  type: string,
+  year: string,
+) => {
+  const db = getDb();
+  return db.getAllAsync<{
+    category_id: string;
+    category_name: string;
+    category_app_icon: string;
+    amount: number;
+  }>(
+    `SELECT category_id, category_name, category_app_icon, SUM(amount) as amount
+     FROM transactions
+     WHERE user_id = ? AND deleted = 0 AND type = ?
+       AND strftime('%Y', date) = ?
+     GROUP BY category_name
+     ORDER BY amount DESC`,
+    [userId, type, year],
+  );
+};
+
 export const getReportSummaryByPayee = async (
   userId: string,
   type: string,
@@ -107,6 +129,25 @@ export const getReportSummaryByPayee = async (
      GROUP BY payee_name
      ORDER BY amount DESC`,
     [userId, type, month, year],
+  );
+};
+
+export const getReportYearlySummaryByPayee = async (userId: string, type: string, year: string) => {
+  const db = getDb();
+  return db.getAllAsync<{
+    payee_id: string;
+    payee_name: string;
+    payee_logo: string;
+    amount: number;
+  }>(
+    `SELECT payee_id, payee_name, payee_logo, SUM(amount) as amount
+     FROM transactions
+     WHERE user_id = ? AND deleted = 0 AND type = ?
+       AND strftime('%Y', date) = ?
+       AND payee_id IS NOT NULL AND payee_id !='null'
+     GROUP BY payee_name
+     ORDER BY amount DESC`,
+    [userId, type, year],
   );
 };
 

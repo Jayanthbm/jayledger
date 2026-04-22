@@ -61,7 +61,7 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
   const [sortBy, setSortBy] = useState<'name' | 'amount'>('amount');
   const [sortAsc, setSortAsc] = useState(false);
   const [showSortPicker, setShowSortPicker] = useState(false);
-  const [useFullPreviousPeriod, setUseFullPreviousPeriod] = useState(false);
+  const [useFullPreviousPeriod, setUseFullPreviousPeriod] = useState(true);
 
   const insets = useSafeAreaInsets();
   const monthStr = (month + 1).toString().padStart(2, '0');
@@ -69,13 +69,18 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
 
   const now = useMemo(() => new Date(), []);
   const isCurrentPeriod = useMemo(() => {
-    if (reportType === 'monthlySummary') {
-      return parseInt(year) === now.getFullYear() && month === now.getMonth();
+    const isCurrentYear = parseInt(year) === now.getFullYear();
+    const isCurrentMonth = isCurrentYear && month === now.getMonth();
+
+    if (
+      reportType === 'yearlySummary' ||
+      reportType === 'transactionsByYear' ||
+      reportType === 'yearlyPayees'
+    ) {
+      return isCurrentYear;
     }
-    if (reportType === 'yearlySummary') {
-      return parseInt(year) === now.getFullYear();
-    }
-    return false;
+    // All other reports are monthly
+    return isCurrentMonth;
   }, [reportType, year, month, now]);
 
   const scrollToTop = useCallback(() => {
@@ -83,15 +88,19 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
   }, []);
 
   const displayTitle = useMemo(() => {
-    if (!isSummary) return title;
-    const dateStr =
-      reportType === 'yearlySummary'
-        ? year
-        : `${
-            ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][
-              month
-            ]
-          } ${year}`;
+    const isYearly =
+      reportType === 'yearlySummary' ||
+      reportType === 'transactionsByYear' ||
+      reportType === 'yearlyPayees';
+    if (!isSummary && !isYearly) return title;
+
+    const dateStr = isYearly
+      ? year
+      : `${
+          ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][
+            month
+          ]
+        } ${year}`;
     return `${title} | ${dateStr}`;
   }, [reportType, title, month, year, isSummary]);
 
@@ -133,6 +142,28 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
       savedDiff,
     };
   }, [data, isSummary]);
+
+  const sortedData = useMemo(() => {
+    return sortReportData(data, searchQuery, sortBy, sortAsc);
+  }, [data, searchQuery, sortBy, sortAsc]);
+
+  const totalAmount = useMemo(() => {
+    return sortedData.reduce((sum, item) => sum + (item.amount || item.totalAmount || 0), 0);
+  }, [sortedData]);
+
+  const totalDiff = useMemo(() => {
+    if (isSummary || data.length === 0 || reportType === 'payees' || reportType === 'categories')
+      return 0;
+
+    const hasPrev = data.some((item) => item.prevAmount !== undefined);
+    if (!hasPrev) return 0;
+
+    const prevTotal = data.reduce((sum, item) => sum + (item.prevAmount || 0), 0);
+    if (prevTotal > 0) {
+      return ((totalAmount - prevTotal) / prevTotal) * 100;
+    }
+    return totalAmount > 0 ? 100 : 0;
+  }, [data, totalAmount, isSummary, reportType]);
 
   const loadData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -176,20 +207,21 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
     }
   };
 
-  const sortedData = useMemo(() => {
-    return sortReportData(data, searchQuery, sortBy, sortAsc);
-  }, [data, searchQuery, sortBy, sortAsc]);
-
-  const totalAmount = useMemo(() => {
-    return sortedData.reduce((sum, item) => sum + (item.amount || item.totalAmount || 0), 0);
-  }, [sortedData]);
-
   const showMonthSelector =
-    reportType !== 'yearlySummary' && reportType !== 'payees' && reportType !== 'categories';
+    reportType !== 'yearlySummary' &&
+    reportType !== 'payees' &&
+    reportType !== 'categories' &&
+    reportType !== 'transactionsByYear' &&
+    reportType !== 'yearlyPayees';
   const showYearSelector = reportType !== 'payees' && reportType !== 'categories';
-  const showTypeToggle = ['summaryByPayee', 'summaryByCategory', 'payees', 'categories'].includes(
-    reportType,
-  );
+  const showTypeToggle = [
+    'summaryByPayee',
+    'summaryByCategory',
+    'payees',
+    'categories',
+    'transactionsByYear',
+    'yearlyPayees',
+  ].includes(reportType);
 
   useEffect(() => {
     const fetchMinDate = async () => {
@@ -244,9 +276,7 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
         reportType === 'monthlyLivingCosts'
           ? () => (
               <TouchableOpacity
-                onPress={() => {
-                  setShowConfig(true);
-                }}
+                onPress={() => setShowConfig(true)}
                 style={styles.headerRightContainer}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
@@ -255,7 +285,7 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
             )
           : undefined,
     });
-  }, [navigation, reportType, colors.text, displayTitle, scrollToTop]);
+  }, [navigation, reportType, colors, displayTitle, scrollToTop]);
 
   return (
     <View style={[common.flex1, { backgroundColor: colors.background }]}>
@@ -275,12 +305,12 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
         colors={colors}
       />
 
-      {isSummary && isCurrentPeriod && (
-        <View style={styles.comparisonToggleContainer}>
+      {isCurrentPeriod && reportType !== 'payees' && reportType !== 'categories' && (
+        <View style={styles.comparisonIconRow}>
           <TouchableOpacity
             activeOpacity={0.7}
             style={[
-              styles.comparisonToggleBtn,
+              styles.comparisonIconBtn,
               {
                 backgroundColor: useFullPreviousPeriod ? colors.primary + '15' : colors.card,
                 borderColor: useFullPreviousPeriod ? colors.primary : colors.border,
@@ -289,17 +319,22 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
             onPress={() => setUseFullPreviousPeriod(!useFullPreviousPeriod)}
           >
             <Icon
-              name="history"
+              name={useFullPreviousPeriod ? 'history-toggle-off' : 'history'}
               size={18}
               color={useFullPreviousPeriod ? colors.primary : colors.textSecondary}
             />
             <Text
               style={[
-                styles.comparisonToggleText,
+                styles.comparisonIconText,
                 { color: useFullPreviousPeriod ? colors.primary : colors.textSecondary },
               ]}
             >
-              Compare with Full {reportType === 'yearlySummary' ? 'Year' : 'Month'}
+              Full{' '}
+              {reportType === 'yearlySummary' ||
+              reportType === 'transactionsByYear' ||
+              reportType === 'yearlyPayees'
+                ? 'Year'
+                : 'Month'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -344,6 +379,7 @@ export default function ReportView({ route, navigation }: ReportViewProps) {
         isSummary={isSummary}
         summaryMetrics={summaryMetrics}
         totalAmount={totalAmount}
+        totalDiff={totalDiff}
         type={type}
         data={data}
         searchQuery={searchQuery}
@@ -430,24 +466,25 @@ const styles = StyleSheet.create({
   headerLeftContainer: { paddingRight: 12, justifyContent: 'center', alignItems: 'center' },
   headerRightContainer: { paddingRight: 16 },
   loader: { marginTop: 40 },
-  comparisonToggleContainer: {
+  comparisonIconRow: {
     paddingHorizontal: 20,
     marginTop: -8,
     marginBottom: 8,
     alignItems: 'center',
   },
-  comparisonToggleBtn: {
+  comparisonIconBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
     borderWidth: 1,
-    gap: 8,
+    gap: 6,
   },
-  comparisonToggleText: {
-    fontSize: 12,
+  comparisonIconText: {
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

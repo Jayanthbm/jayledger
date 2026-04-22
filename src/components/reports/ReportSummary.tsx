@@ -19,6 +19,7 @@ interface ReportSummaryProps {
     savedDiff?: number;
   } | null;
   totalAmount: number;
+  totalDiff?: number;
   type: string;
   data: ReportItem[];
   searchQuery: string;
@@ -30,6 +31,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
   isSummary,
   summaryMetrics,
   totalAmount,
+  totalDiff = 0,
   type,
   data,
   searchQuery,
@@ -146,7 +148,10 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
   if (!searchQuery.trim() || sortedDataLength > 0) {
     return (
       <View style={styles.summaryBanner}>
-        <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>TOTAL</Text>
+        <View style={styles.totalRow}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>TOTAL</Text>
+          {renderTrend(totalDiff, (data[0]?.type || type) === 'Income')}
+        </View>
         <Text
           style={[
             styles.summaryAmount,
@@ -218,5 +223,11 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 18,
     fontWeight: '900',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
   },
 });

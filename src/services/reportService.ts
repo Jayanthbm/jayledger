@@ -3,6 +3,8 @@ import {
   getReportSubscriptionBills,
   getReportSummaryByPayee,
   getReportSummaryByCategory,
+  getReportYearlySummaryByCategory,
+  getReportYearlySummaryByPayee,
   getReportMonthlySummary,
   getReportYearlySummary,
   getReportPayeesOverview,
@@ -40,10 +42,15 @@ export const fetchReportData = async (
     'subscriptionAndBills',
     'monthlySummary',
     'yearlySummary',
+    'transactionsByYear',
+    'yearlyPayees',
   ];
   if (comparisonTypes.includes(reportType)) {
     const selectedDate = new Date(parseInt(year), parseInt(monthStr) - 1, 1);
-    const isYearly = reportType === 'yearlySummary';
+    const isYearly =
+      reportType === 'yearlySummary' ||
+      reportType === 'transactionsByYear' ||
+      reportType === 'yearlyPayees';
     const now = new Date();
 
     let prevStart = '';
@@ -88,7 +95,7 @@ export const fetchReportData = async (
         prevData = await getIncomeExpenseSummary(userId, prevStart, prevEnd);
       } else {
         let groupBy: 'payee' | 'category' = 'category';
-        if (reportType === 'summaryByPayee') groupBy = 'payee';
+        if (reportType === 'summaryByPayee' || reportType === 'yearlyPayees') groupBy = 'payee';
         prevData = await getAggregatedDataForPeriod(userId, type, prevStart, prevEnd, groupBy);
       }
     } catch {
@@ -144,6 +151,10 @@ const fetchBaseReportData = async (
       return await getReportPayeesOverview(userId, type);
     case 'categories':
       return await getReportCategoriesOverview(userId, type);
+    case 'transactionsByYear':
+      return await getReportYearlySummaryByCategory(userId, type, year);
+    case 'yearlyPayees':
+      return await getReportYearlySummaryByPayee(userId, type, year);
     default:
       return [];
   }
@@ -164,16 +175,25 @@ export const handleReportDrillDown = async (
   );
 
   const isOverview = reportType === 'payees' || reportType === 'categories';
-  const fetchStartDate = isOverview ? '1970-01-01' : startDate;
-  const fetchEndDate = isOverview ? '2099-12-31' : endDate;
+  const isYearly =
+    reportType === 'transactionsByYear' ||
+    reportType === 'yearlyPayees' ||
+    reportType === 'yearlySummary';
 
-  if (['summaryByCategory', 'monthlyLivingCosts', 'categories'].includes(reportType)) {
+  const fetchStartDate = isOverview ? '1970-01-01' : isYearly ? `${year}-01-01` : startDate;
+  const fetchEndDate = isOverview ? '2099-12-31' : isYearly ? `${year}-12-31` : endDate;
+
+  if (
+    ['summaryByCategory', 'monthlyLivingCosts', 'categories', 'transactionsByYear'].includes(
+      reportType,
+    )
+  ) {
     const all = await getTransactionsByDateRange(userId, fetchStartDate, fetchEndDate);
     return all.filter(
       (t: Transaction) =>
         t.category_name === (item.category_name || item.name) && t.type === (item.type || type),
     );
-  } else if (['summaryByPayee', 'payees'].includes(reportType)) {
+  } else if (['summaryByPayee', 'payees', 'yearlyPayees'].includes(reportType)) {
     const all = await getTransactionsByDateRange(userId, fetchStartDate, fetchEndDate);
     return all.filter(
       (t: Transaction) =>

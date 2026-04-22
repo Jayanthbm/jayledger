@@ -58,6 +58,20 @@ const reportsList = [
     color: '#ef4444',
   },
   {
+    title: 'Transactions By Year',
+    description: 'Yearly history by category',
+    icon: 'bar-chart',
+    view: 'transactionsByYear',
+    color: '#8b5cf6',
+  },
+  {
+    title: 'Yearly Payees',
+    description: 'Yearly history by payee',
+    icon: 'people',
+    view: 'yearlyPayees',
+    color: '#3b82f6',
+  },
+  {
     title: 'Payees',
     description: 'Overall payee analysis',
     icon: 'people',

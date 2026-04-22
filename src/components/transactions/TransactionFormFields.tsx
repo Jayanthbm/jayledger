@@ -57,7 +57,9 @@ export const TransactionFormFields = ({
         maxLength={255}
       />
 
-      <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 12 }]} />
+      <View
+        style={[styles.divider, styles.dividerWithMargin, { backgroundColor: colors.border }]}
+      />
 
       <View style={styles.linkRow}>
         <Icon name="link" size={20} color={colors.textSecondary} style={common.mr8} />
@@ -101,6 +103,9 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     width: '100%',
+  },
+  dividerWithMargin: {
+    marginTop: 16,
     marginBottom: 16,
   },
   descInput: {

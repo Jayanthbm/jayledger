@@ -49,7 +49,11 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
 }) => {
   const handlePrev = () => {
     const current = new Date(parseInt(year), month, 1);
-    const prev = reportType === 'yearlySummary' ? subYears(current, 1) : subMonths(current, 1);
+    const isYearly =
+      reportType === 'yearlySummary' ||
+      reportType === 'transactionsByYear' ||
+      reportType === 'yearlyPayees';
+    const prev = isYearly ? subYears(current, 1) : subMonths(current, 1);
 
     if (!isBefore(endOfMonth(prev), startOfMonth(minDate))) {
       setYear(prev.getFullYear().toString());
@@ -59,7 +63,11 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
 
   const handleNext = () => {
     const current = new Date(parseInt(year), month, 1);
-    const next = reportType === 'yearlySummary' ? addYears(current, 1) : addMonths(current, 1);
+    const isYearly =
+      reportType === 'yearlySummary' ||
+      reportType === 'transactionsByYear' ||
+      reportType === 'yearlyPayees';
+    const next = isYearly ? addYears(current, 1) : addMonths(current, 1);
 
     if (!isAfter(startOfMonth(next), endOfMonth(maxDate))) {
       setYear(next.getFullYear().toString());
@@ -67,21 +75,18 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
     }
   };
 
-  const prevDisabled =
-    reportType === 'yearlySummary'
-      ? isBefore(endOfMonth(subYears(new Date(parseInt(year), month, 1), 1)), startOfMonth(minDate))
-      : isBefore(
-          endOfMonth(subMonths(new Date(parseInt(year), month, 1), 1)),
-          startOfMonth(minDate),
-        );
+  const isYearly =
+    reportType === 'yearlySummary' ||
+    reportType === 'transactionsByYear' ||
+    reportType === 'yearlyPayees';
 
-  const nextDisabled =
-    reportType === 'yearlySummary'
-      ? isAfter(startOfMonth(addYears(new Date(parseInt(year), month, 1), 1)), endOfMonth(maxDate))
-      : isAfter(
-          startOfMonth(addMonths(new Date(parseInt(year), month, 1), 1)),
-          endOfMonth(maxDate),
-        );
+  const prevDisabled = isYearly
+    ? isBefore(endOfMonth(subYears(new Date(parseInt(year), month, 1), 1)), startOfMonth(minDate))
+    : isBefore(endOfMonth(subMonths(new Date(parseInt(year), month, 1), 1)), startOfMonth(minDate));
+
+  const nextDisabled = isYearly
+    ? isAfter(startOfMonth(addYears(new Date(parseInt(year), month, 1), 1)), endOfMonth(maxDate))
+    : isAfter(startOfMonth(addMonths(new Date(parseInt(year), month, 1), 1)), endOfMonth(maxDate));
 
   return (
     <View style={styles.selectors}>
@@ -141,7 +146,7 @@ export const ReportSelectors: React.FC<ReportSelectorsProps> = ({
           >
             <Icon name="today" size={14} color={colors.primary} style={styles.backToCurrentIcon} />
             <Text style={[styles.backToCurrentText, { color: colors.primary }]}>
-              {reportType === 'yearlySummary' ? 'Back to Current Year' : 'Back to Current Month'}
+              {isYearly ? 'Back to Current Year' : 'Back to Current Month'}
             </Text>
           </TouchableOpacity>
         </View>
