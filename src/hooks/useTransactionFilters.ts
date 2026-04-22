@@ -100,6 +100,14 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
     const timer = setTimeout(() => {
       if (params?.initialStartDate) setStartDate(params.initialStartDate);
       if (params?.initialEndDate) setEndDate(params.initialEndDate);
+      if (params?.initialSelectedCats) {
+        setSelectedCats(params.initialSelectedCats);
+        setTempSelectedCats(params.initialSelectedCats);
+      }
+      if (params?.initialSelectedPayees) {
+        setSelectedPayees(params.initialSelectedPayees);
+        setTempSelectedPayees(params.initialSelectedPayees);
+      }
     }, 0);
     return () => clearTimeout(timer);
   }, [params]);

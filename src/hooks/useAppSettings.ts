@@ -15,7 +15,7 @@ export const useAppSettings = (
   const [notificationPref, setNotificationPref] = useState('None');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [lastSynced, setLastSynced] = useState<number | null>(null);
+  const [lastSynced, setLastSynced] = useState<number | string | null>(null);
 
   const loadSettingsData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -24,7 +24,7 @@ export const useAppSettings = (
       if (pref) setNotificationPref(pref);
 
       const last = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
-      if (last) setLastSynced(parseInt(last, 10));
+      if (last) setLastSynced(last);
     } catch (e) {
       logger.warn('Error loading settings data', e);
     }
@@ -43,7 +43,7 @@ export const useAppSettings = (
     try {
       await runFullSync(session.user.id);
       const last = await AsyncStorage.getItem(`@last_sync_master_${session.user.id}`);
-      if (last) setLastSynced(parseInt(last, 10));
+      if (last) setLastSynced(last);
     } catch (e) {
       logger.warn('Manual sync error', e);
     } finally {
