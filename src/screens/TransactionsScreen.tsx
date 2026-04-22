@@ -346,6 +346,29 @@ export default function TransactionsScreen() {
           </View>
         </View>
 
+        {search.length > 0 && listData.length === 0 && (
+          <View style={common.ph16}>
+            <View
+              style={[
+                common.noResultsSearchContainer,
+                { borderColor: colors.border, backgroundColor: colors.card + '50' },
+              ]}
+            >
+              <Text style={[common.noResultsSearchText, { color: colors.textSecondary }]}>
+                No transactions found matching &quot;{search}&quot;
+              </Text>
+              <TouchableOpacity
+                onPress={() => setSearch('')}
+                style={[common.clearSearchButton, { backgroundColor: colors.primary + '15' }]}
+              >
+                <Text style={[common.clearSearchText, { color: colors.primary }]}>
+                  Clear Search
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <FlashList
           ref={listRef}
           data={listData}
@@ -372,14 +395,26 @@ export default function TransactionsScreen() {
           getItemType={(item: FlashListItem) => item.itemType}
           estimatedItemSize={70}
           ListEmptyComponent={
-            !loading && search.length === 0 ? (
-              <FeedbackPlaceholder
-                icon="receipt"
-                title="No Transactions"
-                subtitle="Start tracking your finances by adding your first transaction!"
-                onAction={() => navigation.navigate('AddTransaction')}
-                actionLabel="Add Transaction"
-              />
+            !loading ? (
+              search.length === 0 ? (
+                <FeedbackPlaceholder
+                  icon="receipt"
+                  title="No Transactions"
+                  subtitle="Start tracking your finances by adding your first transaction!"
+                  onAction={() => navigation.navigate('AddTransaction')}
+                  actionLabel="Add Transaction"
+                />
+              ) : (
+                <View style={common.emptyCenterPadded}>
+                  <Icon name="search-off" size={64} color={colors.border} />
+                  <Text style={[common.emptyTitle20Bold, { color: colors.textSecondary }]}>
+                    No Results Found
+                  </Text>
+                  <Text style={[common.emptySub14Centered, { color: colors.textSecondary }]}>
+                    Try adjusting your filters or search query.
+                  </Text>
+                </View>
+              )
             ) : null
           }
           contentContainerStyle={styles.listContent}
