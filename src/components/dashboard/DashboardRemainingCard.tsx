@@ -15,16 +15,19 @@ interface DashboardRemainingProps {
 export const DashboardRemainingCard = React.memo(
   ({ monthIncome, monthExpense, colors }: DashboardRemainingProps) => {
     const remaining = monthIncome - monthExpense;
-    const spentPercent = Math.min(100, (monthExpense / (monthIncome || 1)) * 100);
+    const isOverspent = remaining < 0;
+    const spentPercent = (monthExpense / (monthIncome || 1)) * 100;
 
     return (
       <DashboardCard
         colors={colors}
-        title="REMAINING FOR PERIOD"
+        title={isOverspent ? 'EXTRA SPENT' : 'REMAINING FOR PERIOD'}
         icon="account-balance-wallet"
         isMain={true}
       >
-        <Text style={[styles.mainAmount, { color: colors.text }]}>{formatCurrency(remaining)}</Text>
+        <Text style={[styles.mainAmount, { color: isOverspent ? colors.danger : colors.text }]}>
+          {formatCurrency(Math.abs(remaining))}
+        </Text>
         <ProgressBar
           progress={spentPercent}
           color={colors.primary}
