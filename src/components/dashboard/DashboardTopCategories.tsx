@@ -24,7 +24,7 @@ export const DashboardTopCategories = React.memo(
         title="TOP CATEGORIES"
         icon="pie-chart"
         onPress={() =>
-          navigation.navigate('ReportDetail', {
+          navigation.navigate('CategorySummaryReport', {
             reportType: 'summaryByCategory',
             title: 'Transactions By Category',
           })

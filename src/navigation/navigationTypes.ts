@@ -33,13 +33,17 @@ export type RootStackParamList = {
         initialEndDate?: string | null;
       }
     | undefined;
-  ReportDetail:
-    | {
-        title?: string;
-        reportType?: string;
-        [key: string]: unknown;
-      }
-    | undefined;
+
+  LivingCostsReport: { title?: string; reportType: string };
+  SubscriptionBillsReport: { title?: string; reportType: string };
+  PayeeSummaryReport: { title?: string; reportType: string };
+  CategorySummaryReport: { title?: string; reportType: string };
+  MonthlySummaryReport: { title?: string; reportType: string };
+  YearlySummaryReport: { title?: string; reportType: string };
+  YearlyCategoryReport: { title?: string; reportType: string };
+  YearlyPayeeReport: { title?: string; reportType: string };
+  PayeeOverviewReport: { title?: string; reportType: string };
+  CategoryOverviewReport: { title?: string; reportType: string };
   Categories: undefined;
   Payees: undefined;
   QuickTransactions: undefined;

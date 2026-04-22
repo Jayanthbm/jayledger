@@ -1,9 +1,6 @@
 import React from 'react';
-import { NavigationContainer, RouteProp } from '@react-navigation/native';
-import {
-  createNativeStackNavigator,
-  NativeStackNavigationProp,
-} from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../store/AuthContext';
 import { ActivityIndicator, View, Platform, StyleSheet } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
@@ -14,11 +11,21 @@ import MainTabs from './MainTabs';
 import DailyLimitDetailScreen from '../screens/DailyLimitDetailScreen';
 import CalendarViewScreen from '../screens/CalendarViewScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
-import ReportView from '../screens/ReportView';
+
 import CategoriesScreen from '../screens/CategoriesScreen';
 import PayeesScreen from '../screens/PayeesScreen';
 import QuickTransactionsScreen from '../screens/QuickTransactionsScreen';
 import AddQuickTransactionScreen from '../screens/AddQuickTransactionScreen';
+import LivingCostsReportScreen from '../screens/reports/LivingCostsReportScreen';
+import SubscriptionBillsReportScreen from '../screens/reports/SubscriptionBillsReportScreen';
+import PayeeSummaryReportScreen from '../screens/reports/PayeeSummaryReportScreen';
+import CategorySummaryReportScreen from '../screens/reports/CategorySummaryReportScreen';
+import MonthlySummaryReportScreen from '../screens/reports/MonthlySummaryReportScreen';
+import YearlySummaryReportScreen from '../screens/reports/YearlySummaryReportScreen';
+import YearlyCategoryReportScreen from '../screens/reports/YearlyCategoryReportScreen';
+import YearlyPayeeReportScreen from '../screens/reports/YearlyPayeeReportScreen';
+import PayeeOverviewReportScreen from '../screens/reports/PayeeOverviewReportScreen';
+import CategoryOverviewReportScreen from '../screens/reports/CategoryOverviewReportScreen';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { TouchableOpacity } from 'react-native';
 
@@ -92,18 +99,93 @@ export default function AppNavigator() {
                 animation: 'slide_from_bottom',
               }}
             />
+
             <Stack.Screen
-              name="ReportDetail"
-              component={ReportView}
-              options={({
-                route,
-                navigation,
-              }: {
-                route: RouteProp<RootStackParamList, 'ReportDetail'>;
-                navigation: NativeStackNavigationProp<RootStackParamList>;
-              }) => ({
+              name="LivingCostsReport"
+              component={LivingCostsReportScreen}
+              options={({ navigation }) => ({
                 headerShown: true,
-                title: route.params?.title || 'Report',
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="SubscriptionBillsReport"
+              component={SubscriptionBillsReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="PayeeSummaryReport"
+              component={PayeeSummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="CategorySummaryReport"
+              component={CategorySummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="MonthlySummaryReport"
+              component={MonthlySummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="YearlySummaryReport"
+              component={YearlySummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="YearlyCategoryReport"
+              component={YearlyCategoryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="YearlyPayeeReport"
+              component={YearlyPayeeReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="PayeeOverviewReport"
+              component={PayeeOverviewReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="CategoryOverviewReport"
+              component={CategoryOverviewReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
                 headerBackTitle: ' ',
                 headerLeft: () => standardHeaderLeft(navigation),
               })}

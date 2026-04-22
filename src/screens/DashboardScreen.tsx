@@ -145,7 +145,7 @@ export default function DashboardScreen() {
         prevIncome={metrics.prevMonthComp.income}
         prevExpense={metrics.prevMonthComp.expense}
         onPress={() =>
-          navigation.navigate('ReportDetail', {
+          navigation.navigate('MonthlySummaryReport', {
             reportType: 'monthlySummary',
             title: 'Monthly Summary',
           })
@@ -161,7 +161,7 @@ export default function DashboardScreen() {
         prevIncome={metrics.prevYearComp.income}
         prevExpense={metrics.prevYearComp.expense}
         onPress={() =>
-          navigation.navigate('ReportDetail', {
+          navigation.navigate('YearlySummaryReport', {
             reportType: 'yearlySummary',
             title: 'Yearly Summary',
           })

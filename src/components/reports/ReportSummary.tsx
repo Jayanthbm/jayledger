@@ -20,6 +20,8 @@ interface ReportSummaryProps {
   } | null;
   totalAmount: number;
   totalDiff?: number;
+  prevTotal?: number;
+  showTrends?: boolean;
   type: string;
   data: ReportItem[];
   searchQuery: string;
@@ -32,28 +34,40 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
   summaryMetrics,
   totalAmount,
   totalDiff = 0,
+  prevTotal = 0,
+  showTrends = true,
   type,
   data,
   searchQuery,
   sortedDataLength,
   colors,
 }) => {
-  const renderTrend = (diff: number, isIncome: boolean) => {
-    if (Math.round(diff) === 0) return null;
-    const isPositive = diff > 0;
-    const color = isPositive
-      ? isIncome
-        ? colors.success
-        : colors.danger
-      : isIncome
-        ? colors.danger
-        : colors.success;
-    const icon = isPositive ? 'trending-up' : 'trending-down';
+  const renderTrend = (diff: number, isIncome: boolean, prevVal?: number) => {
+    const isNeutral = Math.round(diff) === 0;
+
+    // For Monthly/Yearly summaries, we don't show "Same" trends to keep the grid clean
+    if (isSummary && isNeutral) return null;
+
+    // Determine color
+    const color = isNeutral
+      ? colors.textSecondary
+      : diff >= 0
+        ? isIncome
+          ? colors.success
+          : colors.danger
+        : isIncome
+          ? colors.danger
+          : colors.success;
+
+    const icon = isNeutral ? null : diff >= 0 ? 'trending-up' : 'trending-down';
 
     return (
       <View style={styles.trendRow}>
-        <Icon name={icon} size={14} color={color} />
-        <Text style={[styles.trendText, { color }]}>{Math.abs(diff).toFixed(0)}%</Text>
+        {icon && <Icon name={icon} size={14} color={color} />}
+        <Text style={[styles.trendText, { color }]}>
+          {!isNeutral && (prevVal || 0) > 0 ? `${Math.abs(diff).toFixed(0)}%` : ''}
+          {!isSummary && (prevVal || 0) > 0 && ` (${formatCurrency(prevVal || 0)})`}
+        </Text>
       </View>
     );
   };
@@ -70,7 +84,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
           <View style={styles.summaryTextColumn}>
             <View style={styles.labelRow}>
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>INCOME</Text>
-              {renderTrend(summaryMetrics.incomeDiff || 0, true)}
+              {renderTrend(summaryMetrics.incomeDiff || 0, true, summaryMetrics.prevIncome)}
             </View>
             <Text style={[styles.summaryValue, { color: colors.success }]}>
               {formatCurrency(summaryMetrics.income)}
@@ -86,7 +100,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
           <View style={styles.summaryTextColumn}>
             <View style={styles.labelRow}>
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>EXPENSE</Text>
-              {renderTrend(summaryMetrics.expenseDiff || 0, false)}
+              {renderTrend(summaryMetrics.expenseDiff || 0, false, summaryMetrics.prevExpense)}
             </View>
             <Text style={[styles.summaryValue, { color: colors.danger }]}>
               {formatCurrency(summaryMetrics.expense)}
@@ -116,7 +130,6 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
                 {(summaryMetrics.saved || 0) >= 0 ? 'SAVED' : 'DEFICIT'}
               </Text>
-              {renderTrend(summaryMetrics.savedDiff || 0, true)}
             </View>
             <Text
               style={[
@@ -150,7 +163,7 @@ export const ReportSummary: React.FC<ReportSummaryProps> = ({
       <View style={styles.summaryBanner}>
         <View style={styles.totalRow}>
           <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>TOTAL</Text>
-          {renderTrend(totalDiff, (data[0]?.type || type) === 'Income')}
+          {showTrends && renderTrend(totalDiff, (data[0]?.type || type) === 'Income', prevTotal)}
         </View>
         <Text
           style={[

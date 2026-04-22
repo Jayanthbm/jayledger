@@ -15,6 +15,7 @@ interface ReportListItemProps {
   isDark: boolean;
   colors: ThemeColors;
   onPress: () => void;
+  showTrends?: boolean;
 }
 
 export const ReportListItem: React.FC<ReportListItemProps> = ({
@@ -24,6 +25,7 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
   isDark,
   colors,
   onPress,
+  showTrends = true,
 }) => {
   const amount = item.amount || item.totalAmount || 0;
   const progressPercent = (amount / (totalAmount || 1)) * 100;
@@ -63,37 +65,44 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
     <FinancialListItem
       title={name}
       subtitle={
-        hasDiff && Math.round(diff) !== 0 ? (
+        showTrends && hasDiff ? (
           <View style={styles.trendRow}>
-            <MaterialIcons
-              name={diff >= 0 ? 'trending-up' : 'trending-down'}
-              size={14}
-              color={
-                diff >= 0
-                  ? isIncome
-                    ? colors.success
-                    : colors.danger
-                  : isIncome
-                    ? colors.danger
-                    : colors.success
-              }
-            />
+            {Math.round(diff) !== 0 && (
+              <MaterialIcons
+                name={diff >= 0 ? 'trending-up' : 'trending-down'}
+                size={14}
+                color={
+                  diff >= 0
+                    ? isIncome
+                      ? colors.success
+                      : colors.danger
+                    : isIncome
+                      ? colors.danger
+                      : colors.success
+                }
+              />
+            )}
             <Text
               style={[
                 styles.trendText,
                 {
                   color:
-                    diff >= 0
-                      ? isIncome
-                        ? colors.success
-                        : colors.danger
-                      : isIncome
-                        ? colors.danger
-                        : colors.success,
+                    Math.round(diff) === 0
+                      ? colors.textSecondary
+                      : diff >= 0
+                        ? isIncome
+                          ? colors.success
+                          : colors.danger
+                        : isIncome
+                          ? colors.danger
+                          : colors.success,
                 },
               ]}
             >
-              {Math.abs(diff).toFixed(0)}% ({formatCurrency(item.prevAmount || 0)})
+              {Math.round(diff) !== 0 && (item.prevAmount || 0) > 0 ? (
+                <>{Math.abs(diff).toFixed(0)}% </>
+              ) : null}
+              ({formatCurrency(item.prevAmount || 0)})
             </Text>
           </View>
         ) : undefined

@@ -8,7 +8,7 @@ import { useAuth } from '../store/AuthContext';
 import { syncTransactions } from '../services/syncService';
 import { ActivityIndicator } from 'react-native';
 import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
+import { AppNavigation, RootStackParamList } from '../navigation/navigationTypes';
 import { logger } from '../utils/logger';
 
 const { width } = Dimensions.get('window');
@@ -204,12 +204,50 @@ export default function ReportsScreen() {
                 { backgroundColor: colors.card, borderColor: colors.border },
               ]}
               activeOpacity={0.7}
-              onPress={() =>
-                navigation.navigate('ReportDetail', {
+              onPress={() => {
+                const view = item.view;
+                let screen: keyof RootStackParamList;
+
+                switch (view) {
+                  case 'monthlyLivingCosts':
+                    screen = 'LivingCostsReport';
+                    break;
+                  case 'subscriptionAndBills':
+                    screen = 'SubscriptionBillsReport';
+                    break;
+                  case 'summaryByPayee':
+                    screen = 'PayeeSummaryReport';
+                    break;
+                  case 'summaryByCategory':
+                    screen = 'CategorySummaryReport';
+                    break;
+                  case 'monthlySummary':
+                    screen = 'MonthlySummaryReport';
+                    break;
+                  case 'yearlySummary':
+                    screen = 'YearlySummaryReport';
+                    break;
+                  case 'transactionsByYear':
+                    screen = 'YearlyCategoryReport';
+                    break;
+                  case 'yearlyPayees':
+                    screen = 'YearlyPayeeReport';
+                    break;
+                  case 'payees':
+                    screen = 'PayeeOverviewReport';
+                    break;
+                  case 'categories':
+                    screen = 'CategoryOverviewReport';
+                    break;
+                  default:
+                    screen = 'CategoryOverviewReport';
+                }
+
+                navigation.navigate(screen, {
                   reportType: item.view,
                   title: item.title,
-                })
-              }
+                });
+              }}
             >
               <View
                 style={[
