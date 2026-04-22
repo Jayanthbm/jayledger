@@ -11,9 +11,25 @@ const LAST_SYNC_KEY = (userId: string) => `@last_sync_payees_${userId}`;
 export const fetchPayeesData = async (
   userId: string,
 ): Promise<{ payees: Payee[]; viewMode: 'list' | 'grid'; lastSynced: string | null }> => {
-  const payees = await getPayees(userId);
-  const viewMode = await AsyncStorage.getItem(VIEW_MODE_KEY(userId));
+  let payees = await getPayees(userId);
+  const viewMode = (await AsyncStorage.getItem(VIEW_MODE_KEY(userId))) as 'list' | 'grid' | null;
   const lastSynced = await AsyncStorage.getItem(LAST_SYNC_KEY(userId));
+
+  // Trigger auto-sync if never synced or in wrong format
+  if (!lastSynced || !lastSynced.includes('T')) {
+    logger.info('[Payees] Missing or invalid sync history, triggering initial sync...');
+    try {
+      const result = await performPayeeSync(userId);
+      return {
+        payees: result.payees,
+        viewMode: viewMode === 'list' || viewMode === 'grid' ? viewMode : 'grid',
+        lastSynced: result.lastSynced,
+      };
+    } catch (err) {
+      logger.error('[Payees] Auto-sync failed:', err);
+    }
+  }
+
   return {
     payees,
     viewMode: viewMode === 'list' || viewMode === 'grid' ? viewMode : 'grid',

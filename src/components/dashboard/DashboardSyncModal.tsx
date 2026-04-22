@@ -29,7 +29,7 @@ export const DashboardSyncModal = React.memo(
       <BottomSheet
         visible={visible}
         onClose={onClose}
-        title="Initializing JayLedger"
+        title="Initializing Jmoney"
         subtitle={syncError ? 'Action Required' : 'Setting up your personal finance workspace...'}
         showCloseButton={!!syncError}
       >

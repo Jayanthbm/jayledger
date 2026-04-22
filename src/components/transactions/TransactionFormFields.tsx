@@ -1,11 +1,15 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
+import Icon from '@expo/vector-icons/MaterialIcons';
+import { common } from '../../styles/common';
 
 export interface TransactionFormFieldsProps {
   amount: string;
   setAmount: (val: string) => void;
   description: string;
   setDescription: (val: string) => void;
+  productLink: string;
+  setProductLink: (val: string) => void;
   iconColor: string;
   colors: Record<string, string>;
   autoFocus?: boolean;
@@ -16,6 +20,8 @@ export const TransactionFormFields = ({
   setAmount,
   description,
   setDescription,
+  productLink,
+  setProductLink,
   iconColor,
   colors,
   autoFocus = false,
@@ -50,6 +56,21 @@ export const TransactionFormFields = ({
         onChangeText={setDescription}
         maxLength={255}
       />
+
+      <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 12 }]} />
+
+      <View style={styles.linkRow}>
+        <Icon name="link" size={20} color={colors.textSecondary} style={common.mr8} />
+        <TextInput
+          style={[styles.linkInput, { color: colors.text }]}
+          placeholder="Product link (optional)..."
+          placeholderTextColor={colors.textSecondary + '70'}
+          value={productLink}
+          onChangeText={setProductLink}
+          keyboardType="url"
+          autoCapitalize="none"
+        />
+      </View>
     </View>
   );
 };
@@ -84,6 +105,15 @@ const styles = StyleSheet.create({
   },
   descInput: {
     fontSize: 16,
+    padding: 0,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  linkInput: {
+    fontSize: 14,
+    flex: 1,
     padding: 0,
   },
 });

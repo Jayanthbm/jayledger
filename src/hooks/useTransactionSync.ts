@@ -23,7 +23,7 @@ export const useTransactionSync = (session: Session | null, onSyncComplete: () =
       try {
         await syncTransactions(session.user.id, manual);
         const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
-        if (lastTxSync) setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+        if (lastTxSync) setLastSyncTime(getRelativeTime(lastTxSync));
 
         if (manual) {
           onSyncComplete(); // Only reload the list aggressively on manual sync
@@ -47,16 +47,18 @@ export const useTransactionSync = (session: Session | null, onSyncComplete: () =
     useCallback(() => {
       const autoSync = async () => {
         if (session?.user?.id) {
-          const needsSync = await needsTransactionSync(session.user.id);
+          let lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
+          const needsSync =
+            (await needsTransactionSync(session.user.id)) ||
+            !lastTxSync ||
+            !lastTxSync.includes('T');
           if (needsSync) {
             performSync(false);
           }
 
-          const lastTxSync = await AsyncStorage.getItem(
-            `@last_sync_transactions_${session.user.id}`,
-          );
+          lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${session.user.id}`);
           if (lastTxSync) {
-            setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+            setLastSyncTime(getRelativeTime(lastTxSync));
           }
         }
       };

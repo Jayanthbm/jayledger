@@ -77,6 +77,9 @@ export const syncGoals = async (userId: string) => {
       }
     });
     syncLog('Goals', `Saved ${goals.length} goals to local DB.`);
-    await AsyncStorage.setItem(`${STORAGE_KEYS.LAST_SYNC_GOALS}${userId}`, Date.now().toString());
+    await AsyncStorage.setItem(
+      `${STORAGE_KEYS.LAST_SYNC_GOALS}${userId}`,
+      new Date().toISOString(),
+    );
   }
 };

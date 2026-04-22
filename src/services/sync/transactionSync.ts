@@ -135,7 +135,7 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
 
   await AsyncStorage.setItem(
     `${STORAGE_KEYS.LAST_SYNC_TRANSACTIONS}${userId}`,
-    Date.now().toString(),
+    new Date().toISOString(),
   );
   syncLog('Transactions', 'Sync completed.');
 };

@@ -35,6 +35,7 @@ import {
 import { BudgetCard } from '../components/BudgetCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getRelativeTime } from '../utils/dateUtils';
+import { STORAGE_KEYS } from '../constants';
 import {
   fetchBudgetsWithSpending,
   fetchBudgetDrillDown,
@@ -121,20 +122,22 @@ export default function BudgetsScreen() {
       );
       setData(sorted);
 
-      const lastSync = await AsyncStorage.getItem(`@last_sync_budgets_${session.user.id}`);
-      if (lastSync) setLastSyncTime(getRelativeTime(parseInt(lastSync)));
+      const lastSync = await AsyncStorage.getItem(
+        `${STORAGE_KEYS.LAST_SYNC_BUDGETS}${session.user.id}`,
+      );
+      if (lastSync) setLastSyncTime(getRelativeTime(lastSync));
 
-      if (sorted.length === 0) {
+      if (sorted.length === 0 || !lastSync || !lastSync.includes('T')) {
         const alreadyChecked = await AsyncStorage.getItem(
           `@initial_budget_sync_checked_${session.user.id}`,
         );
-        if (!alreadyChecked) {
+        if (!alreadyChecked || !lastSync || !lastSync.includes('T')) {
           setIsSyncing(true);
           await handleBudgetSync(session.user.id);
           const lastSyncUpdated = await AsyncStorage.getItem(
-            `@last_sync_budgets_${session.user.id}`,
+            `${STORAGE_KEYS.LAST_SYNC_BUDGETS}${session.user.id}`,
           );
-          if (lastSyncUpdated) setLastSyncTime(getRelativeTime(parseInt(lastSyncUpdated)));
+          if (lastSyncUpdated) setLastSyncTime(getRelativeTime(lastSyncUpdated));
           const updated = await fetchBudgetsWithSpending(
             session.user.id,
             startDateStr,
@@ -158,8 +161,10 @@ export default function BudgetsScreen() {
     setIsSyncing(true);
     try {
       await handleBudgetSync(session.user.id);
-      const lastSync = await AsyncStorage.getItem(`@last_sync_budgets_${session.user.id}`);
-      if (lastSync) setLastSyncTime(getRelativeTime(parseInt(lastSync)));
+      const lastSync = await AsyncStorage.getItem(
+        `${STORAGE_KEYS.LAST_SYNC_BUDGETS}${session.user.id}`,
+      );
+      if (lastSync) setLastSyncTime(getRelativeTime(lastSync));
       loadData();
       showToast('Budgets synced successfully', 'success');
     } catch (e) {

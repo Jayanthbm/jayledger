@@ -21,7 +21,7 @@ export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
     setError(null);
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock JayLedger',
+        promptMessage: 'Unlock Jmoney',
         fallbackLabel: 'Use Passcode',
         disableDeviceFallback: false,
       });
@@ -60,7 +60,7 @@ export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
           <Icon name="fingerprint" size={64} color={colors.primary} />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>JayLedger Locked</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Jmoney Locked</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Please authenticate to access your financial data
         </Text>

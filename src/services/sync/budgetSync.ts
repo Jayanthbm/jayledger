@@ -99,7 +99,10 @@ export const syncBudgets = async (userId: string) => {
     });
     syncLog('Budgets', `Saved ${budgets.length} budgets to local DB.`);
     logger.info(`[Sync:Budgets] Pulled ${budgets.length} budgets from Supabase`);
-    await AsyncStorage.setItem(`${STORAGE_KEYS.LAST_SYNC_BUDGETS}${userId}`, Date.now().toString());
+    await AsyncStorage.setItem(
+      `${STORAGE_KEYS.LAST_SYNC_BUDGETS}${userId}`,
+      new Date().toISOString(),
+    );
   } else if (error) {
     logger.error(`[Sync:Budgets] Pull failed:`, error);
   }

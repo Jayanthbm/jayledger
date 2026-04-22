@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { logger } from '../utils/logger';
 
-const DB_NAME = 'jayledger.db';
+const DB_NAME = 'jmoney.db';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 

@@ -61,6 +61,9 @@ export const syncPayees = async (userId: string) => {
       }
     });
     syncLog('Payees', `Saved ${payees.length} payees to local DB.`);
-    await AsyncStorage.setItem(`${STORAGE_KEYS.LAST_SYNC_PAYEES}${userId}`, Date.now().toString());
+    await AsyncStorage.setItem(
+      `${STORAGE_KEYS.LAST_SYNC_PAYEES}${userId}`,
+      new Date().toISOString(),
+    );
   }
 };

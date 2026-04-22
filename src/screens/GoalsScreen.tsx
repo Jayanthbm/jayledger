@@ -20,6 +20,7 @@ import { useToast } from '../store/ToastContext';
 import { generateUUID } from '../utils/commonUtils';
 
 import { fetchGoals, handleGoalSync, sortGoals } from '../services/goalService';
+import { STORAGE_KEYS } from '../constants';
 
 // Modular Components
 import { GoalCard } from '../components/goals/GoalCard';
@@ -67,16 +68,18 @@ export default function GoalsScreen() {
       const rows = await fetchGoals(user.id);
       setData(rows);
 
-      const last = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
-      if (last) setLastSyncTime(getRelativeTime(parseInt(last)));
+      const last = await AsyncStorage.getItem(`${STORAGE_KEYS.LAST_SYNC_GOALS}${user.id}`);
+      if (last) setLastSyncTime(getRelativeTime(last));
 
-      if (rows.length === 0) {
+      if (rows.length === 0 || !last || !last.includes('T')) {
         const alreadyChecked = await AsyncStorage.getItem(`@initial_goals_sync_checked_${user.id}`);
-        if (!alreadyChecked) {
+        if (!alreadyChecked || !last || !last.includes('T')) {
           setIsSyncing(true);
           await handleGoalSync(user.id);
-          const lastUpdated = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
-          if (lastUpdated) setLastSyncTime(getRelativeTime(parseInt(lastUpdated)));
+          const lastUpdated = await AsyncStorage.getItem(
+            `${STORAGE_KEYS.LAST_SYNC_GOALS}${user.id}`,
+          );
+          if (lastUpdated) setLastSyncTime(getRelativeTime(lastUpdated));
           const updated = await fetchGoals(user.id);
           setData(updated);
           setIsSyncing(false);
@@ -112,8 +115,8 @@ export default function GoalsScreen() {
     setIsSyncing(true);
     try {
       await handleGoalSync(user.id);
-      const last = await AsyncStorage.getItem(`@last_sync_goals_${user.id}`);
-      if (last) setLastSyncTime(getRelativeTime(parseInt(last)));
+      const last = await AsyncStorage.getItem(`${STORAGE_KEYS.LAST_SYNC_GOALS}${user.id}`);
+      if (last) setLastSyncTime(getRelativeTime(last));
       await loadData();
       showToast('Goals synced successfully', 'success');
     } catch (e) {

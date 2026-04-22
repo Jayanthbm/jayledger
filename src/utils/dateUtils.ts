@@ -2,7 +2,13 @@ import { formatDistanceToNowStrict } from 'date-fns';
 
 export const getRelativeTime = (timestamp: number | string | Date): string => {
   try {
-    const date = new Date(timestamp);
+    let date: Date;
+    if (typeof timestamp === 'string' && /^\d+$/.test(timestamp)) {
+      date = new Date(parseInt(timestamp, 10));
+    } else {
+      date = new Date(timestamp);
+    }
+
     if (isNaN(date.getTime())) return '';
 
     const distance = formatDistanceToNowStrict(date, { addSuffix: true });

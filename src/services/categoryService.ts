@@ -11,9 +11,25 @@ const LAST_SYNC_KEY = (userId: string) => `@last_sync_categories_${userId}`;
 export const fetchCategoriesData = async (
   userId: string,
 ): Promise<{ categories: Category[]; viewMode: 'list' | 'grid'; lastSynced: string | null }> => {
-  const categories = await getCategories(userId);
-  const viewMode = await AsyncStorage.getItem(VIEW_MODE_KEY(userId));
+  let categories = await getCategories(userId);
+  const viewMode = (await AsyncStorage.getItem(VIEW_MODE_KEY(userId))) as 'list' | 'grid' | null;
   const lastSynced = await AsyncStorage.getItem(LAST_SYNC_KEY(userId));
+
+  // Trigger auto-sync if never synced or in wrong format
+  if (!lastSynced || !lastSynced.includes('T')) {
+    logger.info('[Categories] Missing or invalid sync history, triggering initial sync...');
+    try {
+      const result = await performCategorySync(userId);
+      return {
+        categories: result.categories,
+        viewMode: viewMode === 'list' || viewMode === 'grid' ? viewMode : 'grid',
+        lastSynced: result.lastSynced,
+      };
+    } catch (err) {
+      logger.error('[Categories] Auto-sync failed:', err);
+    }
+  }
+
   return {
     categories,
     viewMode: viewMode === 'list' || viewMode === 'grid' ? viewMode : 'grid',

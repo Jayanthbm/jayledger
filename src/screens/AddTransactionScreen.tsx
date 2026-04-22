@@ -46,6 +46,7 @@ export default function AddTransactionScreen() {
   const [type, setType] = useState<'Expense' | 'Income'>(
     editTx ? (editTx.type as 'Expense' | 'Income') : 'Expense',
   );
+  const [productLink, setProductLink] = useState(editTx ? editTx.product_link || '' : '');
   const {
     date,
     showDatePicker,
@@ -170,6 +171,7 @@ export default function AddTransactionScreen() {
         payee_logo: selectedPayee?.logo || null,
         type: type,
         user_id: session.user.id,
+        product_link: productLink.trim() || null,
         created_at: editTx?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         sync_status: 1,
@@ -262,6 +264,8 @@ export default function AddTransactionScreen() {
                 setAmount={setAmount}
                 description={description}
                 setDescription={setDescription}
+                productLink={productLink}
+                setProductLink={setProductLink}
                 iconColor={currentIconColor}
                 colors={colors}
                 autoFocus={!editTx}

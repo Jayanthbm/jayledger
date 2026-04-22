@@ -67,7 +67,7 @@ export const syncCategories = async (userId: string) => {
     syncLog('Categories', `Saved ${categories.length} categories to local DB.`);
     await AsyncStorage.setItem(
       `${STORAGE_KEYS.LAST_SYNC_CATEGORIES}${userId}`,
-      Date.now().toString(),
+      new Date().toISOString(),
     );
   }
 };

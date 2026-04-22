@@ -6,6 +6,7 @@ import {
   needsTransactionSync,
   syncTransactions,
 } from '../services/syncService';
+import { STORAGE_KEYS } from '../constants';
 import { getRelativeTime } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
 import { useToast } from '../store/ToastContext';
@@ -57,9 +58,17 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
 
   const checkSyncStatus = useCallback(async () => {
     if (!userId) return;
-    const lastMasterSync = await AsyncStorage.getItem(`@last_sync_master_${userId}`);
+    const lastTxSync = await AsyncStorage.getItem(
+      `${STORAGE_KEYS.LAST_SYNC_TRANSACTIONS}${userId}`,
+    );
+    if (lastTxSync) {
+      setLastSyncTime(getRelativeTime(lastTxSync));
+    }
 
-    if (!lastMasterSync) {
+    const lastMasterSync = await AsyncStorage.getItem(`${STORAGE_KEYS.LAST_SYNC_MASTER}${userId}`);
+    const needsSync = !lastMasterSync || !lastMasterSync.includes('T');
+
+    if (needsSync) {
       setShowSyncModal(true);
       await handleInitialSync();
     } else {
@@ -71,11 +80,6 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
         onRefresh();
       }
     }
-
-    const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${userId}`);
-    if (lastTxSync) {
-      setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
-    }
   }, [userId, onRefresh, handleInitialSync]);
 
   const handleManualSync = useCallback(async () => {
@@ -85,7 +89,7 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
       await syncTransactions(userId, true);
       const lastTxSync = await AsyncStorage.getItem(`@last_sync_transactions_${userId}`);
       if (lastTxSync) {
-        setLastSyncTime(getRelativeTime(parseInt(lastTxSync)));
+        setLastSyncTime(getRelativeTime(lastTxSync));
       }
       onRefresh();
       showToast('Dashboard synced successfully', 'success');

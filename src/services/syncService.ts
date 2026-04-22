@@ -100,7 +100,7 @@ export const runFullSync = async (userId: string, onProgress?: (msg: string) => 
     await syncPayees(userId);
 
     if (onProgress) onProgress('Finalizing');
-    await AsyncStorage.setItem(`@last_sync_master_${userId}`, Date.now().toString());
+    await AsyncStorage.setItem(`@last_sync_master_${userId}`, new Date().toISOString());
     syncLog('Coordinator', '*** Full Sync complete ***');
     logger.info(`[SyncMaster] Full sync completed for user: ${userId}`);
   } catch (error) {

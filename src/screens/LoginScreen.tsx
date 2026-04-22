@@ -69,7 +69,7 @@ export default function LoginScreen() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.innerContainer}>
               <View style={styles.headerArea}>
-                <Text style={[styles.titleText, { color: colors.text }]}>JayLedger</Text>
+                <Text style={[styles.titleText, { color: colors.text }]}>Jmoney</Text>
                 <Text style={[styles.subtitleText, { color: colors.textSecondary }]}>
                   Manage your finances effortlessly
                 </Text>
