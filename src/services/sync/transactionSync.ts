@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isOnline, syncLog } from './baseSync';
 import { STORAGE_KEYS, TABLES } from '../../constants';
 import { logger } from '../../utils/logger';
+import { Transaction } from '../../models/types';
 
 /**
  * Pushes unsynced local transactions to Supabase.
@@ -95,17 +96,47 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
   let hasMore = true;
 
   while (hasMore) {
-    const { data, error } = await supabase.rpc('get_user_transactions', {
-      uid: userId,
-      after_tid: lastTid,
-      limit_count: CHUNK_SIZE,
-      offset_count: offset,
-    });
+    const { data: rawData, error } = await supabase
+      .from(TABLES.TRANSACTIONS)
+      .select(
+        `
+        *,
+        categories:category_id (
+          name,
+          icon,
+          app_icon
+        ),
+        payees:payee_id (
+          name,
+          logo
+        )
+      `,
+      )
+      .eq('user_id', userId)
+      .gt('tid', lastTid)
+      .order('tid', { ascending: true })
+      .range(offset, offset + CHUNK_SIZE - 1);
 
     if (error) {
       logger.error('[Sync:Transactions] Error pulling transactions:', error);
       break;
     }
+
+    const data = rawData?.map(
+      (
+        item: Transaction & {
+          categories: { name: string; icon: string; app_icon: string } | null;
+          payees: { name: string; logo: string } | null;
+        },
+      ) => ({
+        ...item,
+        category_name: item.categories?.name,
+        category_icon: item.categories?.icon,
+        category_app_icon: item.categories?.app_icon,
+        payee_name: item.payees?.name,
+        payee_logo: item.payees?.logo,
+      }),
+    );
 
     if (!data || data.length === 0) {
       hasMore = false;
