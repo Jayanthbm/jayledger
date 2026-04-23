@@ -46,6 +46,8 @@ export const initDB = async () => {
         user_id TEXT NOT NULL,
         product_link TEXT,
         tid INTEGER DEFAULT 0,
+        latitude REAL,
+        longitude REAL,
         sync_status INTEGER DEFAULT 0,
         created_at TEXT,
         updated_at TEXT,
@@ -142,6 +144,8 @@ export const initDB = async () => {
       'ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;',
       'ALTER TABLE budgets ADD COLUMN deleted INTEGER DEFAULT 0;',
       'ALTER TABLE goals ADD COLUMN deleted INTEGER DEFAULT 0;',
+      'ALTER TABLE transactions ADD COLUMN latitude REAL;',
+      'ALTER TABLE transactions ADD COLUMN longitude REAL;',
     ];
 
     for (const m of migrations) {

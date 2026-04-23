@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { useToast } from '../store/ToastContext';
+import * as Location from 'expo-location';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
@@ -47,6 +48,9 @@ export default function AddTransactionScreen() {
     editTx ? (editTx.type as 'Expense' | 'Income') : 'Expense',
   );
   const [productLink, setProductLink] = useState(editTx ? editTx.product_link || '' : '');
+  const [includeLocation, setIncludeLocation] = useState(!editTx);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [fetchingLocation, setFetchingLocation] = useState(false);
   const {
     date,
     showDatePicker,
@@ -137,6 +141,49 @@ export default function AddTransactionScreen() {
     }
   }, [type, editTx, categories, route.params]);
 
+  const fetchLocation = useCallback(async () => {
+    setFetchingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        showToast('Permission to access location was denied', 'error');
+        setIncludeLocation(false);
+        return;
+      }
+
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      setIncludeLocation(true);
+    } catch (error) {
+      logger.error('Error fetching location:', error);
+      showToast('Failed to get current location', 'error');
+      setIncludeLocation(false);
+    } finally {
+      setFetchingLocation(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (!editTx && includeLocation) {
+      const timer = setTimeout(() => {
+        fetchLocation();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [editTx, includeLocation, fetchLocation]);
+
+  const handleLocationToggle = async () => {
+    if (!includeLocation) {
+      await fetchLocation();
+    } else {
+      setIncludeLocation(false);
+      setLocation(null);
+    }
+  };
+
   const handleSave = async () => {
     if (!session?.user?.id) return;
 
@@ -172,6 +219,8 @@ export default function AddTransactionScreen() {
         type: type,
         user_id: session.user.id,
         product_link: productLink.trim() || null,
+        latitude: location?.latitude || null,
+        longitude: location?.longitude || null,
         created_at: editTx?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
         sync_status: 1,
@@ -280,6 +329,35 @@ export default function AddTransactionScreen() {
                 currentIconBg={currentIconBg}
                 currentIconColor={currentIconColor}
               />
+
+              {!editTx && (
+                <View style={[styles.locationRow, common.mt12]}>
+                  <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>
+                    Include Location
+                  </Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.locationToggle,
+                      {
+                        backgroundColor: includeLocation ? currentIconColor : colors.background,
+                        borderColor: includeLocation ? currentIconColor : colors.border,
+                      },
+                    ]}
+                    onPress={handleLocationToggle}
+                    disabled={fetchingLocation}
+                  >
+                    {fetchingLocation ? (
+                      <ActivityIndicator size="small" color={colors.text} />
+                    ) : (
+                      <Icon
+                        name={includeLocation ? 'location-on' : 'location-off'}
+                        size={18}
+                        color={includeLocation ? 'white' : colors.textSecondary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
             </ScrollView>
 
             {/* Save Button */}
@@ -389,5 +467,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '700',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  locationLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  locationToggle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
 });

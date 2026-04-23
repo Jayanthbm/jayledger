@@ -41,6 +41,8 @@ export const pushLocalTransactions = async (userId: string) => {
       payee_id: tx.payee_id === 'null' ? null : tx.payee_id || null,
       type: tx.type || 'Expense',
       product_link: tx.product_link || null,
+      latitude: tx.latitude || null,
+      longitude: tx.longitude || null,
       created_at: tx.created_at || new Date().toISOString(),
       updated_at: tx.updated_at || new Date().toISOString(),
       sync_status: 'synced' as const,
@@ -153,8 +155,8 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
         };
 
         await db.execAsync(
-          `INSERT OR REPLACE INTO transactions (id, amount, description, transaction_timestamp, date, category_id, category_name, category_icon, category_app_icon, payee_id, payee_name, payee_logo, type, user_id, product_link, tid, sync_status)
-           VALUES ('${sanitized.id}', ${sanitized.amount}, '${sanitized.description}', '${sanitized.transaction_timestamp}', '${sanitized.transaction_timestamp.split('T')[0]}', '${sanitized.category_id}', '${sanitized.category_name}', '${sanitized.category_icon}', '${sanitized.category_app_icon}', '${sanitized.payee_id}', '${sanitized.payee_name}', '${sanitized.payee_logo}', '${sanitized.type}', '${userId}', '${sanitized.product_link || ''}', ${sanitized.tid}, 0)`,
+          `INSERT OR REPLACE INTO transactions (id, amount, description, transaction_timestamp, date, category_id, category_name, category_icon, category_app_icon, payee_id, payee_name, payee_logo, type, user_id, product_link, tid, latitude, longitude, sync_status)
+           VALUES ('${sanitized.id}', ${sanitized.amount}, '${sanitized.description}', '${sanitized.transaction_timestamp}', '${sanitized.transaction_timestamp.split('T')[0]}', '${sanitized.category_id}', '${sanitized.category_name}', '${sanitized.category_icon}', '${sanitized.category_app_icon}', '${sanitized.payee_id}', '${sanitized.payee_name}', '${sanitized.payee_logo}', '${sanitized.type}', '${userId}', '${sanitized.product_link || ''}', ${sanitized.tid}, ${sanitized.latitude || 'NULL'}, ${sanitized.longitude || 'NULL'}, 0)`,
         );
       }
     });

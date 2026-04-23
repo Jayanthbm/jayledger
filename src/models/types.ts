@@ -18,6 +18,8 @@ export interface Transaction {
   user_id: string;
   product_link?: string | null;
   tid: number;
+  latitude?: number | null;
+  longitude?: number | null;
   sync_status?: number;
   created_at?: string;
   updated_at?: string;

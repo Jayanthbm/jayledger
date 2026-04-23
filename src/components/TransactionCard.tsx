@@ -49,6 +49,13 @@ export const TransactionCard = React.memo(
       }
     };
 
+    const handleOpenMap = () => {
+      if (transaction.latitude && transaction.longitude) {
+        const url = `https://www.google.com/maps/search/?api=1&query=${transaction.latitude},${transaction.longitude}`;
+        Linking.openURL(url).catch((err) => logger.error('Failed to open Map:', err));
+      }
+    };
+
     const renderRightActions = () => (
       <View style={styles.actionsContainer}>
         <TouchableOpacity
@@ -93,20 +100,33 @@ export const TransactionCard = React.memo(
 
     const linkNode = transaction.product_link ? (
       <TouchableOpacity
-        style={[styles.linkPill, { backgroundColor: colors.primary + '10' }]}
+        style={[styles.iconPill, { backgroundColor: colors.primary + '15' }]}
         onPress={handleOpenLink}
         activeOpacity={0.6}
       >
         <Icon name="link" size={14} color={colors.primary} />
-        <Text style={[styles.linkText, { color: colors.primary }]}>View Product</Text>
       </TouchableOpacity>
     ) : null;
+
+    const mapNode =
+      transaction.latitude && transaction.longitude ? (
+        <TouchableOpacity
+          style={[styles.iconPill, { backgroundColor: colors.success + '15' }]}
+          onPress={handleOpenMap}
+          activeOpacity={0.6}
+        >
+          <Icon name="map" size={14} color={colors.success} />
+        </TouchableOpacity>
+      ) : null;
 
     const footerNode = (
       <View style={styles.footerRow}>
         {payeeNode}
-        {payeeNode && linkNode && <View style={styles.footerSeparator} />}
-        {linkNode}
+        {payeeNode && (linkNode || mapNode) && <View style={styles.footerSeparator} />}
+        <View style={styles.iconContainer}>
+          {linkNode}
+          {mapNode}
+        </View>
       </View>
     );
 
@@ -199,16 +219,16 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
-  linkPill: {
+  iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
+    gap: 6,
   },
-  linkText: {
-    fontSize: 11,
-    fontWeight: '700',
+  iconPill: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
