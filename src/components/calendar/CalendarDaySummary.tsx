@@ -8,8 +8,6 @@ interface CalendarDaySummaryProps {
   selectedDate: Date;
   totalForDay: number;
   colors: ThemeColors;
-  showTodayButton: boolean;
-  onGoToToday: () => void;
   isCollapsed: boolean;
   showToggleButton: boolean;
   onToggleCalendar: () => void;
@@ -19,8 +17,6 @@ export const CalendarDaySummary: React.FC<CalendarDaySummaryProps> = ({
   selectedDate,
   totalForDay,
   colors,
-  showTodayButton,
-  onGoToToday,
   isCollapsed,
   showToggleButton,
   onToggleCalendar,
@@ -32,14 +28,6 @@ export const CalendarDaySummary: React.FC<CalendarDaySummaryProps> = ({
       </Text>
 
       <View style={styles.centerActions}>
-        {showTodayButton && (
-          <TouchableOpacity
-            onPress={onGoToToday}
-            style={[styles.actionIcon, { backgroundColor: colors.primary + '15' }]}
-          >
-            <MaterialIcons name="today" size={20} color={colors.primary} />
-          </TouchableOpacity>
-        )}
         {showToggleButton && (
           <TouchableOpacity
             onPress={onToggleCalendar}

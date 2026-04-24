@@ -168,6 +168,16 @@ export default function CalendarViewScreen() {
             setSelectedDate={setSelectedDate}
             colors={colors}
           />
+
+          {!isSameDay(selectedDate, new Date()) && (
+            <TouchableOpacity
+              onPress={goToToday}
+              style={[styles.todayButton, { backgroundColor: colors.primary + '15' }]}
+            >
+              <MaterialIcons name="today" size={18} color={colors.primary} />
+              <Text style={[styles.todayText, { color: colors.primary }]}>Goto Today</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -175,10 +185,8 @@ export default function CalendarViewScreen() {
         selectedDate={selectedDate}
         totalForDay={totalForDay}
         colors={colors}
-        showTodayButton={!isSameDay(selectedDate, new Date())}
-        onGoToToday={goToToday}
         isCollapsed={isCollapsed}
-        showToggleButton={isCollapsed || data.length > 2}
+        showToggleButton={isCollapsed || data.length > 0}
         onToggleCalendar={toggleCollapsed}
       />
 
@@ -223,5 +231,20 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 15, marginTop: 12 },
   loader: {
     marginTop: 40,
+  },
+  todayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginTop: 16,
+    alignSelf: 'center',
+  },
+  todayText: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginLeft: 6,
   },
 });
