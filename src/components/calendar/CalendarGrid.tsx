@@ -28,6 +28,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
     [colors.primary, colors.text],
   );
 
+  const startDayIndex = days.length > 0 ? days[0].getDay() : 0;
+  const emptySlots = Array.from({ length: startDayIndex });
+
   return (
     <View style={styles.daysGrid}>
       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
@@ -35,6 +38,11 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
           {d}
         </Text>
       ))}
+
+      {emptySlots.map((_, index) => (
+        <View key={`empty-${index}`} style={styles.dayCell} />
+      ))}
+
       {days.map((day) => {
         const isSelected = isSameDay(day, selectedDate);
         return (
