@@ -9,6 +9,7 @@ import {
   Keyboard,
   ScrollView,
   DeviceEventEmitter,
+  Linking,
 } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
@@ -51,6 +52,7 @@ export default function AddTransactionScreen() {
   const [includeLocation, setIncludeLocation] = useState(!editTx);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [locationSource, setLocationSource] = useState<'Current' | 'Last Known' | null>(null);
   const {
     date,
     showDatePicker,
@@ -143,6 +145,8 @@ export default function AddTransactionScreen() {
 
   const fetchLocation = useCallback(async () => {
     setFetchingLocation(true);
+    let lastKnownUsed = false;
+
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -151,20 +155,70 @@ export default function AddTransactionScreen() {
         return;
       }
 
-      const loc = await Location.getCurrentPositionAsync({});
-      setLocation({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
+      // Phase 1: Try to get last known position immediately (fast fallback)
+      try {
+        const lastKnown = await Location.getLastKnownPositionAsync({});
+        if (lastKnown) {
+          setLocation({
+            latitude: lastKnown.coords.latitude,
+            longitude: lastKnown.coords.longitude,
+          });
+          setLocationSource('Last Known');
+          setIncludeLocation(true);
+          lastKnownUsed = true;
+        }
+      } catch (e) {
+        logger.error('Last known position error:', e);
+      }
+
+      // Phase 2: Try for a fresh fix with a longer timeout
+      const locationPromise = Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
       });
-      setIncludeLocation(true);
-    } catch (error) {
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Location request timed out')), 15000),
+      );
+
+      try {
+        const loc = await Promise.race([locationPromise, timeoutPromise]);
+        setLocation({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+        setLocationSource('Current');
+        setIncludeLocation(true);
+      } catch (freshError: any) {
+        // If we have a last known position, don't show an error for the fresh fix failure
+        if (!lastKnownUsed) {
+          throw freshError;
+        } else {
+          logger.warn('Fresh fix failed, using last known position instead:', freshError.message);
+        }
+      }
+    } catch (error: any) {
       logger.error('Error fetching location:', error);
-      showToast('Failed to get current location', 'error');
+      const msg = error.message?.includes('timed out')
+        ? 'Location request timed out. Please try again.'
+        : 'Failed to get current location';
+      showToast(msg, 'error');
       setIncludeLocation(false);
+      setLocation(null);
+      setLocationSource(null);
     } finally {
       setFetchingLocation(false);
     }
   }, [showToast]);
+
+  const handleOpenMaps = useCallback(() => {
+    if (location) {
+      const url = `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
+      Linking.openURL(url).catch((err) => {
+        logger.error('Error opening Google Maps:', err);
+        showToast('Could not open map', 'error');
+      });
+    }
+  }, [location, showToast]);
 
   useEffect(() => {
     if (!editTx && includeLocation) {
@@ -181,6 +235,7 @@ export default function AddTransactionScreen() {
     } else {
       setIncludeLocation(false);
       setLocation(null);
+      setLocationSource(null);
     }
   };
 
@@ -332,9 +387,18 @@ export default function AddTransactionScreen() {
 
               {!editTx && (
                 <View style={[styles.locationRow, common.mt12]}>
-                  <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>
-                    Include Location
-                  </Text>
+                  <View style={common.flex1}>
+                    <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>
+                      Include Location {locationSource && `(${locationSource})`}
+                    </Text>
+                    {location && includeLocation && (
+                      <TouchableOpacity onPress={handleOpenMaps} activeOpacity={0.6}>
+                        <Text style={[styles.coordsText, { color: colors.primary }]}>
+                          {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   <TouchableOpacity
                     style={[
                       styles.locationToggle,
@@ -485,5 +549,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+  },
+  coordsText: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
   },
 });

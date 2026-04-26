@@ -10,8 +10,8 @@ export interface TransactionFormFieldsProps {
   setDescription: (val: string) => void;
   productLink: string;
   setProductLink: (val: string) => void;
-  identifier: string;
-  setIdentifier: (val: string) => void;
+  identifier?: string;
+  setIdentifier?: (val: string) => void;
   iconColor: string;
   colors: Record<string, string>;
   autoFocus?: boolean;
@@ -61,16 +61,20 @@ export const TransactionFormFields = ({
           onChangeText={setDescription}
           maxLength={255}
         />
-        <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
-        <TextInput
-          style={[styles.identifierInput, { color: colors.text }]}
-          placeholder="ID"
-          placeholderTextColor={colors.textSecondary + '70'}
-          value={identifier}
-          onChangeText={(text) => setIdentifier(text.toUpperCase().slice(0, 2))}
-          maxLength={2}
-          autoCapitalize="characters"
-        />
+        {setIdentifier && (
+          <>
+            <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
+            <TextInput
+              style={[styles.identifierInput, { color: colors.text }]}
+              placeholder="ID"
+              placeholderTextColor={colors.textSecondary + '70'}
+              value={identifier}
+              onChangeText={(text) => setIdentifier(text.toUpperCase().slice(0, 2))}
+              maxLength={2}
+              autoCapitalize="characters"
+            />
+          </>
+        )}
       </View>
 
       <View
