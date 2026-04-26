@@ -57,7 +57,7 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
     } finally {
       setIsSyncing(false);
     }
-  }, [userId, onRefresh]);
+  }, [userId, onRefresh, isSyncing]);
 
   const checkSyncStatus = useCallback(async () => {
     if (!userId) return;
@@ -85,7 +85,7 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
         onRefresh();
       }
     }
-  }, [userId, onRefresh, handleInitialSync]);
+  }, [userId, onRefresh, handleInitialSync, isSyncing]);
 
   const handleManualSync = useCallback(async () => {
     if (!userId || isSyncing) return;

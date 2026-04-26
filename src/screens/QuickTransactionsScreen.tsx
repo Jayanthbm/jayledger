@@ -7,10 +7,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomSheet } from '../components/BottomSheet';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { getQuickTransactions, deleteQuickTransaction } from '../db/queries';
+import {
+  getQuickTransactions,
+  deleteQuickTransaction,
+  updateQuickTransactionPriorities,
+} from '../db/queries';
 import { QuickTransaction } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -18,9 +23,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
-
-import { formatCurrency } from '../utils/formatters';
 import { logger } from '../utils/logger';
+import { QuickTransactionCard } from '../components/transactions/QuickTransactionCard';
+import { SearchBar } from '../components/SearchBar';
+
+const QUICK_VIEW_MODE_KEY = (userId: string) => `@quick_transaction_view_mode_${userId}`;
 
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
@@ -31,7 +38,7 @@ export default function QuickTransactionsScreen() {
   const listRef = useRef<FlatList>(null);
   const dynamicStyles = React.useMemo(
     () => ({
-      listContent: { paddingBottom: insets.bottom + 80 },
+      listContent: { paddingBottom: insets.bottom + 80, paddingHorizontal: 10, paddingTop: 4 },
       fab: { bottom: insets.bottom + 16 },
     }),
     [insets.bottom],
@@ -40,6 +47,74 @@ export default function QuickTransactionsScreen() {
   const scrollToTop = useCallback(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, []);
+
+  const [data, setData] = useState<QuickTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [isReordering, setIsReordering] = useState(false);
+  const [viewMode, setViewMode] = useState<'Card' | 'List'>('Card');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const loadData = useCallback(async () => {
+    if (!session?.user?.id) return;
+    try {
+      const [qts, savedViewMode] = await Promise.all([
+        getQuickTransactions(session.user.id),
+        AsyncStorage.getItem(QUICK_VIEW_MODE_KEY(session.user.id)),
+      ]);
+      setData(qts);
+      if (savedViewMode === 'Card' || savedViewMode === 'List') {
+        setViewMode(savedViewMode);
+      }
+    } catch (error) {
+      logger.error('Load Quick Transactions Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [session]);
+
+  const toggleReorderMode = () => {
+    setIsReordering(!isReordering);
+    if (!isReordering) setViewMode('List'); // Force list for reordering
+  };
+
+  const toggleViewMode = async () => {
+    const newMode = viewMode === 'Card' ? 'List' : 'Card';
+    setViewMode(newMode);
+    if (session?.user?.id) {
+      await AsyncStorage.setItem(QUICK_VIEW_MODE_KEY(session.user.id), newMode);
+    }
+  };
+
+  const moveItem = async (index: number, direction: 'up' | 'down') => {
+    const newData = [...filteredData]; // Use current visible list
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newData.length) return;
+
+    // Swap items
+    [newData[index], newData[targetIndex]] = [newData[targetIndex], newData[index]];
+
+    // Update priorities based on new indices
+    const updatedItems = newData.map((item, i) => ({ ...item, priority: i + 1 }));
+    const updates = updatedItems.map((item) => ({ id: item.id, priority: item.priority }));
+
+    // Optimistic update
+    setData((prev) => {
+      const remaining = prev.filter((p) => !updatedItems.find((n) => n.id === p.id));
+      const merged = [...remaining, ...updatedItems];
+      return merged.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    });
+
+    try {
+      if (session?.user?.id) {
+        await updateQuickTransactionPriorities(updates, session.user.id);
+      }
+    } catch (error) {
+      logger.error('Reorder Error:', error);
+      loadData(); // Rollback
+    }
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -53,24 +128,14 @@ export default function QuickTransactionsScreen() {
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
+      headerRight: undefined, // Remove header actions
     });
   }, [navigation, colors.text, scrollToTop]);
 
-  const [data, setData] = useState<QuickTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const loadData = useCallback(async () => {
-    if (!session?.user?.id) return;
-    try {
-      const qts = await getQuickTransactions(session.user.id);
-      setData(qts);
-    } catch (error) {
-      logger.error('Load Quick Transactions Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [session]);
+  const q = searchQuery.trim().toLowerCase();
+  const filteredData = (
+    q ? data.filter((item) => item.name.toLowerCase().includes(q)) : [...data]
+  ).sort((a, b) => (a.priority || 0) - (b.priority || 0));
 
   useFocusEffect(
     useCallback(() => {
@@ -92,37 +157,86 @@ export default function QuickTransactionsScreen() {
     loadData();
   };
 
-  const renderItem = ({ item }: { item: QuickTransaction }) => (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => navigation.navigate('AddQuickTransaction', { quickTransaction: item })}
-    >
-      <View
-        style={[
-          styles.iconContainer,
-          {
-            backgroundColor: item.type === 'Income' ? colors.success + '20' : colors.danger + '20',
-          },
-        ]}
-      >
-        <Icon
-          name={item.type === 'Income' ? 'add-circle' : 'remove-circle'}
-          size={24}
-          color={item.type === 'Income' ? colors.success : colors.danger}
-        />
+  const handleEdit = (item: QuickTransaction) => {
+    if (isReordering) return;
+    navigation.navigate('AddQuickTransaction', { quickTransaction: item });
+  };
+
+  const renderItem = ({ item, index }: { item: QuickTransaction; index: number }) => {
+    if (viewMode === 'Card' && !isReordering) {
+      return (
+        <QuickTransactionCard item={item} onPress={handleEdit} showDelete onDelete={handleDelete} />
+      );
+    }
+
+    // List View or Reorder Mode
+    return (
+      <View style={[styles.listRow, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={styles.listItemContent}
+          onPress={() => handleEdit(item)}
+          activeOpacity={0.7}
+        >
+          <View
+            style={[
+              styles.iconBox,
+              {
+                backgroundColor:
+                  item.type === 'Income' ? colors.success + '15' : colors.danger + '15',
+              },
+            ]}
+          >
+            <Icon
+              name={item.type === 'Income' ? 'add' : 'remove'}
+              size={20}
+              color={item.type === 'Income' ? colors.success : colors.danger}
+            />
+          </View>
+          <View style={common.flex1}>
+            <Text style={[styles.listName, { color: colors.text }]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={[styles.listMeta, { color: colors.textSecondary }]}>
+              {item.type} Template
+            </Text>
+          </View>
+          {item.amount && (
+            <Text
+              style={[
+                styles.listAmount,
+                { color: item.type === 'Income' ? colors.success : colors.danger },
+              ]}
+            >
+              ₹{item.amount}
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        {isReordering ? (
+          <View style={styles.reorderArrows}>
+            <TouchableOpacity
+              onPress={() => moveItem(index, 'up')}
+              disabled={index === 0}
+              style={[styles.arrowBtn, index === 0 && styles.disabledBtn]}
+            >
+              <Icon name="expand-less" size={24} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => moveItem(index, 'down')}
+              disabled={index === data.length - 1}
+              style={[styles.arrowBtn, index === data.length - 1 && styles.disabledBtn]}
+            >
+              <Icon name="expand-more" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.listDelete}>
+            <Icon name="delete-outline" size={22} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
-      <View style={styles.details}>
-        <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
-        <Text style={[styles.meta, { color: colors.textSecondary }]}>
-          {item.amount ? `${formatCurrency(item.amount)} • ` : ''}
-          {item.type} Template
-        </Text>
-      </View>
-      <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id)}>
-        <Icon name="delete-outline" size={24} color={colors.textSecondary} />
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -134,20 +248,67 @@ export default function QuickTransactionsScreen() {
 
   return (
     <View style={[common.flex1, { backgroundColor: colors.background }]}>
+      <View style={common.headerTools}>
+        <View style={common.headerControls}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search templates..."
+            size="medium"
+            containerStyle={common.flex1}
+          />
+          <View style={common.actionRow}>
+            <TouchableOpacity
+              style={[
+                common.sortButton,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                searchQuery.length > 0 && styles.disabledOpacity,
+              ]}
+              onPress={searchQuery.length > 0 ? undefined : toggleReorderMode}
+              disabled={searchQuery.length > 0}
+            >
+              <View style={common.flexRowCenterGap4}>
+                <Icon name={isReordering ? 'check' : 'sort'} size={18} color={colors.primary} />
+                <Text style={styles.orderBtnText}>{isReordering ? 'Done' : 'Order'}</Text>
+              </View>
+            </TouchableOpacity>
+            {!isReordering && (
+              <TouchableOpacity
+                style={[
+                  common.iconButton44,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={toggleViewMode}
+              >
+                <Icon
+                  name={viewMode === 'Card' ? 'view-list' : 'grid-view'}
+                  size={22}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
+
       <FlatList
         ref={listRef}
-        data={data}
+        data={filteredData}
         keyExtractor={(item) => item.id}
+        numColumns={viewMode === 'Card' && !isReordering ? 2 : 1}
+        key={`${viewMode}-${isReordering}`}
         renderItem={renderItem}
-        contentContainerStyle={[common.listContent16, dynamicStyles.listContent]}
+        contentContainerStyle={[dynamicStyles.listContent]}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Icon name="bolt" size={64} color={colors.border} />
             <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
-              No Templates Yet
+              {searchQuery ? 'No Templates Found' : 'No Templates Yet'}
             </Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
-              Create templates for transactions you do frequently to add them in one tap.
+              {searchQuery
+                ? `Nothing matches "${searchQuery}".`
+                : 'Create templates for transactions you do frequently to add them in one tap.'}
             </Text>
           </View>
         }
@@ -187,26 +348,6 @@ export default function QuickTransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  details: { flex: 1 },
-  name: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  meta: { fontSize: 13, fontWeight: '600' },
-  deleteBtn: { padding: 8 },
   empty: {
     flex: 1,
     alignItems: 'center',
@@ -247,5 +388,60 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  orderBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#007AFF', // Fallback blue, will be overridden or used if primary matches
+  },
+  disabledOpacity: {
+    opacity: 0.5,
+  },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    marginHorizontal: 16,
+  },
+  listItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  listName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  listMeta: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  listAmount: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginHorizontal: 12,
+  },
+  listDelete: {
+    padding: 8,
+  },
+  reorderArrows: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  arrowBtn: {
+    padding: 4,
+  },
+  disabledBtn: {
+    opacity: 0.3,
   },
 });

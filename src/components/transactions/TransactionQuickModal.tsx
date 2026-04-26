@@ -1,12 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import Icon from '@expo/vector-icons/MaterialIcons';
+import { View, Text, FlatList } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { QuickTransaction } from '../../models/types';
 import { common } from '../../styles/common';
 import { useTheme } from '../../store/ThemeContext';
-
-import { formatCurrency } from '../../utils/formatters';
+import { QuickTransactionMiniCard } from './QuickTransactionMiniCard';
 
 interface TransactionQuickModalProps {
   visible: boolean;
@@ -20,8 +18,8 @@ export const TransactionQuickModal = React.memo(
     const { colors } = useTheme();
     const themedStyles = React.useMemo(
       () => ({
-        metaText: { color: colors.textSecondary, fontSize: 13 },
         emptyText: { color: colors.textSecondary },
+        gridContainer: { padding: 4 },
       }),
       [colors.textSecondary],
     );
@@ -31,38 +29,9 @@ export const TransactionQuickModal = React.memo(
         <FlatList
           data={quickTransactions}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.quickItem,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-              onPress={() => onSelect(item)}
-            >
-              <View
-                style={[
-                  styles.quickIcon,
-                  {
-                    backgroundColor:
-                      item.type === 'Income' ? colors.success + '20' : colors.danger + '20',
-                  },
-                ]}
-              >
-                <Icon
-                  name={item.type === 'Income' ? 'add' : 'remove'}
-                  size={24}
-                  color={item.type === 'Income' ? colors.success : colors.danger}
-                />
-              </View>
-              <View style={common.flex1}>
-                <Text style={[styles.quickName, { color: colors.text }]}>{item.name}</Text>
-                {item.amount ? (
-                  <Text style={themedStyles.metaText}>{formatCurrency(item.amount)}</Text>
-                ) : null}
-              </View>
-              <Icon name="chevron-right" size={24} color={colors.border} />
-            </TouchableOpacity>
-          )}
+          numColumns={3}
+          renderItem={({ item }) => <QuickTransactionMiniCard item={item} onPress={onSelect} />}
+          contentContainerStyle={themedStyles.gridContainer}
           ListEmptyComponent={
             <View style={common.alignCenterMt40}>
               <Text style={themedStyles.emptyText}>
@@ -76,26 +45,3 @@ export const TransactionQuickModal = React.memo(
   },
 );
 TransactionQuickModal.displayName = 'TransactionQuickModal';
-
-const styles = StyleSheet.create({
-  quickItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  quickIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  quickName: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});

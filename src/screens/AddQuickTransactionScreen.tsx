@@ -50,6 +50,7 @@ export default function AddQuickTransactionScreen() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPayee, setSelectedPayee] = useState<Payee | null>(null);
   const [productLink, setProductLink] = useState(editQt?.product_link || '');
+  const [identifier, setIdentifier] = useState(editQt?.identifier || '');
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
@@ -127,6 +128,8 @@ export default function AddQuickTransactionScreen() {
         description: description.trim(),
         user_id: session.user.id,
         product_link: productLink.trim() || null,
+        priority: editQt?.priority || 0,
+        identifier: identifier.trim().toUpperCase().slice(0, 2) || undefined,
       };
 
       if (editQt) {
@@ -198,6 +201,8 @@ export default function AddQuickTransactionScreen() {
                 setDescription={setDescription}
                 productLink={productLink}
                 setProductLink={setProductLink}
+                identifier={identifier}
+                setIdentifier={setIdentifier}
                 iconColor={currentIconColor}
                 colors={colors}
                 autoFocus={false}

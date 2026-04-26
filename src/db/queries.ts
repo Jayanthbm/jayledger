@@ -4,6 +4,7 @@ export * from './transactionQueries';
 export * from './budgetQueries';
 export * from './reportQueries';
 export * from './quickTransactionQueries';
+export { updateQuickTransactionPriorities } from './quickTransactionQueries';
 export * from './metaQueries';
 
 /**

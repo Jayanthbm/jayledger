@@ -10,6 +10,8 @@ export interface TransactionFormFieldsProps {
   setDescription: (val: string) => void;
   productLink: string;
   setProductLink: (val: string) => void;
+  identifier: string;
+  setIdentifier: (val: string) => void;
   iconColor: string;
   colors: Record<string, string>;
   autoFocus?: boolean;
@@ -22,6 +24,8 @@ export const TransactionFormFields = ({
   setDescription,
   productLink,
   setProductLink,
+  identifier,
+  setIdentifier,
   iconColor,
   colors,
   autoFocus = false,
@@ -48,14 +52,26 @@ export const TransactionFormFields = ({
 
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-      <TextInput
-        style={[styles.descInput, { color: colors.text }]}
-        placeholder="Add a note..."
-        placeholderTextColor={colors.textSecondary + '70'}
-        value={description}
-        onChangeText={setDescription}
-        maxLength={255}
-      />
+      <View style={styles.inputRow}>
+        <TextInput
+          style={[styles.descInput, { color: colors.text }]}
+          placeholder="Add a note..."
+          placeholderTextColor={colors.textSecondary + '70'}
+          value={description}
+          onChangeText={setDescription}
+          maxLength={255}
+        />
+        <View style={[styles.verticalDivider, { backgroundColor: colors.border }]} />
+        <TextInput
+          style={[styles.identifierInput, { color: colors.text }]}
+          placeholder="ID"
+          placeholderTextColor={colors.textSecondary + '70'}
+          value={identifier}
+          onChangeText={(text) => setIdentifier(text.toUpperCase().slice(0, 2))}
+          maxLength={2}
+          autoCapitalize="characters"
+        />
+      </View>
 
       <View
         style={[styles.divider, styles.dividerWithMargin, { backgroundColor: colors.border }]}
@@ -110,7 +126,24 @@ const styles = StyleSheet.create({
   },
   descInput: {
     fontSize: 16,
-    padding: 0,
+    paddingVertical: 8,
+    flex: 1,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  verticalDivider: {
+    width: 1,
+    height: 24,
+  },
+  identifierInput: {
+    fontSize: 16,
+    fontWeight: '700',
+    width: 40,
+    textAlign: 'center',
+    paddingVertical: 8,
   },
   linkRow: {
     flexDirection: 'row',
@@ -119,6 +152,6 @@ const styles = StyleSheet.create({
   linkInput: {
     fontSize: 14,
     flex: 1,
-    padding: 0,
+    paddingVertical: 8,
   },
 });

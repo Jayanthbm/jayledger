@@ -77,6 +77,8 @@ export interface QuickTransaction {
   description?: string;
   user_id: string;
   product_link?: string | null;
+  priority: number;
+  identifier?: string;
 }
 
 // Supabase session shape minimum
