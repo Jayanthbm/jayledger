@@ -84,7 +84,10 @@ export const runFullSync = async (userId: string, onProgress?: (msg: string) => 
     syncLog('Coordinator', '*** runFullSync Initiation ***');
     logger.info(`[SyncMaster] Starting full sync for user: ${userId}`);
 
-    if (onProgress) onProgress('Syncing Transactions (Full)');
+    if (onProgress) onProgress('Pushing local changes...');
+    await pushLocalChanges(userId);
+
+    if (onProgress) onProgress('Syncing Transactions');
     await forceTransactionsSync(userId);
 
     if (onProgress) onProgress('Syncing Goals');

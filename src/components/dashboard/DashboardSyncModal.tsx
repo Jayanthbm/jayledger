@@ -19,9 +19,10 @@ export const DashboardSyncModal = React.memo(
     const steps = [
       'Pushing local changes...',
       'Syncing Transactions',
-      'Syncing Budgets',
       'Syncing Goals',
-      'Calculating reports',
+      'Syncing Budgets',
+      'Syncing Categories',
+      'Syncing Payees',
       'Finalizing',
     ];
 

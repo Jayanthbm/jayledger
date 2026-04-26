@@ -14,13 +14,13 @@ import { useToast } from '../store/ToastContext';
 export const useDashboardSync = (userId: string | undefined, onRefresh: () => void) => {
   const { showToast } = useToast();
   const [showSyncModal, setShowSyncModal] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<string>('Syncing Transactions');
+  const [syncStatus, setSyncStatus] = useState<string>('Pushing local changes...');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
 
   const handleInitialSync = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || isSyncing) return;
 
     setIsSyncing(true);
     setSyncError(null);
@@ -43,11 +43,14 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
         }
       });
 
-      const check = await AsyncStorage.getItem(`@last_sync_master_${userId}`);
-      if (check) {
-        setShowSyncModal(false);
-        onRefresh();
-      }
+      // Close modal on success if no error was set during sync
+      setSyncError((currentError) => {
+        if (!currentError) {
+          setShowSyncModal(false);
+          onRefresh();
+        }
+        return currentError;
+      });
     } catch (error) {
       logger.error('Dashboard Initial Sync Error:', error);
       setSyncError('Sync failed. Please check your connection.');
@@ -69,8 +72,10 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
     const needsSync = !lastMasterSync || !lastMasterSync.includes('T');
 
     if (needsSync) {
-      setShowSyncModal(true);
-      await handleInitialSync();
+      if (!isSyncing) {
+        setShowSyncModal(true);
+        await handleInitialSync();
+      }
     } else {
       const needsPartial = await needsTransactionSync(userId);
       if (needsPartial) {
