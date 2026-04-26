@@ -16,8 +16,8 @@ export const getQuickTransactions = async (userId: string) => {
 export const insertQuickTransaction = async (qt: QuickTransaction) => {
   const db = getDb();
   return db.runAsync(
-    `INSERT INTO quick_transactions (id, name, type, amount, category_id, payee_id, description, user_id) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO quick_transactions (id, name, type, amount, category_id, payee_id, description, user_id, product_link) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       qt.id,
       qt.name,
@@ -27,6 +27,7 @@ export const insertQuickTransaction = async (qt: QuickTransaction) => {
       qt.payee_id || null,
       qt.description || null,
       qt.user_id,
+      qt.product_link || null,
     ],
   );
 };
@@ -34,7 +35,7 @@ export const insertQuickTransaction = async (qt: QuickTransaction) => {
 export const updateQuickTransaction = async (qt: QuickTransaction) => {
   const db = getDb();
   return db.runAsync(
-    `UPDATE quick_transactions SET name = ?, type = ?, amount = ?, category_id = ?, payee_id = ?, description = ?
+    `UPDATE quick_transactions SET name = ?, type = ?, amount = ?, category_id = ?, payee_id = ?, description = ?, product_link = ?
          WHERE id = ? AND user_id = ?`,
     [
       qt.name,
@@ -43,6 +44,7 @@ export const updateQuickTransaction = async (qt: QuickTransaction) => {
       qt.category_id || null,
       qt.payee_id || null,
       qt.description || null,
+      qt.product_link || null,
       qt.id,
       qt.user_id,
     ],

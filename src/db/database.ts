@@ -146,6 +146,7 @@ export const initDB = async () => {
       'ALTER TABLE goals ADD COLUMN deleted INTEGER DEFAULT 0;',
       'ALTER TABLE transactions ADD COLUMN latitude REAL;',
       'ALTER TABLE transactions ADD COLUMN longitude REAL;',
+      'ALTER TABLE quick_transactions ADD COLUMN product_link TEXT;',
     ];
 
     for (const m of migrations) {

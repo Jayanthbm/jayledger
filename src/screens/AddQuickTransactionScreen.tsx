@@ -49,11 +49,13 @@ export default function AddQuickTransactionScreen() {
   const [description, setDescription] = useState(editQt?.description || '');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPayee, setSelectedPayee] = useState<Payee | null>(null);
+  const [productLink, setProductLink] = useState(editQt?.product_link || '');
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
   const [showModal, setShowModal] = useState<'Category' | 'Payee' | null>(null);
-  const [modalSearch, setModalSearch] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [payeeSearch, setPayeeSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -124,6 +126,7 @@ export default function AddQuickTransactionScreen() {
         payee_id: selectedPayee?.id,
         description: description.trim(),
         user_id: session.user.id,
+        product_link: productLink.trim() || null,
       };
 
       if (editQt) {
@@ -193,6 +196,8 @@ export default function AddQuickTransactionScreen() {
                 setAmount={setAmount}
                 description={description}
                 setDescription={setDescription}
+                productLink={productLink}
+                setProductLink={setProductLink}
                 iconColor={currentIconColor}
                 colors={colors}
                 autoFocus={false}
@@ -234,8 +239,8 @@ export default function AddQuickTransactionScreen() {
         onClose={() => setShowModal(null)}
         type="Category"
         data={categories.filter((c) => c.type === type)}
-        searchQuery={modalSearch}
-        onSearchChange={setModalSearch}
+        searchQuery={categorySearch}
+        onSearchChange={setCategorySearch}
         selectedItemId={selectedCategory?.id}
         onSelect={(item) => {
           setSelectedCategory(item as Category);
@@ -248,8 +253,8 @@ export default function AddQuickTransactionScreen() {
         onClose={() => setShowModal(null)}
         type="Payee"
         data={[{ id: 'none', name: 'None' }, ...payees] as (Category | Payee)[]}
-        searchQuery={modalSearch}
-        onSearchChange={setModalSearch}
+        searchQuery={payeeSearch}
+        onSearchChange={setPayeeSearch}
         selectedItemId={selectedPayee?.id}
         onSelect={(item) => {
           setSelectedPayee(item.id === 'none' ? null : (item as Payee));
