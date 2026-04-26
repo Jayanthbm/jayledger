@@ -171,37 +171,47 @@ export default function AddTransactionScreen() {
         logger.error('Last known position error:', e);
       }
 
-      // Phase 2: Try for a fresh fix with a longer timeout
-      const locationPromise = Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      // Phase 2: Progressive Accuracy Strategy
+      const accuracies = [
+        { level: Location.Accuracy.High, timeout: 10000, name: 'High' },
+        { level: Location.Accuracy.Balanced, timeout: 10000, name: 'Medium' },
+        { level: Location.Accuracy.Low, timeout: 5000, name: 'Low' },
+      ];
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Location request timed out')), 15000),
-      );
+      let success = false;
+      for (const config of accuracies) {
+        try {
+          const locationPromise = Location.getCurrentPositionAsync({
+            accuracy: config.level,
+          });
 
-      try {
-        const loc = await Promise.race([locationPromise, timeoutPromise]);
-        setLocation({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        });
-        setLocationSource('Current');
-        setIncludeLocation(true);
-      } catch (freshError: any) {
-        // If we have a last known position, don't show an error for the fresh fix failure
-        if (!lastKnownUsed) {
-          throw freshError;
-        } else {
-          logger.warn('Fresh fix failed, using last known position instead:', freshError.message);
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Timed out at ${config.name}`)), config.timeout),
+          );
+
+          const loc = await Promise.race([locationPromise, timeoutPromise]);
+          setLocation({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          });
+          setLocationSource('Current');
+          setIncludeLocation(true);
+          success = true;
+          break; // Stop once we have a fresh fix
+        } catch (err: any) {
+          logger.warn(`Failed with ${config.name} accuracy, trying next...`);
         }
       }
+
+      if (!success && !lastKnownUsed) {
+        showToast('Failed to get current location. Please try again.', 'error');
+        setIncludeLocation(false);
+        setLocation(null);
+        setLocationSource(null);
+      }
     } catch (error: any) {
-      logger.error('Error fetching location:', error);
-      const msg = error.message?.includes('timed out')
-        ? 'Location request timed out. Please try again.'
-        : 'Failed to get current location';
-      showToast(msg, 'error');
+      logger.error('Critical location error:', error);
+      showToast('Location services error', 'error');
       setIncludeLocation(false);
       setLocation(null);
       setLocationSource(null);
