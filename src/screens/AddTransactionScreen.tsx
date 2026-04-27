@@ -33,6 +33,8 @@ import { useTransactionDateTime } from '../hooks/useTransactionDateTime';
 import { TransactionFormFields } from '../components/transactions/TransactionFormFields';
 import { TransactionSelectorRow } from '../components/transactions/TransactionSelectorRow';
 import { ItemSelectorModal } from '../components/transactions/ItemSelectorModal';
+import { TransactionLocationEditRow } from '../components/transactions/TransactionLocationEditRow';
+import { LocationEditSheet } from '../components/transactions/LocationEditSheet';
 import { logger } from '../utils/logger';
 
 export default function AddTransactionScreen() {
@@ -50,9 +52,16 @@ export default function AddTransactionScreen() {
   );
   const [productLink, setProductLink] = useState(editTx ? editTx.product_link || '' : '');
   const [includeLocation, setIncludeLocation] = useState(!editTx);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(
+    editTx?.latitude && editTx?.longitude
+      ? { latitude: editTx.latitude, longitude: editTx.longitude }
+      : null,
+  );
   const [fetchingLocation, setFetchingLocation] = useState(false);
-  const [locationSource, setLocationSource] = useState<'Current' | 'Last Known' | null>(null);
+  const [locationSource, setLocationSource] = useState<'Current' | 'Last Known' | null>(
+    editTx?.latitude && editTx?.longitude ? 'Last Known' : null,
+  );
+  const [showLocationSheet, setShowLocationSheet] = useState(false);
   const {
     date,
     showDatePicker,
@@ -249,6 +258,18 @@ export default function AddTransactionScreen() {
     }
   };
 
+  const handleManualLocationUpdate = (latitude: number, longitude: number) => {
+    setLocation({ latitude, longitude });
+    setLocationSource('Current');
+    showToast('Location updated manually', 'success');
+  };
+
+  const handleRemoveLocation = () => {
+    setLocation(null);
+    setLocationSource(null);
+    showToast('Location removed', 'info');
+  };
+
   const handleSave = async () => {
     if (!session?.user?.id) return;
 
@@ -432,6 +453,14 @@ export default function AddTransactionScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+
+              {editTx && (
+                <TransactionLocationEditRow
+                  location={location}
+                  onEditPress={() => setShowLocationSheet(true)}
+                  colors={colors}
+                />
+              )}
             </ScrollView>
 
             {/* Save Button */}
@@ -496,6 +525,17 @@ export default function AddTransactionScreen() {
                 setShowModal(null);
               }}
               transactionType={type}
+            />
+
+            <LocationEditSheet
+              visible={showLocationSheet}
+              onClose={() => setShowLocationSheet(false)}
+              location={location}
+              onUpdateFromGPS={fetchLocation}
+              onManualUpdate={handleManualLocationUpdate}
+              onRemove={handleRemoveLocation}
+              colors={colors}
+              isFetching={fetchingLocation}
             />
           </View>
         </TouchableWithoutFeedback>
