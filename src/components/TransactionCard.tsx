@@ -1,5 +1,12 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Linking } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  Linking,
+  DeviceEventEmitter,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { Transaction, MaterialIconName } from '../models/types';
 import { useTheme } from '../store/ThemeContext';
@@ -8,6 +15,8 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 import { Swipeable } from 'react-native-gesture-handler';
 import { FinancialListItem } from './common/FinancialListItem';
 import { logger } from '../utils/logger';
+import { syncTransactions } from '../services/syncService';
+import { useAuth } from '../store/AuthContext';
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -28,6 +37,7 @@ export const TransactionCard = React.memo(
     compact = false,
   }: TransactionCardProps) => {
     const { colors } = useTheme();
+    const { session } = useAuth();
     const swipeableRef = useRef<Swipeable>(null);
     const isIncome = transaction.type === 'Income';
 
@@ -53,6 +63,17 @@ export const TransactionCard = React.memo(
       if (transaction.latitude && transaction.longitude) {
         const url = `https://www.google.com/maps/search/?api=1&query=${transaction.latitude},${transaction.longitude}`;
         Linking.openURL(url).catch((err) => logger.error('Failed to open Map:', err));
+      }
+    };
+
+    const handleSync = async () => {
+      if (!session?.user?.id || transaction.sync_status !== 1) return;
+      try {
+        await syncTransactions(session.user.id, true);
+        DeviceEventEmitter.emit('module_refreshed', { module: 'Transactions' });
+        DeviceEventEmitter.emit('module_refreshed', { module: 'Dashboard' });
+      } catch (err) {
+        logger.error('Failed to manually sync transaction:', err);
       }
     };
 
@@ -119,6 +140,17 @@ export const TransactionCard = React.memo(
         </TouchableOpacity>
       ) : null;
 
+    const isSynced = transaction.sync_status !== 1;
+    const syncTag = !isSynced ? (
+      <TouchableOpacity
+        style={[styles.syncTag, { backgroundColor: colors.textSecondary + '25' }]}
+        onPress={handleSync}
+        activeOpacity={0.6}
+      >
+        <Icon name="cloud-upload" size={12} color={colors.textSecondary} />
+      </TouchableOpacity>
+    ) : null;
+
     const footerNode = (
       <View style={styles.footerRow}>
         {payeeNode}
@@ -131,19 +163,22 @@ export const TransactionCard = React.memo(
     );
 
     const cardContent = (
-      <FinancialListItem
-        title={transaction.category_name || 'No Category'}
-        subtitle={transaction.description || undefined}
-        icon={(transaction.category_app_icon || 'receipt') as MaterialIconName}
-        iconColor={isIncome ? colors.success : colors.primary}
-        amountText={`${isIncome ? '+' : '-'} ${formatCurrency(transaction.amount)}`}
-        amountColor={isIncome ? colors.success : colors.danger}
-        metaText={formatDate(transaction.transaction_timestamp, compact ? 'dd MMM, p' : 'PPp')}
-        rightBottomNode={footerNode}
-        onIconPress={() => onFilterCategory?.(transaction.category_id)}
-        compact={compact}
-        containerStyle={compact ? styles.containerCompact : styles.containerNormal}
-      />
+      <View style={[styles.cardWrapper, !compact && styles.containerNormal]}>
+        <FinancialListItem
+          title={transaction.category_name || 'No Category'}
+          subtitle={transaction.description || undefined}
+          icon={(transaction.category_app_icon || 'receipt') as MaterialIconName}
+          iconColor={isIncome ? colors.success : colors.primary}
+          amountText={`${isIncome ? '+' : '-'} ${formatCurrency(transaction.amount)}`}
+          amountColor={isIncome ? colors.success : colors.danger}
+          metaText={formatDate(transaction.transaction_timestamp, compact ? 'dd MMM, p' : 'PPp')}
+          rightBottomNode={footerNode}
+          onIconPress={() => onFilterCategory?.(transaction.category_id)}
+          compact={compact}
+          containerStyle={compact ? styles.containerCompact : styles.fullWidthContainer}
+        />
+        {syncTag}
+      </View>
     );
 
     if (onEdit || onDelete) {
@@ -230,5 +265,23 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cardWrapper: {
+    position: 'relative',
+  },
+  syncTag: {
+    position: 'absolute',
+    top: 10,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 10,
+    elevation: 3,
+  },
+  fullWidthContainer: {
+    marginHorizontal: 0,
   },
 });

@@ -198,7 +198,7 @@ export default function AddTransactionScreen() {
           setIncludeLocation(true);
           success = true;
           break; // Stop once we have a fresh fix
-        } catch (err: any) {
+        } catch {
           logger.warn(`Failed with ${config.name} accuracy, trying next...`);
         }
       }
@@ -209,7 +209,7 @@ export default function AddTransactionScreen() {
         setLocation(null);
         setLocationSource(null);
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Critical location error:', error);
       showToast('Location services error', 'error');
       setIncludeLocation(false);

@@ -45,7 +45,6 @@ export const pushLocalTransactions = async (userId: string) => {
       longitude: tx.longitude || null,
       created_at: tx.created_at || new Date().toISOString(),
       updated_at: tx.updated_at || new Date().toISOString(),
-      sync_status: 'synced' as const,
       ...(tx.tid && tx.tid !== 0 ? { tid: tx.tid } : {}),
     };
 

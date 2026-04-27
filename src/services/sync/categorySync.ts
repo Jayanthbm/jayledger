@@ -19,6 +19,7 @@ export const pushLocalCategories = async (userId: string) => {
     app_icon: string;
     user_id: string;
     sync_status: number;
+    is_living_cost: number;
   }>(`SELECT * FROM categories WHERE user_id = '${userId}' AND sync_status = 1`);
 
   if (unsyncedCategories.length === 0) return;
@@ -26,7 +27,7 @@ export const pushLocalCategories = async (userId: string) => {
   syncLog('Categories', `Pushing ${unsyncedCategories.length} unsynced categories...`);
 
   for (const cat of unsyncedCategories) {
-    const { sync_status: _sync, ...catToPush } = cat;
+    const { sync_status: _sync, is_living_cost: _ilc, ...catToPush } = cat;
     const { error } = await supabase
       .from(TABLES.CATEGORIES)
       .upsert([catToPush], { onConflict: 'id' });
