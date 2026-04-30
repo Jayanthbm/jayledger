@@ -6,6 +6,10 @@ import { isOnline, syncLog } from './baseSync';
 import { STORAGE_KEYS, TABLES } from '../../constants';
 import { logger } from '../../utils/logger';
 import { Transaction } from '../../models/types';
+import {
+  getTransactionDate,
+  toSupabaseTransactionTimestamp,
+} from '../../utils/transactionTimestamp';
 
 /**
  * Pushes unsynced local transactions to Supabase.
@@ -35,7 +39,7 @@ export const pushLocalTransactions = async (userId: string) => {
       id: tx.id,
       user_id: tx.user_id,
       amount: tx.amount,
-      transaction_timestamp: tx.transaction_timestamp,
+      transaction_timestamp: toSupabaseTransactionTimestamp(tx.transaction_timestamp),
       description: tx.description || '',
       category_id: tx.category_id,
       payee_id: tx.payee_id === 'null' ? null : tx.payee_id || null,
@@ -155,7 +159,7 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
 
         await db.execAsync(
           `INSERT OR REPLACE INTO transactions (id, amount, description, transaction_timestamp, date, category_id, category_name, category_icon, category_app_icon, payee_id, payee_name, payee_logo, type, user_id, product_link, tid, latitude, longitude, sync_status)
-           VALUES ('${sanitized.id}', ${sanitized.amount}, '${sanitized.description}', '${sanitized.transaction_timestamp}', '${sanitized.transaction_timestamp.split('T')[0]}', '${sanitized.category_id}', '${sanitized.category_name}', '${sanitized.category_icon}', '${sanitized.category_app_icon}', '${sanitized.payee_id}', '${sanitized.payee_name}', '${sanitized.payee_logo}', '${sanitized.type}', '${userId}', '${sanitized.product_link || ''}', ${sanitized.tid}, ${sanitized.latitude || 'NULL'}, ${sanitized.longitude || 'NULL'}, 0)`,
+           VALUES ('${sanitized.id}', ${sanitized.amount}, '${sanitized.description}', '${sanitized.transaction_timestamp}', '${getTransactionDate(sanitized.transaction_timestamp)}', '${sanitized.category_id}', '${sanitized.category_name}', '${sanitized.category_icon}', '${sanitized.category_app_icon}', '${sanitized.payee_id}', '${sanitized.payee_name}', '${sanitized.payee_logo}', '${sanitized.type}', '${userId}', '${sanitized.product_link || ''}', ${sanitized.tid}, ${sanitized.latitude || 'NULL'}, ${sanitized.longitude || 'NULL'}, 0)`,
         );
       }
     });

@@ -58,7 +58,7 @@ export default function SubscriptionBillsReportScreen({ route, navigation }: Pro
         reportType={reportType}
         minDate={report.minDate}
         maxDate={report.maxDate}
-        showTypeToggle={true}
+        showTypeToggle={false}
         showYearSelector={true}
         showMonthSelector={true}
         colors={colors}
