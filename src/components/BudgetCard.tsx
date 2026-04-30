@@ -72,7 +72,7 @@ export const BudgetCard = ({
       <View style={styles.header}>
         <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
         <Text style={[styles.spentText, { color: colors.textSecondary }]}>
-          {formatCurrency(spent)} spent of {formatCurrency(amount)}
+          {formatCurrency(spent)} of {formatCurrency(amount)}
         </Text>
       </View>
 
