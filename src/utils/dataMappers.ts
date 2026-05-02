@@ -25,7 +25,14 @@ export const mapTransactionsToFlashList = (rows: Transaction[]) => {
   const stickyIndices: number[] = [];
   let currentTotal = 0;
 
-  Object.values(grouped).forEach((group) => {
+  // Sort groups by date descending, then sort transactions within each group by timestamp descending
+  const sortedGroups = Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
+
+  sortedGroups.forEach((group) => {
+    group.transactions.sort(
+      (a, b) =>
+        new Date(b.transaction_timestamp).getTime() - new Date(a.transaction_timestamp).getTime(),
+    );
     stickyIndices.push(flattened.length);
     flattened.push({ itemType: 'header', ...group });
     group.transactions.forEach((tx) => {

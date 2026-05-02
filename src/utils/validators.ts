@@ -24,9 +24,7 @@ export const validateTransaction = (data: {
   const amountResult = validateAmount(data.amount);
   if (!amountResult.valid) errors.amount = amountResult.errors.amount;
 
-  if (!data.description?.trim()) {
-    errors.description = 'Description is required';
-  } else if (data.description.length > 500) {
+  if (data.description && data.description.length > 500) {
     errors.description = 'Description is too long';
   }
 
