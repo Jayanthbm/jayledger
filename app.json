@@ -12,6 +12,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "jsEngine": "hermes",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jayanth.jmoney",
@@ -22,15 +23,84 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.jayanth.jmoney",
-      "versionCode": 8
+      "versionCode": 8,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "jmoney"
+          }
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-sqlite", "@react-native-community/datetimepicker"],
+    "plugins": [
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/splash.png",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "add_transaction_icon": {
+              "foregroundImage": "./assets/plus.png",
+              "backgroundColor": "#ffffff"
+            },
+            "quick_transaction_icon": {
+              "foregroundImage": "./assets/plus.png",
+              "backgroundColor": "#e3f2fd"
+            },
+            "goals_icon": {
+              "foregroundImage": "./assets/goals.png",
+              "backgroundColor": "#ffffff"
+            },
+            "budgets_icon": {
+              "foregroundImage": "./assets/budget.png",
+              "backgroundColor": "#ffffff"
+            }
+          },
+          "iosActions": [
+            {
+              "id": "add_transaction",
+              "title": "New Transaction",
+              "icon": "add"
+            },
+            {
+              "id": "quick_transaction",
+              "title": "Quick Transaction",
+              "icon": "compose"
+            },
+            {
+              "id": "view_goals",
+              "title": "Goals",
+              "icon": "bookmark"
+            },
+            {
+              "id": "view_budgets",
+              "title": "Budgets",
+              "icon": "time"
+            }
+          ]
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "15967860-93c6-4a70-a4bb-2fd15c051278"

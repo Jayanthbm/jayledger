@@ -11,6 +11,11 @@ interface AuthContextProps {
   signOut: () => Promise<void>;
 }
 
+interface AuthProviderProps {
+  children: React.ReactNode;
+  onAuthReady?: () => void;
+}
+
 const AuthContext = createContext<AuthContextProps>({
   session: null,
   loading: true,
@@ -18,7 +23,7 @@ const AuthContext = createContext<AuthContextProps>({
   signOut: async () => {},
 });
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children, onAuthReady }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const loadingRef = React.useRef(loading);
@@ -26,6 +31,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
+
+  // Notify parent when auth is ready
+  useEffect(() => {
+    if (!loading && onAuthReady) {
+      onAuthReady();
+    }
+  }, [loading, onAuthReady]);
 
   useEffect(() => {
     logger.log('[Auth] Initializing session...');

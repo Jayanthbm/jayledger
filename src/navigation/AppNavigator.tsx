@@ -2,11 +2,13 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../store/AuthContext';
-import { ActivityIndicator, View, Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { RootStackParamList } from './navigationTypes';
+import { QuickActionHandler } from '../components/QuickActionHandler';
 
 import LoginScreen from '../screens/LoginScreen';
+import LoadingScreen from '../screens/LoadingScreen';
 import MainTabs from './MainTabs';
 import DailyLimitDetailScreen from '../screens/DailyLimitDetailScreen';
 import CalendarViewScreen from '../screens/CalendarViewScreen';
@@ -35,13 +37,8 @@ export default function AppNavigator() {
   const { session, loading } = useAuth();
   const { colors } = useTheme();
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  // Don't show intermediate loading screen - splash screen handles this
+  // Just render the navigation structure immediately
 
   const standardHeaderLeft = (navigation: { goBack: () => void }) => (
     <TouchableOpacity
@@ -55,6 +52,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
+      <QuickActionHandler />
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -66,7 +64,9 @@ export default function AppNavigator() {
           gestureEnabled: true,
         }}
       >
-        {session ? (
+        {loading ? (
+          <Stack.Screen name="Login" component={LoadingScreen} />
+        ) : session ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen
@@ -240,11 +240,6 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   headerLeftBtn: {
     paddingRight: 12,
     justifyContent: 'center',
