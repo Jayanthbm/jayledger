@@ -394,6 +394,16 @@ export default function AddTransactionScreen() {
                 </TouchableOpacity>
               </View>
 
+              <TransactionSelectorRow
+                selectedPayee={selectedPayee}
+                selectedCategory={selectedCategory}
+                onPressPayee={() => setShowModal('Payee')}
+                onPressCategory={() => setShowModal('Category')}
+                colors={colors}
+                currentIconBg={currentIconBg}
+                currentIconColor={currentIconColor}
+              />
+
               <TransactionFormFields
                 amount={amount}
                 setAmount={setAmount}
@@ -404,16 +414,6 @@ export default function AddTransactionScreen() {
                 iconColor={currentIconColor}
                 colors={colors}
                 autoFocus={!editTx}
-              />
-
-              <TransactionSelectorRow
-                selectedPayee={selectedPayee}
-                selectedCategory={selectedCategory}
-                onPressPayee={() => setShowModal('Payee')}
-                onPressCategory={() => setShowModal('Category')}
-                colors={colors}
-                currentIconBg={currentIconBg}
-                currentIconColor={currentIconColor}
               />
 
               {!editTx && (
