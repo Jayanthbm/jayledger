@@ -149,6 +149,8 @@ export const initDB = async () => {
       'ALTER TABLE quick_transactions ADD COLUMN product_link TEXT;',
       'ALTER TABLE quick_transactions ADD COLUMN priority INTEGER DEFAULT 0;',
       'ALTER TABLE quick_transactions ADD COLUMN identifier TEXT;',
+      'ALTER TABLE quick_transactions ADD COLUMN sync_status INTEGER DEFAULT 1;',
+      'ALTER TABLE quick_transactions ADD COLUMN deleted INTEGER DEFAULT 0;',
     ];
 
     for (const m of migrations) {

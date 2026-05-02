@@ -6,6 +6,7 @@ import { pushLocalCategories, syncCategories } from './sync/categorySync';
 import { pushLocalBudgets, syncBudgets } from './sync/budgetSync';
 import { pushLocalGoals, syncGoals } from './sync/goalSync';
 import { pushLocalPayees, syncPayees } from './sync/payeeSync';
+import { pushLocalQuickTransactions, syncQuickTransactions } from './sync/quickTransactionSync';
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 
@@ -24,6 +25,7 @@ export const pushLocalChanges = async (userId: string) => {
   await pushLocalBudgets(userId);
   await pushLocalCategories(userId);
   await pushLocalPayees(userId);
+  await pushLocalQuickTransactions(userId);
 
   syncLog('Coordinator', 'Local data push complete.');
 };
@@ -66,7 +68,14 @@ export const forceTransactionsSync = async (userId: string) => {
 };
 
 // Re-exporting sync functions for backward compatibility
-export { syncTransactions, syncGoals, syncBudgets, syncCategories, syncPayees };
+export {
+  syncTransactions,
+  syncGoals,
+  syncBudgets,
+  syncCategories,
+  syncPayees,
+  syncQuickTransactions,
+};
 
 let isSyncingData = false;
 
@@ -101,6 +110,9 @@ export const runFullSync = async (userId: string, onProgress?: (msg: string) => 
 
     if (onProgress) onProgress('Syncing Payees');
     await syncPayees(userId);
+
+    if (onProgress) onProgress('Syncing Quick Transactions');
+    await syncQuickTransactions(userId);
 
     if (onProgress) onProgress('Finalizing');
     await AsyncStorage.setItem(`@last_sync_master_${userId}`, new Date().toISOString());

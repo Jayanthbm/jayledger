@@ -194,6 +194,16 @@ export default function AddQuickTransactionScreen() {
                 containerStyle={styles.segmentedControl}
               />
 
+              <TransactionSelectorRow
+                selectedPayee={selectedPayee}
+                selectedCategory={selectedCategory}
+                onPressPayee={() => setShowModal('Payee')}
+                onPressCategory={() => setShowModal('Category')}
+                colors={colors}
+                currentIconBg={currentIconBg}
+                currentIconColor={currentIconColor}
+              />
+
               <TransactionFormFields
                 amount={amount}
                 setAmount={setAmount}
@@ -206,16 +216,6 @@ export default function AddQuickTransactionScreen() {
                 iconColor={currentIconColor}
                 colors={colors}
                 autoFocus={false}
-              />
-
-              <TransactionSelectorRow
-                selectedPayee={selectedPayee}
-                selectedCategory={selectedCategory}
-                onPressPayee={() => setShowModal('Payee')}
-                onPressCategory={() => setShowModal('Category')}
-                colors={colors}
-                currentIconBg={currentIconBg}
-                currentIconColor={currentIconColor}
               />
             </ScrollView>
 

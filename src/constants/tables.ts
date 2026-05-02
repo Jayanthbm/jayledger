@@ -7,6 +7,7 @@ export const TABLES = {
   PAYEES: 'payees',
   BUDGETS: 'budgets',
   GOALS: 'goals',
+  QUICK_TRANSACTIONS: 'quick_transactions',
   PROFILES: 'profiles',
   ATTACHMENTS: 'attachments',
   SYNC_LOG: 'sync_log',

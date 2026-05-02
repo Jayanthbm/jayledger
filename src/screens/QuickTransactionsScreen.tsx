@@ -7,15 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomSheet } from '../components/BottomSheet';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import {
-  getQuickTransactions,
-  deleteQuickTransaction,
-  updateQuickTransactionPriorities,
-} from '../db/queries';
+import { deleteQuickTransaction, updateQuickTransactionPriorities } from '../db/queries';
 import { QuickTransaction } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -26,12 +21,19 @@ import { AppNavigation } from '../navigation/navigationTypes';
 import { logger } from '../utils/logger';
 import { QuickTransactionCard } from '../components/transactions/QuickTransactionCard';
 import { SearchBar } from '../components/SearchBar';
-
-const QUICK_VIEW_MODE_KEY = (userId: string) => `@quick_transaction_view_mode_${userId}`;
+import { useToast } from '../store/ToastContext';
+import { getRelativeTime } from '../utils/dateUtils';
+import {
+  fetchQuickTransactionsData,
+  saveQuickTransactionViewMode,
+  performQuickTransactionSync,
+  backgroundPushQuickTransactions,
+} from '../services/quickTransactionService';
 
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
+  const { showToast } = useToast();
   const navigation = useNavigation<AppNavigation>();
 
   const insets = useSafeAreaInsets();
@@ -50,7 +52,9 @@ export default function QuickTransactionsScreen() {
 
   const [data, setData] = useState<QuickTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
 
   const [isReordering, setIsReordering] = useState(false);
   const [viewMode, setViewMode] = useState<'Card' | 'List'>('Card');
@@ -59,14 +63,14 @@ export default function QuickTransactionsScreen() {
   const loadData = useCallback(async () => {
     if (!session?.user?.id) return;
     try {
-      const [qts, savedViewMode] = await Promise.all([
-        getQuickTransactions(session.user.id),
-        AsyncStorage.getItem(QUICK_VIEW_MODE_KEY(session.user.id)),
-      ]);
-      setData(qts);
-      if (savedViewMode === 'Card' || savedViewMode === 'List') {
-        setViewMode(savedViewMode);
-      }
+      const {
+        quickTransactions,
+        viewMode: savedViewMode,
+        lastSynced: synced,
+      } = await fetchQuickTransactionsData(session.user.id);
+      setData(quickTransactions);
+      setViewMode(savedViewMode);
+      setLastSynced(synced);
     } catch (error) {
       logger.error('Load Quick Transactions Error:', error);
     } finally {
@@ -83,9 +87,27 @@ export default function QuickTransactionsScreen() {
     const newMode = viewMode === 'Card' ? 'List' : 'Card';
     setViewMode(newMode);
     if (session?.user?.id) {
-      await AsyncStorage.setItem(QUICK_VIEW_MODE_KEY(session.user.id), newMode);
+      await saveQuickTransactionViewMode(session.user.id, newMode);
     }
   };
+
+  const handleManualSync = useCallback(async () => {
+    if (!session?.user?.id) return;
+    setSyncing(true);
+    try {
+      const { quickTransactions, lastSynced: synced } = await performQuickTransactionSync(
+        session.user.id,
+      );
+      setData(quickTransactions);
+      setLastSynced(synced);
+      showToast('Quick transactions synced', 'success');
+    } catch (e) {
+      logger.error('Quick transaction sync error:', e);
+      showToast('Sync failed', 'error');
+    } finally {
+      setSyncing(false);
+    }
+  }, [session, showToast]);
 
   const moveItem = async (index: number, direction: 'up' | 'down') => {
     const newData = [...filteredData]; // Use current visible list
@@ -109,6 +131,7 @@ export default function QuickTransactionsScreen() {
     try {
       if (session?.user?.id) {
         await updateQuickTransactionPriorities(updates, session.user.id);
+        backgroundPushQuickTransactions(session.user.id);
       }
     } catch (error) {
       logger.error('Reorder Error:', error);
@@ -117,20 +140,50 @@ export default function QuickTransactionsScreen() {
   };
 
   useEffect(() => {
-    navigation.setOptions({
-      headerTitle: () => (
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={scrollToTop}
-          style={common.headerTitleContainer}
-        >
-          <Text style={[common.navHeaderTitle, { color: colors.text }]}>Quick Transactions</Text>
-        </TouchableOpacity>
-      ),
-      headerTitleAlign: 'left',
-      headerRight: undefined, // Remove header actions
-    });
-  }, [navigation, colors.text, scrollToTop]);
+    const timer = setTimeout(() => {
+      navigation.setOptions({
+        headerTitle: () => (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={scrollToTop}
+            style={common.headerTitleContainer}
+          >
+            <Text style={[common.navHeaderTitle, { color: colors.text }]}>Quick Transactions</Text>
+            {lastSynced && (
+              <Text style={[common.navHeaderSubtitle, { color: colors.textSecondary }]}>
+                Synced: {getRelativeTime(lastSynced)}
+              </Text>
+            )}
+          </TouchableOpacity>
+        ),
+        headerTitleAlign: 'left',
+        headerRight: () => (
+          <TouchableOpacity
+            style={common.headerRightBtn}
+            onPress={handleManualSync}
+            disabled={syncing}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
+            {syncing ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="refresh" size={24} color={colors.text} />
+            )}
+          </TouchableOpacity>
+        ),
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [
+    navigation,
+    handleManualSync,
+    syncing,
+    colors.text,
+    colors.textSecondary,
+    colors.primary,
+    scrollToTop,
+    lastSynced,
+  ]);
 
   const q = searchQuery.trim().toLowerCase();
   const filteredData = (
