@@ -8,13 +8,17 @@ import { Category, Payee, Goal } from '../models/types';
 export const getCategories = async (userId: string) => {
   const db = getDb();
   return db.getAllAsync<Category>(
-    `SELECT * FROM categories WHERE user_id = '${userId}' ORDER BY type, name`,
+    `SELECT * FROM categories WHERE user_id = ? ORDER BY priority ASC, name ASC`,
+    [userId],
   );
 };
 
 export const getPayees = async (userId: string) => {
   const db = getDb();
-  return db.getAllAsync<Payee>(`SELECT * FROM payees WHERE user_id = '${userId}' ORDER BY name`);
+  return db.getAllAsync<Payee>(
+    `SELECT * FROM payees WHERE user_id = ? ORDER BY priority ASC, name ASC`,
+    [userId],
+  );
 };
 
 export const insertCategory = async (category: Category, syncStatus: number = 1) => {
@@ -22,9 +26,19 @@ export const insertCategory = async (category: Category, syncStatus: number = 1)
   const name = (category.name || '').replace(/'/g, "''");
   const icon = (category.icon || '').replace(/'/g, "''");
   const appIcon = (category.app_icon || '').replace(/'/g, "''");
+
+  let priority = category.priority ?? 0;
+  if (priority === 0) {
+    const result = await db.getFirstAsync<{ maxP: number }>(
+      `SELECT MAX(priority) as maxP FROM categories WHERE user_id = ?`,
+      [category.user_id],
+    );
+    priority = (result?.maxP || 0) + 1;
+  }
+
   await db.execAsync(
-    `INSERT OR REPLACE INTO categories (id, name, type, icon, app_icon, user_id, is_living_cost, sync_status)
-     VALUES ('${category.id}', '${name}', '${category.type}', '${icon}', '${appIcon}', '${category.user_id}', ${category.is_living_cost || 0}, ${syncStatus})`,
+    `INSERT OR REPLACE INTO categories (id, name, type, icon, app_icon, user_id, is_living_cost, priority, sync_status)
+     VALUES ('${category.id}', '${name}', '${category.type}', '${icon}', '${appIcon}', '${category.user_id}', ${category.is_living_cost || 0}, ${priority}, ${syncStatus})`,
   );
 };
 
@@ -32,9 +46,19 @@ export const insertPayee = async (payee: Payee, syncStatus: number = 1) => {
   const db = getDb();
   const name = (payee.name || '').replace(/'/g, "''");
   const logo = (payee.logo || '').replace(/'/g, "''");
+
+  let priority = payee.priority ?? 0;
+  if (priority === 0) {
+    const result = await db.getFirstAsync<{ maxP: number }>(
+      `SELECT MAX(priority) as maxP FROM payees WHERE user_id = ?`,
+      [payee.user_id],
+    );
+    priority = (result?.maxP || 0) + 1;
+  }
+
   await db.execAsync(
-    `INSERT OR REPLACE INTO payees (id, name, logo, user_id, sync_status)
-     VALUES ('${payee.id}', '${name}', '${logo}', '${payee.user_id}', ${syncStatus})`,
+    `INSERT OR REPLACE INTO payees (id, name, logo, user_id, priority, sync_status)
+     VALUES ('${payee.id}', '${name}', '${logo}', '${payee.user_id}', ${priority}, ${syncStatus})`,
   );
 };
 
@@ -60,4 +84,34 @@ export const toggleCategoryLivingCost = async (categoryId: string, isLivingCost:
   await db.execAsync(
     `UPDATE categories SET is_living_cost = ${isLivingCost ? 1 : 0} WHERE id = '${categoryId}'`,
   );
+};
+
+export const updateCategoryPriorities = async (
+  updates: { id: string; priority: number }[],
+  userId: string,
+) => {
+  const db = getDb();
+  // Execute updates sequentially without explicit transaction
+  // Each UPDATE is atomic, and we're just updating priority fields
+  for (const update of updates) {
+    await db.runAsync(
+      `UPDATE categories SET priority = ?, sync_status = 1 WHERE id = ? AND user_id = ?`,
+      [update.priority, update.id, userId],
+    );
+  }
+};
+
+export const updatePayeePriorities = async (
+  updates: { id: string; priority: number }[],
+  userId: string,
+) => {
+  const db = getDb();
+  // Execute updates sequentially without explicit transaction
+  // Each UPDATE is atomic, and we're just updating priority fields
+  for (const update of updates) {
+    await db.runAsync(
+      `UPDATE payees SET priority = ?, sync_status = 1 WHERE id = ? AND user_id = ?`,
+      [update.priority, update.id, userId],
+    );
+  }
 };

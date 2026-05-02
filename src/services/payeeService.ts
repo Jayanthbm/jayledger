@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getPayees, insertPayee } from '../db/queries';
 import { syncPayees } from '../services/syncService';
+import { pushLocalPayees } from '../services/sync/payeeSync';
 import { Payee } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { logger } from '../utils/logger';
@@ -65,4 +66,44 @@ export const performPayeeSync = async (userId: string) => {
   await AsyncStorage.setItem(LAST_SYNC_KEY(userId), now);
   const updated = await getPayees(userId);
   return { payees: updated, lastSynced: now };
+};
+
+export const backgroundPushPayees = (userId: string) => {
+  pushLocalPayees(userId)
+    .then(() => AsyncStorage.setItem(LAST_SYNC_KEY(userId), new Date().toISOString()))
+    .catch((err) => logger.error('[Payees] Background push failed:', err));
+};
+
+export const filterAndSortPayees = (
+  payees: Payee[],
+  searchQuery: string,
+  sortBy: 'name' | 'priority',
+  sortAsc: boolean,
+  isReordering: boolean,
+): Payee[] => {
+  let result = [...payees];
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter((p) => p.name.toLowerCase().includes(q));
+  }
+
+  if (isReordering) {
+    result.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+  } else {
+    // Normal mode: sort by selected mode
+    if (sortBy === 'priority') {
+      result.sort((a, b) => {
+        const cmp = (a.priority || 0) - (b.priority || 0);
+        return sortAsc ? cmp : -cmp;
+      });
+    } else {
+      result.sort((a, b) => {
+        const cmp = a.name.localeCompare(b.name);
+        return sortAsc ? cmp : -cmp;
+      });
+    }
+  }
+
+  return result;
 };

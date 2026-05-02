@@ -6,6 +6,7 @@ export * from './reportQueries';
 export * from './quickTransactionQueries';
 export { updateQuickTransactionPriorities } from './quickTransactionQueries';
 export * from './metaQueries';
+export { updateCategoryPriorities, updatePayeePriorities } from './metaQueries';
 
 /**
  * Global application maintenance queries.

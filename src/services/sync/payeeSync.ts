@@ -16,6 +16,7 @@ export const pushLocalPayees = async (userId: string) => {
     name: string;
     logo: string;
     user_id: string;
+    priority: number;
     sync_status: number;
   }>(`SELECT * FROM payees WHERE user_id = '${userId}' AND sync_status = 1`);
 
@@ -55,8 +56,9 @@ export const syncPayees = async (userId: string) => {
       for (const item of payees) {
         const name = (item.name || '').replace(/'/g, "''");
         const logo = (item.logo || '').replace(/'/g, "''");
+        const priority = item.priority ?? 0;
         await db.execAsync(
-          `INSERT OR REPLACE INTO payees (id, name, logo, user_id, sync_status) VALUES ('${item.id}', '${name}', '${logo}', '${item.user_id}', 0)`,
+          `INSERT OR REPLACE INTO payees (id, name, logo, user_id, priority, sync_status) VALUES ('${item.id}', '${name}', '${logo}', '${item.user_id}', ${priority}, 0)`,
         );
       }
     });

@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+} from 'react-native';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
 import { Category } from '../models/types';
@@ -15,11 +22,15 @@ import {
   saveCategoryViewMode,
   addCategory,
   performCategorySync,
+  backgroundPushCategories,
+  filterAndSortCategories,
 } from '../services/categoryService';
+import { updateCategoryPriorities } from '../db/queries';
 
 // Modular Components
 import { CategoryCard } from '../components/categories/CategoryCard';
 import { CategoryAddModal } from '../components/categories/CategoryAddModal';
+import { CategorySortModal } from '../components/categories/CategorySortModal';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { common } from '../styles/common';
 import { AppNavigation } from '../navigation/navigationTypes';
@@ -38,8 +49,11 @@ export default function CategoriesScreen() {
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'priority'>('priority');
   const [sortAsc, setSortAsc] = useState(true);
   const [activeTab, setActiveTab] = useState<'Expense' | 'Income'>('Expense');
+  const [isReordering, setIsReordering] = useState(false);
+  const [showSortModal, setShowSortModal] = useState(false);
 
   const [isAddModalVisible, setAddModalVisible] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
@@ -84,6 +98,42 @@ export default function CategoriesScreen() {
     setViewMode(newMode);
     if (user?.id) {
       await saveCategoryViewMode(user.id, newMode);
+    }
+  };
+
+  const toggleReorderMode = () => {
+    // If exiting reorder mode, sync the changes
+    if (isReordering && user?.id) {
+      backgroundPushCategories(user.id);
+    }
+    setIsReordering(!isReordering);
+    if (!isReordering) setViewMode('list'); // Force list for reordering
+  };
+
+  const moveItem = async (index: number, direction: 'up' | 'down') => {
+    const newData = [...filteredData];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newData.length) return;
+
+    [newData[index], newData[targetIndex]] = [newData[targetIndex], newData[index]];
+
+    const updatedItems = newData.map((item, i) => ({ ...item, priority: i + 1 }));
+    const updates = updatedItems.map((item) => ({ id: item.id, priority: item.priority }));
+
+    setCategories((prev) => {
+      const remaining = prev.filter((p) => !updatedItems.find((n) => n.id === p.id));
+      const merged = [...remaining, ...updatedItems];
+      return merged.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    });
+
+    try {
+      if (user?.id) {
+        await updateCategoryPriorities(updates, user.id);
+        // Don't sync here - will sync when user clicks Done
+      }
+    } catch (error) {
+      logger.error('Reorder Error:', error);
+      loadData();
     }
   };
 
@@ -159,18 +209,14 @@ export default function CategoriesScreen() {
     showToast('Category added successfully', 'success');
   };
 
-  const filteredData = useMemo(() => {
-    let result = categories.filter((c) => c.type === activeTab);
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter((c) => c.name.toLowerCase().includes(q));
-    }
-    result.sort((a, b) => {
-      const cmp = a.name.localeCompare(b.name);
-      return sortAsc ? cmp : -cmp;
-    });
-    return result;
-  }, [categories, searchQuery, sortAsc, activeTab]);
+  const filteredData = filterAndSortCategories(
+    categories,
+    activeTab,
+    searchQuery,
+    sortBy,
+    sortAsc,
+    isReordering,
+  );
 
   if (loading) {
     return (
@@ -203,40 +249,63 @@ export default function CategoriesScreen() {
             containerStyle={common.flex1}
           />
           <View style={common.actionRow}>
+            {!isReordering && (
+              <TouchableOpacity
+                style={[
+                  common.sortButton,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={() => setShowSortModal(true)}
+              >
+                <View style={common.flexRowCenterGap4}>
+                  <MaterialIcons name="sort" size={18} color={colors.primary} />
+                  <MaterialIcons
+                    name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
+                    size={14}
+                    color={colors.primary}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={[
                 common.sortButton,
                 { backgroundColor: colors.card, borderColor: colors.border },
+                searchQuery.length > 0 && styles.disabledOpacity,
               ]}
-              onPress={() => setSortAsc(!sortAsc)}
+              onPress={searchQuery.length > 0 ? undefined : toggleReorderMode}
+              disabled={searchQuery.length > 0}
             >
               <View style={common.flexRowCenterGap4}>
-                <MaterialIcons name="sort" size={18} color={colors.primary} />
                 <MaterialIcons
-                  name={sortAsc ? 'arrow-upward' : 'arrow-downward'}
-                  size={14}
+                  name={isReordering ? 'check' : 'reorder'}
+                  size={18}
                   color={colors.primary}
                 />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                common.iconButton44,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-              onPress={toggleViewMode}
-            >
-              <MaterialIcons
-                name={viewMode === 'list' ? 'grid-view' : 'view-list'}
-                size={22}
-                color={colors.text}
-              />
-            </TouchableOpacity>
+            {!isReordering && (
+              <TouchableOpacity
+                style={[
+                  common.iconButton44,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={toggleViewMode}
+              >
+                <MaterialIcons
+                  name={viewMode === 'list' ? 'grid-view' : 'view-list'}
+                  size={22}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
         <View style={common.captionRow}>
-          <Text style={[common.sortCaption, { color: colors.textSecondary }]}>Sorted by Name</Text>
+          <Text style={[common.sortCaption, { color: colors.textSecondary }]}>
+            Sorted by {sortBy === 'priority' ? 'Priority' : 'Name'}
+          </Text>
         </View>
       </View>
 
@@ -282,34 +351,69 @@ export default function CategoriesScreen() {
       ) : (
         <FlatList
           ref={listRef}
-          key={viewMode}
+          key={`${viewMode}-${isReordering}`}
           data={filteredData}
-          numColumns={viewMode === 'grid' ? 3 : 1}
+          numColumns={viewMode === 'grid' && !isReordering ? 3 : 1}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <CategoryCard
-              item={item}
-              viewMode={viewMode}
-              colors={colors}
-              onPress={(cat) =>
-                navigation.navigate('Main', {
-                  screen: 'Transactions',
-                  params: { initialSelectedCats: [cat.id] },
-                })
-              }
-            />
-          )}
+          renderItem={({ item, index }) => {
+            if (isReordering) {
+              return (
+                <View style={[styles.reorderRow, { borderBottomColor: colors.border }]}>
+                  <View style={styles.reorderContent}>
+                    <CategoryCard item={item} viewMode="list" colors={colors} onPress={() => {}} />
+                  </View>
+                  <View style={styles.reorderArrows}>
+                    <TouchableOpacity
+                      onPress={() => moveItem(index, 'up')}
+                      disabled={index === 0}
+                      style={index === 0 ? styles.arrowBtnDisabled : styles.arrowBtn}
+                    >
+                      <MaterialIcons name="expand-less" size={24} color={colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => moveItem(index, 'down')}
+                      disabled={index === filteredData.length - 1}
+                      style={
+                        index === filteredData.length - 1
+                          ? styles.arrowBtnDisabled
+                          : styles.arrowBtn
+                      }
+                    >
+                      <MaterialIcons name="expand-more" size={24} color={colors.primary} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            }
+            return (
+              <CategoryCard
+                item={item}
+                viewMode={viewMode}
+                colors={colors}
+                onPress={(cat) =>
+                  navigation.navigate('Main', {
+                    screen: 'Transactions',
+                    params: { initialSelectedCats: [cat.id] },
+                  })
+                }
+              />
+            );
+          }}
           contentContainerStyle={common.listContent16T4B120}
-          columnWrapperStyle={viewMode === 'grid' ? common.justifyStart : undefined}
+          columnWrapperStyle={
+            viewMode === 'grid' && !isReordering ? common.justifyStart : undefined
+          }
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      <FloatingActionButton
-        onPress={() => setAddModalVisible(true)}
-        iconName="add"
-        backgroundColor={colors.primary}
-      />
+      {!isReordering && (
+        <FloatingActionButton
+          onPress={() => setAddModalVisible(true)}
+          iconName="add"
+          backgroundColor={colors.primary}
+        />
+      )}
 
       <CategoryAddModal
         visible={isAddModalVisible}
@@ -317,6 +421,44 @@ export default function CategoriesScreen() {
         onAdd={handleAddCategorySubmit}
         colors={colors}
       />
+
+      <CategorySortModal
+        visible={showSortModal}
+        onClose={() => setShowSortModal(false)}
+        sortBy={sortBy}
+        sortAsc={sortAsc}
+        onSortChange={(mode, asc) => {
+          setSortBy(mode);
+          setSortAsc(asc);
+        }}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  disabledOpacity: {
+    opacity: 0.5,
+  },
+  reorderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    marginHorizontal: 16,
+  },
+  reorderContent: {
+    flex: 1,
+  },
+  reorderArrows: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  arrowBtn: {
+    padding: 4,
+  },
+  arrowBtnDisabled: {
+    padding: 4,
+    opacity: 0.3,
+  },
+});

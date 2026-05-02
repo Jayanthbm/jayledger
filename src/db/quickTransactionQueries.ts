@@ -79,14 +79,14 @@ export const updateQuickTransactionPriorities = async (
   userId: string,
 ) => {
   const db = getDb();
-  await db.withTransactionAsync(async () => {
-    for (const update of updates) {
-      await db.runAsync(
-        `UPDATE quick_transactions SET priority = ?, sync_status = 1 WHERE id = ? AND user_id = ?`,
-        [update.priority, update.id, userId],
-      );
-    }
-  });
+  // Execute updates sequentially without explicit transaction
+  // Each UPDATE is atomic, and we're just updating priority fields
+  for (const update of updates) {
+    await db.runAsync(
+      `UPDATE quick_transactions SET priority = ?, sync_status = 1 WHERE id = ? AND user_id = ?`,
+      [update.priority, update.id, userId],
+    );
+  }
 };
 
 export const deleteQuickTransaction = async (id: string, userId: string) => {

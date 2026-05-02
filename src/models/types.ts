@@ -56,6 +56,7 @@ export interface Category {
   app_icon?: string | null;
   user_id: string;
   is_living_cost?: number;
+  priority?: number;
   sync_status?: number;
 }
 
@@ -64,6 +65,7 @@ export interface Payee {
   name: string;
   logo: string;
   user_id: string;
+  priority?: number;
   sync_status?: number;
 }
 

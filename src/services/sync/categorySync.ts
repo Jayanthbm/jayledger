@@ -18,6 +18,7 @@ export const pushLocalCategories = async (userId: string) => {
     icon: string;
     app_icon: string;
     user_id: string;
+    priority: number;
     sync_status: number;
     is_living_cost: number;
   }>(`SELECT * FROM categories WHERE user_id = '${userId}' AND sync_status = 1`);
@@ -59,9 +60,10 @@ export const syncCategories = async (userId: string) => {
         const name = (item.name || '').replace(/'/g, "''");
         const icon = (item.icon || '').replace(/'/g, "''");
         const appIcon = (item.app_icon || '').replace(/'/g, "''");
+        const priority = item.priority ?? 0;
         await db.execAsync(`
-          INSERT INTO categories (id, name, type, icon, app_icon, user_id, sync_status) 
-          VALUES ('${item.id}', '${name}', '${item.type}', '${icon}', '${appIcon}', '${item.user_id}', 0)
+          INSERT INTO categories (id, name, type, icon, app_icon, user_id, priority, sync_status) 
+          VALUES ('${item.id}', '${name}', '${item.type}', '${icon}', '${appIcon}', '${item.user_id}', ${priority}, 0)
         `);
       }
     });

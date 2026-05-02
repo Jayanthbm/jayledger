@@ -79,6 +79,10 @@ export default function QuickTransactionsScreen() {
   }, [session]);
 
   const toggleReorderMode = () => {
+    // If exiting reorder mode, sync the changes
+    if (isReordering && session?.user?.id) {
+      backgroundPushQuickTransactions(session.user.id);
+    }
     setIsReordering(!isReordering);
     if (!isReordering) setViewMode('List'); // Force list for reordering
   };
@@ -131,7 +135,7 @@ export default function QuickTransactionsScreen() {
     try {
       if (session?.user?.id) {
         await updateQuickTransactionPriorities(updates, session.user.id);
-        backgroundPushQuickTransactions(session.user.id);
+        // Don't sync here - will sync when user clicks Done
       }
     } catch (error) {
       logger.error('Reorder Error:', error);
@@ -366,13 +370,15 @@ export default function QuickTransactionsScreen() {
           </View>
         }
       />
-      <FloatingActionButton
-        onPress={() => navigation.navigate('AddQuickTransaction')}
-        iconName="add"
-        backgroundColor={colors.primary}
-        style={dynamicStyles.fab}
-        iconSize={30}
-      />
+      {!isReordering && (
+        <FloatingActionButton
+          onPress={() => navigation.navigate('AddQuickTransaction')}
+          iconName="add"
+          backgroundColor={colors.primary}
+          style={dynamicStyles.fab}
+          iconSize={30}
+        />
+      )}
 
       <BottomSheet
         visible={!!deletingId}

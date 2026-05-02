@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCategories, insertCategory } from '../db/queries';
 import { syncCategories } from '../services/syncService';
+import { pushLocalCategories } from '../services/sync/categorySync';
 import { Category } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { logger } from '../utils/logger';
@@ -72,4 +73,46 @@ export const performCategorySync = async (userId: string) => {
   await AsyncStorage.setItem(LAST_SYNC_KEY(userId), now);
   const updated = await getCategories(userId);
   return { categories: updated, lastSynced: now };
+};
+
+export const backgroundPushCategories = (userId: string) => {
+  pushLocalCategories(userId)
+    .then(() => AsyncStorage.setItem(LAST_SYNC_KEY(userId), new Date().toISOString()))
+    .catch((err) => logger.error('[Categories] Background push failed:', err));
+};
+
+export const filterAndSortCategories = (
+  categories: Category[],
+  activeTab: 'Expense' | 'Income',
+  searchQuery: string,
+  sortBy: 'name' | 'priority',
+  sortAsc: boolean,
+  isReordering: boolean,
+): Category[] => {
+  let result = categories.filter((c) => c.type === activeTab);
+
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    result = result.filter((c) => c.name.toLowerCase().includes(q));
+  }
+
+  if (isReordering) {
+    // When reordering, sort by priority only
+    result.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+  } else {
+    // Normal mode: sort by selected mode
+    if (sortBy === 'priority') {
+      result.sort((a, b) => {
+        const cmp = (a.priority || 0) - (b.priority || 0);
+        return sortAsc ? cmp : -cmp;
+      });
+    } else {
+      result.sort((a, b) => {
+        const cmp = a.name.localeCompare(b.name);
+        return sortAsc ? cmp : -cmp;
+      });
+    }
+  }
+
+  return result;
 };
