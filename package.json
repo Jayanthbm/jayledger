@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "test": "jest",
     "prepare": "husky",
-    "prebuild": "npx expo prebuild --platform android --clean"
+    "prebuild": "npx expo prebuild --platform android --clean",
+    "exapk": "npx eas build -p android --profile preview"
   },
   "jest": {
     "preset": "ts-jest",
