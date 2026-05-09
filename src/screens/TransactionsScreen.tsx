@@ -133,7 +133,16 @@ export default function TransactionsScreen() {
     const sub = DeviceEventEmitter.addListener('module_refreshed', (data: { module: string }) => {
       if (data.module === 'Transactions') loadData();
     });
-    return () => sub.remove();
+
+    const quickActionSub = DeviceEventEmitter.addListener('show_quick_transaction_modal', () => {
+      logger.info('[TransactionsScreen] Quick transaction modal triggered via quick action');
+      setShowQuickModal(true);
+    });
+
+    return () => {
+      sub.remove();
+      quickActionSub.remove();
+    };
   }, [
     navigation,
     isSyncing,

@@ -40,12 +40,6 @@ export function QuickActionHandler() {
               DeviceEventEmitter.emit('show_quick_transaction_modal');
               logger.info('[QuickActions] Triggered quick transaction modal');
             }, 200);
-          } else if (action.id === 'view_goals') {
-            navigation.navigate('Main', { screen: 'Goals' });
-            logger.info('[QuickActions] Navigated to Goals');
-          } else if (action.id === 'view_budgets') {
-            navigation.navigate('Main', { screen: 'Budgets' });
-            logger.info('[QuickActions] Navigated to Budgets');
           } else {
             logger.warn('[QuickActions] Unknown action ID:', action.id);
           }
@@ -71,16 +65,6 @@ export function QuickActionHandler() {
         id: 'quick_transaction',
         title: 'Quick Transaction',
         icon: 'asset:quick_transaction_icon',
-      },
-      {
-        id: 'view_goals',
-        title: 'Goals',
-        icon: 'asset:goals_icon',
-      },
-      {
-        id: 'view_budgets',
-        title: 'Budgets',
-        icon: 'asset:budgets_icon',
       },
     ];
 
