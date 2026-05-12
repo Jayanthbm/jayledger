@@ -1,3 +1,6 @@
+import { Colors } from '../store/ThemeContext';
+import type MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -15,6 +18,8 @@ export interface Transaction {
   user_id: string;
   product_link?: string | null;
   tid: number;
+  latitude?: number | null;
+  longitude?: number | null;
   sync_status?: number;
   created_at?: string;
   updated_at?: string;
@@ -51,6 +56,7 @@ export interface Category {
   app_icon?: string | null;
   user_id: string;
   is_living_cost?: number;
+  priority?: number;
   sync_status?: number;
 }
 
@@ -59,6 +65,7 @@ export interface Payee {
   name: string;
   logo: string;
   user_id: string;
+  priority?: number;
   sync_status?: number;
 }
 
@@ -71,10 +78,46 @@ export interface QuickTransaction {
   payee_id?: string;
   description?: string;
   user_id: string;
+  product_link?: string | null;
+  priority: number;
+  identifier?: string;
+  sync_status?: number;
+  deleted?: number;
 }
 
 // Supabase session shape minimum
 export interface UserSession {
   id: string;
   email?: string;
+}
+
+export interface ReportItem {
+  id?: string;
+  name?: string;
+  amount?: number;
+  totalAmount?: number;
+  type?: string;
+  category_name?: string;
+  category_id?: string;
+  payee_name?: string;
+  payee_id?: string;
+  icon?: string;
+  app_icon?: string | null;
+  is_living_cost?: number;
+  month?: string;
+  income?: number;
+  expense?: number;
+  category_app_icon?: string;
+  payee_logo?: string;
+  prevAmount?: number;
+  diffPercentage?: number;
+}
+
+export type ThemeColors = typeof Colors.light;
+export type MaterialIconName = keyof typeof MaterialIcons.glyphMap;
+
+export interface MonthlyStatsBreakdown {
+  month: string;
+  income: number;
+  expense: number;
 }

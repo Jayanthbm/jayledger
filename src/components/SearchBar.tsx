@@ -18,7 +18,7 @@ export const SearchBar = ({
   placeholder = 'Search...',
   size = 'medium',
   onClear,
-  containerStyle
+  containerStyle,
 }: SearchBarProps) => {
   const { colors } = useTheme();
 
@@ -37,17 +37,19 @@ export const SearchBar = ({
   const sizes = getSizes();
 
   return (
-    <View style={[
-      styles.container, 
-      { 
-        height: sizes.height,
-        backgroundColor: colors.card,
-        borderColor: colors.border,
-        borderRadius: sizes.borderRadius,
-        paddingHorizontal: sizes.paddingHorizontal
-      },
-      containerStyle
-    ]}>
+    <View
+      style={[
+        styles.container,
+        {
+          height: sizes.height,
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderRadius: sizes.borderRadius,
+          paddingHorizontal: sizes.paddingHorizontal,
+        },
+        containerStyle,
+      ]}
+    >
       <Icon name="search" size={sizes.iconSize} color={colors.textSecondary} />
       <TextInput
         value={value}
@@ -55,16 +57,15 @@ export const SearchBar = ({
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary + '90'}
         style={[
-          styles.input, 
-          { 
+          styles.input,
+          {
             color: colors.text,
             fontSize: sizes.fontSize,
-            marginLeft: 8
-          }
+          },
         ]}
       />
       {value !== '' && (
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => {
             onChangeText('');
             onClear?.();
@@ -88,8 +89,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     padding: 0,
+    marginLeft: 8,
   },
   clearBtn: {
     padding: 4,
-  }
+  },
 });

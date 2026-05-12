@@ -1,215 +1,210 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from 'react-native';
-import { Transaction } from '../models/types';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+  Linking,
+  DeviceEventEmitter,
+} from 'react-native';
+import { Image } from 'expo-image';
+import { Transaction, MaterialIconName } from '../models/types';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { format } from 'date-fns';
+import { formatCurrency, formatDate } from '../utils/formatters';
 import { Swipeable } from 'react-native-gesture-handler';
+import { FinancialListItem } from './common/FinancialListItem';
+import { logger } from '../utils/logger';
+import { syncTransactions } from '../services/syncService';
+import { useAuth } from '../store/AuthContext';
 
 interface TransactionCardProps {
   transaction: Transaction;
   onEdit?: (tx: Transaction) => void;
   onDelete?: (tx: Transaction) => void;
-  onFilterCategory?: (catId: string) => void;
   onFilterPayee?: (payeeId: string | null) => void;
+  onFilterCategory?: (categoryId: string | null) => void;
   compact?: boolean;
 }
 
-export const TransactionCard = React.memo(({ 
-  transaction, 
-  onEdit, 
-  onDelete, 
-  onFilterCategory, 
-  onFilterPayee,
-  compact = false
-}: TransactionCardProps) => {
-  const { colors } = useTheme();
-  const swipeableRef = useRef<Swipeable>(null);
-  const isIncome = transaction.type === 'Income';
+export const TransactionCard = React.memo(
+  ({
+    transaction,
+    onEdit,
+    onDelete,
+    onFilterPayee,
+    onFilterCategory,
+    compact = false,
+  }: TransactionCardProps) => {
+    const { colors } = useTheme();
+    const { session } = useAuth();
+    const swipeableRef = useRef<Swipeable>(null);
+    const isIncome = transaction.type === 'Income';
 
-  const handleLinkPress = () => {
-    if (transaction.product_link) {
-      Linking.openURL(transaction.product_link).catch(err => console.error("Couldn't load page", err));
-    }
-  };
+    const handleEdit = () => {
+      swipeableRef.current?.close();
+      onEdit?.(transaction);
+    };
 
-  const handleEdit = () => {
-    swipeableRef.current?.close();
-    onEdit?.(transaction);
-  };
+    const handleDelete = () => {
+      swipeableRef.current?.close();
+      onDelete?.(transaction);
+    };
 
-  const handleDelete = () => {
-    swipeableRef.current?.close();
-    onDelete?.(transaction);
-  };
+    const handleOpenLink = () => {
+      if (transaction.product_link) {
+        Linking.openURL(transaction.product_link).catch((err) =>
+          logger.error('Failed to open URL:', err),
+        );
+      }
+    };
 
-  const renderRightActions = () => (
-    <View style={styles.actionsContainer}>
-      <TouchableOpacity 
-        style={[styles.actionButton, { backgroundColor: colors.primary }]} 
-        onPress={handleEdit}
-      >
-        <Icon name="edit" size={24} color="white" />
-      </TouchableOpacity>
-      <TouchableOpacity 
-        style={[styles.actionButton, { backgroundColor: colors.danger }]} 
-        onPress={handleDelete}
-      >
-        <Icon name="delete" size={24} color="white" />
-      </TouchableOpacity>
-    </View>
-  );
+    const handleOpenMap = () => {
+      if (transaction.latitude && transaction.longitude) {
+        const url = `https://www.google.com/maps/search/?api=1&query=${transaction.latitude},${transaction.longitude}`;
+        Linking.openURL(url).catch((err) => logger.error('Failed to open Map:', err));
+      }
+    };
 
-  const cardContent = (
-    <View style={[
-      styles.card, 
-      { backgroundColor: colors.card },
-      compact && { padding: 12, marginVertical: 4, borderRadius: 12, marginHorizontal: 0 }
-    ]}>
-      <View style={styles.mainRow}>
-        <TouchableOpacity 
-          style={[
-            styles.iconContainer, 
-            { backgroundColor: colors.background },
-            compact && { width: 36, height: 36, borderRadius: 18 }
-          ]}
-          onPress={() => onFilterCategory?.(transaction.category_id!)}
-          activeOpacity={0.7}
+    const handleSync = async () => {
+      if (!session?.user?.id || transaction.sync_status !== 1) return;
+      try {
+        await syncTransactions(session.user.id, true);
+        DeviceEventEmitter.emit('module_refreshed', { module: 'Transactions' });
+        DeviceEventEmitter.emit('module_refreshed', { module: 'Dashboard' });
+      } catch (err) {
+        logger.error('Failed to manually sync transaction:', err);
+      }
+    };
+
+    const renderRightActions = () => (
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: colors.primary }]}
+          onPress={handleEdit}
         >
-          <Icon 
-            name={(transaction.category_app_icon || 'receipt') as any} 
-            size={compact ? 20 : 24} 
-            color={isIncome ? colors.success : colors.primary} 
-          />
+          <Icon name="edit" size={24} color="white" />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: colors.danger }]}
+          onPress={handleDelete}
+        >
+          <Icon name="delete" size={24} color="white" />
+        </TouchableOpacity>
+      </View>
+    );
 
-        <View style={styles.middleSection}>
-          <Text style={[
-            styles.categoryName, 
-            { color: colors.text },
-            compact && { fontSize: 14, marginBottom: 2 }
-          ]}>
-            {transaction.category_name}
-          </Text>
-          
-          {transaction.description && (
-            <Text 
-              style={[
-                styles.description, 
-                { color: colors.textSecondary },
-                compact && { fontSize: 13, lineHeight: 16, marginBottom: 2 }
-              ]} 
-              numberOfLines={compact ? 1 : 2} 
-              ellipsizeMode="tail"
-            >
-              {transaction.description}
-            </Text>
-          )}
+    const payeeNode = transaction.payee_name ? (
+      <TouchableOpacity
+        style={styles.payeeRow}
+        onPress={() => onFilterPayee?.(transaction.payee_id)}
+        activeOpacity={0.6}
+      >
+        {transaction.payee_logo ? (
+          <Image
+            source={{ uri: transaction.payee_logo }}
+            style={styles.payeeLogo}
+            contentFit="contain"
+            transition={200}
+            cachePolicy="disk"
+          />
+        ) : (
+          <View style={[styles.payeeLogoPlaceholder, { backgroundColor: colors.border }]}>
+            <Icon name="person" size={10} color={colors.textSecondary} />
+          </View>
+        )}
+        <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
+          {transaction.payee_name}
+        </Text>
+      </TouchableOpacity>
+    ) : null;
 
-          {transaction.payee_name && (
-            <TouchableOpacity 
-              style={styles.payeeRow}
-              onPress={() => onFilterPayee?.(transaction.payee_id)}
-              activeOpacity={0.6}
-            >
-              {transaction.payee_logo ? (
-                <Image source={{ uri: transaction.payee_logo }} style={styles.payeeLogo} />
-              ) : (
-                <View style={[styles.payeeLogoPlaceholder, { backgroundColor: colors.border }]}>
-                  <Icon name="person" size={10} color={colors.textSecondary} />
-                </View>
-              )}
-              <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
-                {transaction.payee_name}
-              </Text>
-            </TouchableOpacity>
-          )}
+    const linkNode = transaction.product_link ? (
+      <TouchableOpacity
+        style={[styles.iconPill, { backgroundColor: colors.primary + '15' }]}
+        onPress={handleOpenLink}
+        activeOpacity={0.6}
+      >
+        <Icon name="link" size={14} color={colors.primary} />
+      </TouchableOpacity>
+    ) : null;
 
-          <Text style={[styles.dateTime, { color: colors.textSecondary + '80' }]}>
-            {format(new Date(transaction.transaction_timestamp), compact ? 'dd MMM, p' : 'PPp')}
-          </Text>
-        </View>
+    const mapNode =
+      transaction.latitude && transaction.longitude ? (
+        <TouchableOpacity
+          style={[styles.iconPill, { backgroundColor: colors.success + '15' }]}
+          onPress={handleOpenMap}
+          activeOpacity={0.6}
+        >
+          <Icon name="map" size={14} color={colors.success} />
+        </TouchableOpacity>
+      ) : null;
 
-        <View style={styles.rightSection}>
-          <Text style={[
-            styles.amount, 
-            { color: isIncome ? colors.success : colors.danger },
-            compact && { fontSize: 15 }
-          ]}>
-            {isIncome ? '+' : '-'} ₹{transaction.amount.toLocaleString()}
-          </Text>
-          
-          {transaction.product_link && (
-            <TouchableOpacity onPress={handleLinkPress} style={styles.linkButton}>
-              <Icon name="link" size={14} color={colors.primary} />
-              <Text style={[styles.linkText, { color: colors.primary }]}>
-                View
-              </Text>
-            </TouchableOpacity>
-          )}
+    const isSynced = transaction.sync_status !== 1;
+    const syncTag = !isSynced ? (
+      <TouchableOpacity
+        style={[styles.syncTag, { backgroundColor: colors.textSecondary + '25' }]}
+        onPress={handleSync}
+        activeOpacity={0.6}
+      >
+        <Icon name="cloud-upload" size={12} color={colors.textSecondary} />
+      </TouchableOpacity>
+    ) : null;
+
+    const footerNode = (
+      <View style={styles.footerRow}>
+        {payeeNode}
+        {payeeNode && (linkNode || mapNode) && <View style={styles.footerSeparator} />}
+        <View style={styles.iconContainer}>
+          {linkNode}
+          {mapNode}
         </View>
       </View>
-    </View>
-  );
-
-  if (onEdit || onDelete) {
-    return (
-      <Swipeable
-        ref={swipeableRef}
-        renderRightActions={renderRightActions}
-        friction={2}
-        rightThreshold={40}
-      >
-        {cardContent}
-      </Swipeable>
     );
-  }
 
-  return cardContent;
-});
+    const cardContent = (
+      <View style={[styles.cardWrapper, !compact && styles.containerNormal]}>
+        <FinancialListItem
+          title={transaction.category_name || 'No Category'}
+          subtitle={transaction.description || undefined}
+          icon={(transaction.category_app_icon || 'receipt') as MaterialIconName}
+          iconColor={isIncome ? colors.success : colors.primary}
+          amountText={`${isIncome ? '+' : '-'} ${formatCurrency(transaction.amount)}`}
+          amountColor={isIncome ? colors.success : colors.danger}
+          metaText={formatDate(transaction.transaction_timestamp, compact ? 'dd MMM, p' : 'PPp')}
+          rightBottomNode={footerNode}
+          onIconPress={() => onFilterCategory?.(transaction.category_id)}
+          compact={compact}
+          containerStyle={compact ? styles.containerCompact : styles.fullWidthContainer}
+        />
+        {syncTag}
+      </View>
+    );
+
+    if (onEdit || onDelete) {
+      return (
+        <Swipeable
+          ref={swipeableRef}
+          renderRightActions={renderRightActions}
+          friction={2}
+          rightThreshold={40}
+        >
+          {cardContent}
+        </Swipeable>
+      );
+    }
+
+    return cardContent;
+  },
+);
+
+TransactionCard.displayName = 'TransactionCard';
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  mainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  middleSection: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  categoryName: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 14,
-    lineHeight: 18,
-    marginBottom: 4,
-  },
   payeeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    flexShrink: 1,
   },
   payeeLogo: {
     width: 16,
@@ -228,33 +223,7 @@ const styles = StyleSheet.create({
   payeeName: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  dateTime: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  rightSection: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    minHeight: 44,
-  },
-  amount: {
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  linkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-  },
-  linkText: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginLeft: 4,
+    flexShrink: 1,
   },
   actionsContainer: {
     flexDirection: 'row',
@@ -267,5 +236,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     marginLeft: 8,
+  },
+  containerCompact: {
+    marginHorizontal: 0,
+  },
+  containerNormal: {
+    marginHorizontal: 16,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  footerSeparator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  iconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  iconPill: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardWrapper: {
+    position: 'relative',
+  },
+  syncTag: {
+    position: 'absolute',
+    top: 10,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 10,
+    elevation: 3,
+  },
+  fullWidthContainer: {
+    marginHorizontal: 0,
   },
 });
