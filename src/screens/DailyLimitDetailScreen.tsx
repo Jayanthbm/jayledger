@@ -8,6 +8,9 @@ import { TransactionCard } from '../components/TransactionCard';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
+import { formatCurrency } from '../utils/formatters';
+import { logger } from '../utils/logger';
+
 export default function DailyLimitDetailScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
@@ -26,38 +29,46 @@ export default function DailyLimitDetailScreen() {
       const txs = await getTransactionsByDate(session.user.id, todayStr);
       setData(txs);
     } catch (error) {
-      console.error("Error loading today's transactions:", error);
+      logger.error("Error loading today's transactions:", error);
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id, todayStr]);
+  }, [session, todayStr]);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   const totalSpent = data.reduce((sum, tx) => sum + (tx.type === 'Expense' ? tx.amount : 0), 0);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-
-      <View style={[styles.statsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View
+        style={[styles.statsCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      >
         <Text style={[styles.statsLabel, { color: colors.textSecondary }]}>Total Spent Today</Text>
-        <Text style={[styles.statsValue, { color: colors.danger }]}>₹{totalSpent.toLocaleString()}</Text>
+        <Text style={[styles.statsValue, { color: colors.danger }]}>
+          {formatCurrency(totalSpent)}
+        </Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <FlatList
           data={data}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           renderItem={({ item }) => <TransactionCard transaction={item} />}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <MaterialIcons name="receipt" size={64} color={colors.border} />
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No transactions today</Text>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No transactions today
+              </Text>
             </View>
           }
         />
@@ -70,10 +81,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+
   statsCard: {
     margin: 16,
     padding: 24,
@@ -100,5 +108,8 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     marginTop: 16,
-  }
+  },
+  loader: {
+    marginTop: 40,
+  },
 });

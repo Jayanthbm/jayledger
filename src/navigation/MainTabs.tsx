@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
@@ -27,27 +28,28 @@ export default function MainTabs() {
         headerStyle: { backgroundColor: colors.card },
         headerTintColor: colors.text,
         headerShadowVisible: false,
-        tabBarStyle: { 
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
-          height: 84 + (insets.bottom > 0 ? insets.bottom : 0),
-          paddingTop: 14,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 14,
-          borderTopWidth: 1,
-          elevation: 0,
-        },
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+            height: 84 + (insets.bottom > 0 ? insets.bottom : 0),
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 14,
+          },
+        ],
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarShowLabel: false,
-        tabBarIcon: ({ color, size, focused }) => {
-          let iconName: any = 'help';
-          if (route.name === 'Dashboard') iconName = focused ? 'home-variant' : 'home-variant-outline';
+        tabBarIcon: ({ color, focused }) => {
+          let iconName: keyof typeof Icon.glyphMap = 'help';
+          if (route.name === 'Dashboard')
+            iconName = focused ? 'home-variant' : 'home-variant-outline';
           else if (route.name === 'Transactions') iconName = 'swap-vertical';
           else if (route.name === 'Budgets') iconName = focused ? 'wallet' : 'wallet-outline';
           else if (route.name === 'Goals') iconName = focused ? 'bullseye-arrow' : 'bullseye';
           else if (route.name === 'Reports') iconName = focused ? 'chart-box' : 'chart-box-outline';
           else if (route.name === 'Settings') iconName = focused ? 'tune' : 'tune-variant';
-          
+
           return <Icon name={iconName} size={26} color={color} />;
         },
       })}
@@ -61,3 +63,11 @@ export default function MainTabs() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    paddingTop: 14,
+    borderTopWidth: 1,
+    elevation: 0,
+  },
+});

@@ -1,0 +1,229 @@
+{
+  "project_type": "mobile app",
+  "tech_stack": [
+    "TypeScript",
+    "React 19",
+    "React Native 0.81",
+    "Expo 54",
+    "React Navigation",
+    "Expo SQLite",
+    "Supabase",
+    "AsyncStorage",
+    "Jest",
+    "ESLint",
+    "Prettier"
+  ],
+  "entry_points": [
+    "index.ts",
+    "App.tsx",
+    "src/navigation/AppNavigator.tsx",
+    "src/navigation/MainTabs.tsx",
+    "src/db/database.ts",
+    "src/services/supabase.ts",
+    "src/services/syncService.ts"
+  ],
+  "important_files": [
+    {
+      "path": "package.json",
+      "description": "Defines scripts, dependencies, Jest config, and lint-staged setup."
+    },
+    {
+      "path": "app.json",
+      "description": "Expo app metadata, native IDs, plugins, EAS project, and updates config."
+    },
+    {
+      "path": "App.tsx",
+      "description": "Initializes SQLite, handles biometric lock, and mounts providers/navigation."
+    },
+    {
+      "path": "index.ts",
+      "description": "Registers the Expo root component."
+    },
+    {
+      "path": "src/navigation/AppNavigator.tsx",
+      "description": "Auth-aware root stack navigator for login, main app, modals, and reports."
+    },
+    {
+      "path": "src/navigation/MainTabs.tsx",
+      "description": "Authenticated bottom-tab navigator for dashboard, transactions, budgets, goals, reports, and settings."
+    },
+    {
+      "path": "src/navigation/navigationTypes.ts",
+      "description": "Typed route names and params for navigation."
+    },
+    {
+      "path": "src/db/database.ts",
+      "description": "SQLite open/init logic, schema creation, migrations, and indexes."
+    },
+    {
+      "path": "src/db/queries.ts",
+      "description": "Shared SQLite query helpers for categories, payees, stats, and related data."
+    },
+    {
+      "path": "src/db/transactionQueries.ts",
+      "description": "Transaction CRUD, date lookups, net worth, and sync-status helpers."
+    },
+    {
+      "path": "src/db/reportQueries.ts",
+      "description": "SQLite aggregation queries for report screens."
+    },
+    {
+      "path": "src/models/types.ts",
+      "description": "Core TypeScript interfaces for app entities and report data."
+    },
+    {
+      "path": "src/store/AuthContext.tsx",
+      "description": "Supabase session state plus sign-in, sign-out, and post-login sync."
+    },
+    {
+      "path": "src/store/ThemeContext.tsx",
+      "description": "Light/dark theme colors and persisted theme preference."
+    },
+    {
+      "path": "src/services/supabase.ts",
+      "description": "Supabase client configuration with AsyncStorage-backed auth."
+    },
+    {
+      "path": "src/services/syncService.ts",
+      "description": "Coordinates full sync and entity-level push/pull operations."
+    },
+    {
+      "path": "src/services/sync/baseSync.ts",
+      "description": "Shared sync helpers for connectivity and logging."
+    },
+    {
+      "path": "src/services/sync/transactionSync.ts",
+      "description": "Transaction-specific Supabase synchronization."
+    },
+    {
+      "path": "src/services/transactionService.ts",
+      "description": "Transaction list fetching, filtering, stats, and FlashList mapping."
+    },
+    {
+      "path": "src/services/dashboardService.ts",
+      "description": "Dashboard metrics and financial calculations."
+    },
+    {
+      "path": "src/services/reportService.ts",
+      "description": "Service layer for report data retrieval."
+    },
+    {
+      "path": "src/hooks/useDashboardData.ts",
+      "description": "Loads dashboard metrics for the current user."
+    },
+    {
+      "path": "src/hooks/useDashboardSync.ts",
+      "description": "Manages dashboard sync state and manual/initial sync actions."
+    }
+  ],
+  "architecture": {
+    "src/screens": "Top-level screens for dashboard, transactions, budgets, goals, reports, settings, auth, and setup flows.",
+    "src/components": "Reusable UI components grouped by feature plus shared common components.",
+    "src/navigation": "React Navigation stack/tab setup and route typing.",
+    "src/store": "React contexts for auth, theme, and toast state.",
+    "src/db": "SQLite database initialization and query modules.",
+    "src/services": "Business/data services plus Supabase sync orchestration.",
+    "src/hooks": "Feature and screen hooks for data loading, filtering, sync, and settings.",
+    "src/models": "Shared TypeScript data interfaces.",
+    "src/utils": "Date, formatting, validation, mapping, timestamp, and logging helpers.",
+    "src/styles": "Shared spacing, typography, layout, card, and common style primitives.",
+    "src/constants": "Shared constants for tables, sync, and app values.",
+    "__tests__": "Jest tests for services, utilities, queries, and components.",
+    "__mocks__": "Mocks for Jest, including Expo SQLite.",
+    "assets": "Expo app icons and splash/favicon assets.",
+    "android": "Generated/native Android project for Expo native builds."
+  },
+  "rules": [
+    "Do NOT scan entire codebase unless required",
+    "Prefer using listed important files",
+    "Make minimal, targeted changes",
+    "Follow existing patterns and conventions",
+    "Preserve offline-first SQLite behavior when changing data flows",
+    "Keep Supabase sync status and soft-delete fields consistent",
+    "Use existing hooks/services before adding new screen-level data logic",
+    "Use shared styles from src/styles and theme colors from ThemeContext",
+    "Update navigation types when adding or changing routes",
+    "Add or update focused Jest tests for query, service, or utility changes"
+  ],
+  "common_tasks": [
+    {
+      "task": "Add or modify a screen",
+      "files": [
+        "src/screens",
+        "src/navigation/AppNavigator.tsx",
+        "src/navigation/MainTabs.tsx",
+        "src/navigation/navigationTypes.ts"
+      ]
+    },
+    {
+      "task": "Add reusable UI",
+      "files": ["src/components", "src/components/common", "src/styles"]
+    },
+    {
+      "task": "Change transaction behavior",
+      "files": [
+        "src/services/transactionService.ts",
+        "src/db/transactionQueries.ts",
+        "src/hooks/useTransactions.ts",
+        "src/screens/TransactionsScreen.tsx"
+      ]
+    },
+    {
+      "task": "Change dashboard behavior",
+      "files": [
+        "src/services/dashboardService.ts",
+        "src/hooks/useDashboardData.ts",
+        "src/hooks/useDashboardSync.ts",
+        "src/components/dashboard",
+        "src/screens/DashboardScreen.tsx"
+      ]
+    },
+    {
+      "task": "Change reports",
+      "files": [
+        "src/db/reportQueries.ts",
+        "src/services/reportService.ts",
+        "src/hooks/useReports.ts",
+        "src/screens/reports"
+      ]
+    },
+    {
+      "task": "Change local schema",
+      "files": ["src/db/database.ts", "src/db", "src/models/types.ts", "__tests__"]
+    },
+    {
+      "task": "Change sync behavior",
+      "files": ["src/services/syncService.ts", "src/services/sync"]
+    },
+    {
+      "task": "Change authentication",
+      "files": [
+        "src/store/AuthContext.tsx",
+        "src/services/supabase.ts",
+        "src/screens/LoginScreen.tsx"
+      ]
+    },
+    {
+      "task": "Change app theme/styles",
+      "files": ["src/store/ThemeContext.tsx", "src/styles"]
+    },
+    {
+      "task": "Run validation",
+      "files": ["package.json", "jest-setup.ts", "eslint.config.js", "__tests__"]
+    }
+  ],
+  "ignore": [
+    "node_modules",
+    ".git",
+    ".expo",
+    "android",
+    "ios",
+    "build",
+    "dist",
+    "coverage",
+    "logs",
+    "*.log",
+    "assets",
+    "package-lock.json"
+  ]
+}

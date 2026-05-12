@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Appearance, ColorSchemeName } from 'react-native';
+import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const Colors = {
@@ -22,7 +22,7 @@ export const Colors = {
     border: '#374151',
     danger: '#EF4444',
     success: '#10B981',
-  }
+  },
 };
 
 interface ThemeContextProps {
@@ -31,7 +31,7 @@ interface ThemeContextProps {
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextProps>({
+export const ThemeContext = createContext<ThemeContextProps>({
   isDark: false,
   colors: Colors.light,
   toggleTheme: () => {},

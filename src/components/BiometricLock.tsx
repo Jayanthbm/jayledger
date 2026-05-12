@@ -1,25 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { common } from '../styles/common';
+import { logger } from '../utils/logger';
 
 interface BiometricLockProps {
   onUnlock: () => void;
 }
 
 export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const authenticate = async () => {
+  const authenticate = React.useCallback(async () => {
     setIsAuthenticating(true);
     setError(null);
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock JayLedger',
+        promptMessage: 'Unlock Jmoney',
         fallbackLabel: 'Use Passcode',
         disableDeviceFallback: false,
       });
@@ -31,29 +33,34 @@ export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
       }
     } catch (e) {
       setError('An error occurred during authentication');
-      console.error(e);
+      logger.error(e);
     } finally {
       setIsAuthenticating(false);
     }
-  };
+  }, [onUnlock]);
 
   useEffect(() => {
-    authenticate();
-  }, []);
+    const timer = setTimeout(() => {
+      authenticate();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [authenticate]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient
-        colors={[colors.primary + '20', 'transparent']}
-        style={styles.gradient}
-      />
-      
+      <LinearGradient colors={[colors.primary + '20', 'transparent']} style={styles.gradient} />
+
       <View style={styles.content}>
-        <View style={[styles.logoContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.logoContainer,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
           <Icon name="fingerprint" size={64} color={colors.primary} />
         </View>
-        
-        <Text style={[styles.title, { color: colors.text }]}>JayLedger Locked</Text>
+
+        <Text style={[styles.title, { color: colors.text }]}>Jmoney Locked</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           Please authenticate to access your financial data
         </Text>
@@ -73,7 +80,7 @@ export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Icon name="lock-open" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <Icon name="lock-open" size={20} color="#fff" style={common.mr8} />
               <Text style={styles.buttonText}>Unlock App</Text>
             </>
           )}
