@@ -21,7 +21,7 @@
     "@shopify/flash-list": "2.0.2",
     "@supabase/supabase-js": "^2.103.0",
     "date-fns": "^4.1.0",
-    "expo": "~54.0.33",
+    "expo": "~56.0.12",
     "expo-crypto": "~15.0.8",
     "expo-linear-gradient": "~15.0.8",
     "expo-local-authentication": "~17.0.8",
