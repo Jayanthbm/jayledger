@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { logger } from '../utils/logger';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -36,8 +37,17 @@ export const scheduleReminder = async (timeOfDay: string) => {
     await AsyncStorage.setItem('notification_pref', timeOfDay);
 
     let hour = 9; // Morning default
-    if (timeOfDay === 'Evening') hour = 18; // 6 PM
-    if (timeOfDay === 'Night') hour = 21; // 9 PM
+    let minute = 0;
+
+    if (timeOfDay === 'Evening') {
+      hour = 18; // 6 PM
+    } else if (timeOfDay === 'Night') {
+      hour = 21; // 9 PM
+    } else if (timeOfDay.includes(':')) {
+      const [h, m] = timeOfDay.split(':').map((s) => parseInt(s, 10));
+      hour = h;
+      minute = m;
+    }
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -47,11 +57,11 @@ export const scheduleReminder = async (timeOfDay: string) => {
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
         hour,
-        minute: 0,
+        minute,
       },
     });
   } catch (error) {
-    console.warn("Notifications aren't fully supported in Expo Go SDK 54+:", error);
+    logger.warn("Notifications aren't fully supported in Expo Go SDK 54+:", error);
     // Suppress crash to allow other settings changes in Expo Go
   }
 };

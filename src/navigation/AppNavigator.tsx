@@ -2,40 +2,50 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../store/AuthContext';
-import { ActivityIndicator, View, Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useTheme } from '../store/ThemeContext';
+import { RootStackParamList } from './navigationTypes';
+import { QuickActionHandler } from '../components/QuickActionHandler';
 
 import LoginScreen from '../screens/LoginScreen';
+import LoadingScreen from '../screens/LoadingScreen';
 import MainTabs from './MainTabs';
 import DailyLimitDetailScreen from '../screens/DailyLimitDetailScreen';
 import CalendarViewScreen from '../screens/CalendarViewScreen';
 import AddTransactionScreen from '../screens/AddTransactionScreen';
-import ReportView from '../screens/ReportView';
+
 import CategoriesScreen from '../screens/CategoriesScreen';
 import PayeesScreen from '../screens/PayeesScreen';
 import QuickTransactionsScreen from '../screens/QuickTransactionsScreen';
 import AddQuickTransactionScreen from '../screens/AddQuickTransactionScreen';
+import LivingCostsReportScreen from '../screens/reports/LivingCostsReportScreen';
+import SubscriptionBillsReportScreen from '../screens/reports/SubscriptionBillsReportScreen';
+import PayeeSummaryReportScreen from '../screens/reports/PayeeSummaryReportScreen';
+import CategorySummaryReportScreen from '../screens/reports/CategorySummaryReportScreen';
+import MonthlySummaryReportScreen from '../screens/reports/MonthlySummaryReportScreen';
+import YearlySummaryReportScreen from '../screens/reports/YearlySummaryReportScreen';
+import YearlyCategoryReportScreen from '../screens/reports/YearlyCategoryReportScreen';
+import YearlyPayeeReportScreen from '../screens/reports/YearlyPayeeReportScreen';
+import PayeeOverviewReportScreen from '../screens/reports/PayeeOverviewReportScreen';
+import CategoryOverviewReportScreen from '../screens/reports/CategoryOverviewReportScreen';
+import GroupsScreen from '../screens/GroupsScreen';
+import GroupSummaryReportScreen from '../screens/reports/GroupSummaryReportScreen';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { TouchableOpacity } from 'react-native';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const { session, loading } = useAuth();
   const { colors } = useTheme();
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  // Don't show intermediate loading screen - splash screen handles this
+  // Just render the navigation structure immediately
 
-  const standardHeaderLeft = (navigation: any) => (
+  const standardHeaderLeft = (navigation: { goBack: () => void }) => (
     <TouchableOpacity
       onPress={() => navigation.goBack()}
-      style={{ paddingRight: 12, justifyContent: 'center', alignItems: 'center' }}
+      style={styles.headerLeftBtn}
       hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
     >
       <Icon name="arrow-back" size={24} color={colors.text} />
@@ -44,6 +54,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
+      <QuickActionHandler />
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -55,7 +66,9 @@ export default function AppNavigator() {
           gestureEnabled: true,
         }}
       >
-        {session ? (
+        {loading ? (
+          <Stack.Screen name="Login" component={LoadingScreen} />
+        ) : session ? (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen
@@ -65,7 +78,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: "Today's Activity",
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -75,7 +88,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Transaction Calendar',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -85,17 +98,107 @@ export default function AppNavigator() {
                 headerShown: false,
                 presentation: 'transparentModal',
                 contentStyle: { backgroundColor: 'transparent' },
-                animation: 'slide_from_bottom'
+                animation: 'slide_from_bottom',
               }}
             />
+
             <Stack.Screen
-              name="ReportDetail"
-              component={ReportView}
-              options={({ route, navigation }: any) => ({
+              name="LivingCostsReport"
+              component={LivingCostsReportScreen}
+              options={({ navigation }) => ({
                 headerShown: true,
-                title: route.params?.title || 'Report',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="SubscriptionBillsReport"
+              component={SubscriptionBillsReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="PayeeSummaryReport"
+              component={PayeeSummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="CategorySummaryReport"
+              component={CategorySummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="GroupSummaryReport"
+              component={GroupSummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="MonthlySummaryReport"
+              component={MonthlySummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="YearlySummaryReport"
+              component={YearlySummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="YearlyCategoryReport"
+              component={YearlyCategoryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="YearlyPayeeReport"
+              component={YearlyPayeeReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="PayeeOverviewReport"
+              component={PayeeOverviewReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="CategoryOverviewReport"
+              component={CategoryOverviewReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -105,7 +208,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Categories',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -115,7 +218,17 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Payees',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="Groups"
+              component={GroupsScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                title: 'Groups',
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -125,7 +238,7 @@ export default function AppNavigator() {
                 headerShown: true,
                 title: 'Quick Transactions',
                 headerBackTitle: ' ',
-                headerLeft: () => standardHeaderLeft(navigation)
+                headerLeft: () => standardHeaderLeft(navigation),
               })}
             />
             <Stack.Screen
@@ -135,7 +248,7 @@ export default function AppNavigator() {
                 headerShown: false,
                 presentation: 'transparentModal',
                 contentStyle: { backgroundColor: 'transparent' },
-                animation: 'slide_from_bottom'
+                animation: 'slide_from_bottom',
               }}
             />
           </>
@@ -146,3 +259,11 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  headerLeftBtn: {
+    paddingRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

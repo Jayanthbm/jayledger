@@ -1,5 +1,14 @@
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView,
+  ViewStyle,
+} from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/ThemeContext';
@@ -12,7 +21,7 @@ interface BottomSheetProps {
   children: React.ReactNode;
   isFullScreen?: boolean;
   showCloseButton?: boolean;
-  containerStyle?: any;
+  containerStyle?: ViewStyle | ViewStyle[];
   headerRight?: React.ReactNode;
 }
 
@@ -25,18 +34,30 @@ export const BottomSheet = ({
   isFullScreen = false,
   showCloseButton = true,
   containerStyle,
-  headerRight
+  headerRight,
 }: BottomSheetProps) => {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const themedStyles = React.useMemo(
+    () => ({
+      closeButton: { backgroundColor: isDark ? colors.border : '#eee' },
+      fullModal: { backgroundColor: colors.background, paddingTop: insets.top },
+      modalContent: {
+        backgroundColor: colors.card,
+        borderColor: colors.border,
+        paddingBottom: insets.bottom + 20,
+      },
+    }),
+    [colors.background, colors.border, colors.card, insets.bottom, insets.top, isDark],
+  );
 
-  const Header = () => (
+  const renderHeader = () => (
     <View style={styles.modalHeader}>
       <View style={styles.leftAction}>
         {showCloseButton && (
-          <TouchableOpacity 
-            onPress={onClose} 
-            style={[styles.closeBtn, { backgroundColor: isDark ? colors.border : '#eee' }]}
+          <TouchableOpacity
+            onPress={onClose}
+            style={[styles.closeBtn, themedStyles.closeButton]}
             activeOpacity={0.7}
           >
             <Icon name="close" size={24} color={colors.text} />
@@ -45,66 +66,47 @@ export const BottomSheet = ({
       </View>
 
       <View style={styles.centerAction}>
-        <Text style={[styles.modalTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+        <Text style={[styles.modalTitle, { color: colors.text }]} numberOfLines={1}>
+          {title}
+        </Text>
         {subtitle ? (
-          <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{subtitle}</Text>
+          <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+            {subtitle}
+          </Text>
         ) : null}
       </View>
 
-      <View style={styles.rightAction}>
-        {headerRight}
-      </View>
+      <View style={styles.rightAction}>{headerRight}</View>
     </View>
   );
 
   if (isFullScreen) {
     return (
-      <Modal 
-        visible={visible} 
-        animationType="slide" 
-        statusBarTranslucent
-        onRequestClose={onClose}
-      >
-        <View style={[styles.fullModal, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-          <View style={{ paddingHorizontal: 24, paddingTop: 12 }}>
-            <Header />
-          </View>
-          <View style={{ flex: 1 }}>
-            {children}
-          </View>
+      <Modal visible={visible} animationType="slide" statusBarTranslucent onRequestClose={onClose}>
+        <View style={[styles.fullModal, themedStyles.fullModal]}>
+          <View style={styles.fullHeaderContainer}>{renderHeader()}</View>
+          <View style={styles.flex1}>{children}</View>
         </View>
       </Modal>
     );
   }
 
   return (
-    <Modal 
-      visible={visible} 
-      transparent 
-      animationType="slide" 
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
       statusBarTranslucent
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+        style={styles.flex1}
       >
-        <View style={[styles.modalOverlay, { flex: 1 }]}>
-          <TouchableOpacity 
-            style={styles.modalDismiss} 
-            activeOpacity={1} 
-            onPress={onClose} 
-          />
-          <View style={[
-            styles.modalContent,
-            { 
-              backgroundColor: colors.card, 
-              borderColor: colors.border, 
-              paddingBottom: insets.bottom + 20 
-            },
-            containerStyle
-          ]}>
-            <Header />
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalDismiss} activeOpacity={1} onPress={onClose} />
+          <View style={[styles.modalContent, themedStyles.modalContent, containerStyle]}>
+            {renderHeader()}
             {children}
           </View>
         </View>
@@ -173,5 +175,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  fullHeaderContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+  },
+  flex1: {
+    flex: 1,
   },
 });

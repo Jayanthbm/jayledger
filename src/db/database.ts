@@ -1,32 +1,33 @@
 import * as SQLite from 'expo-sqlite';
+import { logger } from '../utils/logger';
 
-const DB_NAME = 'jayledger.db';
+const DB_NAME = 'jmoney.db';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 export const getDb = () => {
   try {
     if (!dbInstance) {
-      console.log("[DB] Opening database sync...");
+      logger.log('[DB] Opening database sync...');
       dbInstance = SQLite.openDatabaseSync(DB_NAME);
-      console.log("[DB] Database opened successfully.");
+      logger.log('[DB] Database opened successfully.');
     }
     return dbInstance;
   } catch (error) {
-    console.error("[DB] Failed to open database:", error);
+    logger.error('[DB] Failed to open database:', error);
     throw error;
   }
 };
 
 export const initDB = async () => {
   const db = getDb();
-  console.log("[DB] Starting initDB migrations...");
-  
-  try {
-    console.log("[DB] Setting journal_mode = WAL...");
-    await db.execAsync("PRAGMA journal_mode = WAL;");
+  logger.log('[DB] Starting initDB migrations...');
 
-    console.log("[DB] Creating tables...");
+  try {
+    logger.log('[DB] Setting journal_mode = WAL...');
+    await db.execAsync('PRAGMA journal_mode = WAL;');
+
+    logger.log('[DB] Creating tables...');
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY NOT NULL,
@@ -45,6 +46,8 @@ export const initDB = async () => {
         user_id TEXT NOT NULL,
         product_link TEXT,
         tid INTEGER DEFAULT 0,
+        latitude REAL,
+        longitude REAL,
         sync_status INTEGER DEFAULT 0,
         created_at TEXT,
         updated_at TEXT,
@@ -60,7 +63,8 @@ export const initDB = async () => {
         goal_amount REAL NOT NULL,
         current_amount REAL NOT NULL,
         user_id TEXT NOT NULL,
-        sync_status INTEGER DEFAULT 0
+        sync_status INTEGER DEFAULT 0,
+        deleted INTEGER DEFAULT 0
       );
     `);
 
@@ -115,37 +119,71 @@ export const initDB = async () => {
       );
     `);
 
-    console.log("[DB] Running migrations...");
-    const coreTables = ['transactions', 'goals', 'budgets', 'categories', 'payees'];
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS transaction_groups (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        user_id TEXT NOT NULL,
+        priority INTEGER DEFAULT 0,
+        sync_status INTEGER DEFAULT 0
+      );
+    `);
+
+    logger.log('[DB] Running migrations...');
+    const coreTables = [
+      'transactions',
+      'goals',
+      'budgets',
+      'categories',
+      'payees',
+      'transaction_groups',
+    ];
     for (const table of coreTables) {
       try {
         await db.execAsync(`ALTER TABLE ${table} ADD COLUMN sync_status INTEGER DEFAULT 0;`);
-      } catch(e) {}
+      } catch {
+        // Column might already exist, ignoring error.
+      }
     }
 
     const migrations = [
-      "ALTER TABLE transactions ADD COLUMN category_app_icon TEXT;",
-      "ALTER TABLE transactions ADD COLUMN product_link TEXT;",
-      "ALTER TABLE transactions ADD COLUMN tid INTEGER DEFAULT 0;",
-      "ALTER TABLE transactions ADD COLUMN created_at TEXT;",
-      "ALTER TABLE transactions ADD COLUMN updated_at TEXT;",
-      "ALTER TABLE transactions ADD COLUMN deleted INTEGER DEFAULT 0;",
-      "ALTER TABLE categories ADD COLUMN icon TEXT;",
-      "ALTER TABLE categories ADD COLUMN app_icon TEXT;",
-      "ALTER TABLE categories ADD COLUMN user_id TEXT;",
-      "ALTER TABLE payees ADD COLUMN logo TEXT;",
-      "ALTER TABLE payees ADD COLUMN user_id TEXT;",
-      "ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;",
-      "ALTER TABLE budgets ADD COLUMN deleted INTEGER DEFAULT 0;"
+      'ALTER TABLE transactions ADD COLUMN category_app_icon TEXT;',
+      'ALTER TABLE transactions ADD COLUMN product_link TEXT;',
+      'ALTER TABLE transactions ADD COLUMN tid INTEGER DEFAULT 0;',
+      'ALTER TABLE transactions ADD COLUMN created_at TEXT;',
+      'ALTER TABLE transactions ADD COLUMN updated_at TEXT;',
+      'ALTER TABLE transactions ADD COLUMN deleted INTEGER DEFAULT 0;',
+      'ALTER TABLE categories ADD COLUMN icon TEXT;',
+      'ALTER TABLE categories ADD COLUMN app_icon TEXT;',
+      'ALTER TABLE categories ADD COLUMN user_id TEXT;',
+      'ALTER TABLE payees ADD COLUMN logo TEXT;',
+      'ALTER TABLE payees ADD COLUMN user_id TEXT;',
+      'ALTER TABLE categories ADD COLUMN is_living_cost INTEGER DEFAULT 0;',
+      'ALTER TABLE budgets ADD COLUMN deleted INTEGER DEFAULT 0;',
+      'ALTER TABLE goals ADD COLUMN deleted INTEGER DEFAULT 0;',
+      'ALTER TABLE transactions ADD COLUMN latitude REAL;',
+      'ALTER TABLE transactions ADD COLUMN longitude REAL;',
+      'ALTER TABLE quick_transactions ADD COLUMN product_link TEXT;',
+      'ALTER TABLE quick_transactions ADD COLUMN priority INTEGER DEFAULT 0;',
+      'ALTER TABLE quick_transactions ADD COLUMN identifier TEXT;',
+      'ALTER TABLE quick_transactions ADD COLUMN sync_status INTEGER DEFAULT 1;',
+      'ALTER TABLE quick_transactions ADD COLUMN deleted INTEGER DEFAULT 0;',
+      'ALTER TABLE categories ADD COLUMN priority INTEGER DEFAULT 0;',
+      'ALTER TABLE payees ADD COLUMN priority INTEGER DEFAULT 0;',
+      'ALTER TABLE transactions ADD COLUMN group_id TEXT;',
+      'ALTER TABLE transactions ADD COLUMN group_name TEXT;',
     ];
 
     for (const m of migrations) {
       try {
         await db.execAsync(m);
-      } catch(e) {}
+      } catch {
+        // Migration might already be applied, continuing.
+      }
     }
 
-    console.log("[DB] Creating indexes...");
+    logger.log('[DB] Creating indexes...');
     try {
       await db.execAsync(`
         CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
@@ -155,14 +193,15 @@ export const initDB = async () => {
         CREATE INDEX IF NOT EXISTS idx_sync_status ON transactions(sync_status);
         CREATE INDEX IF NOT EXISTS idx_transactions_catname ON transactions(category_name);
         CREATE INDEX IF NOT EXISTS idx_transactions_tid ON transactions(tid);
+        CREATE INDEX IF NOT EXISTS idx_transactions_group ON transactions(group_id);
       `);
     } catch (e) {
-      console.warn("[DB] Index creation warning:", e);
+      logger.warn('[DB] Index creation warning:', e);
     }
 
-    console.log("[DB] initDB completed successfully.");
+    logger.log('[DB] initDB completed successfully.');
   } catch (error) {
-    console.error("[DB] initDB critical error:", error);
+    logger.error('[DB] initDB critical error:', error);
     throw error;
   }
 };
