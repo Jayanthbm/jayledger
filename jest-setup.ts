@@ -45,10 +45,38 @@ jest.mock('react-native', () => {
   };
 });
 
-// Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
-);
+// Mock AsyncStorage (inline CJS mock — v3 only ships an ESM jest build)
+const asyncStorageStore: Record<string, string> = {};
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn((key: string) => Promise.resolve(asyncStorageStore[key] ?? null)),
+    setItem: jest.fn((key: string, value: string) => {
+      asyncStorageStore[key] = value;
+      return Promise.resolve();
+    }),
+    removeItem: jest.fn((key: string) => {
+      delete asyncStorageStore[key];
+      return Promise.resolve();
+    }),
+    removeMany: jest.fn((keys: string[]) => {
+      keys.forEach((k) => delete asyncStorageStore[k]);
+      return Promise.resolve();
+    }),
+    clear: jest.fn(() => {
+      Object.keys(asyncStorageStore).forEach((k) => delete asyncStorageStore[k]);
+      return Promise.resolve();
+    }),
+    getAllKeys: jest.fn(() => Promise.resolve(Object.keys(asyncStorageStore))),
+    multiGet: jest.fn((keys: string[]) =>
+      Promise.resolve(keys.map((k) => [k, asyncStorageStore[k] ?? null])),
+    ),
+    multiSet: jest.fn((pairs: [string, string][]) => {
+      pairs.forEach(([k, v]) => (asyncStorageStore[k] = v));
+      return Promise.resolve();
+    }),
+  },
+}));
 
 // Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => ({

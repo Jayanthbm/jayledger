@@ -2,9 +2,9 @@
   "project_type": "mobile app",
   "tech_stack": [
     "TypeScript",
-    "React 19",
-    "React Native 0.81",
-    "Expo 54",
+    "React 19.2",
+    "React Native 0.86",
+    "Expo 57",
     "React Navigation",
     "Expo SQLite",
     "Supabase",

@@ -7,7 +7,7 @@
 
 ## Tech Stack
 
-- TypeScript, React 19, React Native 0.81, Expo 54
+- TypeScript, React 19, React Native 0.86, Expo 57
 - React Navigation native stack, bottom tabs, and material top tabs
 - Expo SQLite for local persistence
 - Supabase JS for authentication and remote sync
