@@ -12,6 +12,9 @@ import {
   getTransactionsByDateRange,
   getAggregatedDataForPeriod,
   getIncomeExpenseSummary,
+  getReportSummaryByGroup,
+  getReportYearlySummaryByGroup,
+  getReportGroupsOverview,
 } from '../db/queries';
 import { Transaction, ReportItem } from '../models/types';
 import { format, endOfMonth, startOfMonth, subMonths, isSameMonth } from 'date-fns';
@@ -38,19 +41,22 @@ export const fetchReportData = async (
   const comparisonTypes = [
     'summaryByPayee',
     'summaryByCategory',
+    'summaryByGroup',
     'monthlyLivingCosts',
     'subscriptionAndBills',
     'monthlySummary',
     'yearlySummary',
     'transactionsByYear',
     'yearlyPayees',
+    'yearlyGroup',
   ];
   if (comparisonTypes.includes(reportType)) {
     const selectedDate = new Date(parseInt(year), parseInt(monthStr) - 1, 1);
     const isYearly =
       reportType === 'yearlySummary' ||
       reportType === 'transactionsByYear' ||
-      reportType === 'yearlyPayees';
+      reportType === 'yearlyPayees' ||
+      reportType === 'yearlyGroup';
     const now = new Date();
 
     let prevStart = '';
@@ -94,8 +100,9 @@ export const fetchReportData = async (
       if (isSummary) {
         prevData = await getIncomeExpenseSummary(userId, prevStart, prevEnd);
       } else {
-        let groupBy: 'payee' | 'category' = 'category';
+        let groupBy: 'payee' | 'category' | 'group' = 'category';
         if (reportType === 'summaryByPayee' || reportType === 'yearlyPayees') groupBy = 'payee';
+        else if (reportType === 'summaryByGroup') groupBy = 'group';
         prevData = await getAggregatedDataForPeriod(userId, type, prevStart, prevEnd, groupBy);
       }
     } catch {
@@ -155,6 +162,12 @@ const fetchBaseReportData = async (
       return await getReportYearlySummaryByCategory(userId, type, year);
     case 'yearlyPayees':
       return await getReportYearlySummaryByPayee(userId, type, year);
+    case 'summaryByGroup':
+      return await getReportSummaryByGroup(userId, type, monthStr, year);
+    case 'yearlyGroup':
+      return await getReportYearlySummaryByGroup(userId, type, year);
+    case 'groups':
+      return await getReportGroupsOverview(userId, type);
     default:
       return [];
   }
@@ -199,6 +212,12 @@ export const handleReportDrillDown = async (
       (t: Transaction) =>
         t.payee_name === (item.payee_name || item.name) && t.type === (item.type || type),
     );
+  } else if (['summaryByGroup', 'yearlyGroup'].includes(reportType)) {
+    const all = await getTransactionsByDateRange(userId, fetchStartDate, fetchEndDate);
+    return all.filter(
+      (t: Transaction) =>
+        t.group_name === (item.group_name || item.name) && t.type === (item.type || type),
+    );
   } else if (reportType === 'subscriptionAndBills') {
     const all = await getTransactionsByDateRange(userId, startDate, endDate);
     return all.filter((t: Transaction) => t.category_name === item.category_name);
@@ -223,13 +242,18 @@ export const sortReportData = (
   }
 
   return [...filtered].sort((a, b) => {
+    if (a.priority !== undefined && b.priority !== undefined) {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+    }
     let valA =
       sortBy === 'name'
-        ? a.name || a.category_name || a.payee_name || ''
+        ? a.name || a.category_name || a.payee_name || a.group_name || ''
         : a.amount || a.totalAmount || 0;
     let valB =
       sortBy === 'name'
-        ? b.name || b.category_name || b.payee_name || ''
+        ? b.name || b.category_name || b.payee_name || b.group_name || ''
         : b.amount || b.totalAmount || 0;
 
     let cmp = 0;

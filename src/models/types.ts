@@ -24,6 +24,8 @@ export interface Transaction {
   created_at?: string;
   updated_at?: string;
   deleted?: number;
+  group_id?: string | null;
+  group_name?: string | null;
 }
 
 export interface Goal {
@@ -109,8 +111,11 @@ export interface ReportItem {
   expense?: number;
   category_app_icon?: string;
   payee_logo?: string;
+  group_name?: string;
+  group_id?: string;
   prevAmount?: number;
   diffPercentage?: number;
+  priority?: number;
 }
 
 export type ThemeColors = typeof Colors.light;
@@ -120,4 +125,13 @@ export interface MonthlyStatsBreakdown {
   month: string;
   income: number;
   expense: number;
+}
+
+export interface TransactionGroup {
+  id: string;
+  name: string;
+  description?: string | null;
+  user_id: string;
+  priority?: number;
+  sync_status?: number;
 }

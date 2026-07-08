@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   LAST_SYNC_BUDGETS: '@last_sync_budgets_',
   LAST_SYNC_GOALS: '@last_sync_goals_',
   LAST_SYNC_QUICK_TRANSACTIONS: '@last_sync_quick_transactions_',
+  LAST_SYNC_TRANSACTION_GROUPS: '@last_sync_transaction_groups_',
   LAST_SYNC_MASTER: '@last_sync_master_',
   THEME: '@theme',
   AUTH_SESSION: '@auth_session',

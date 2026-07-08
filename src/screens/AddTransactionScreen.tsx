@@ -21,10 +21,15 @@ import { RootStackParamList } from '../navigation/navigationTypes';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
-import { getCategories, getPayees, insertOrUpdateTransaction } from '../db/queries';
+import {
+  getCategories,
+  getPayees,
+  insertOrUpdateTransaction,
+  getTransactionGroups,
+} from '../db/queries';
 import { BottomSheet } from '../components/BottomSheet';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { Category, Payee, Transaction } from '../models/types';
+import { Category, Payee, Transaction, TransactionGroup } from '../models/types';
 import { generateUUID } from '../utils/commonUtils';
 import { syncTransactions } from '../services/syncService';
 import { common } from '../styles/common';
@@ -74,10 +79,12 @@ export default function AddTransactionScreen() {
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPayee, setSelectedPayee] = useState<Payee | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<TransactionGroup | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
-  const [showModal, setShowModal] = useState<'Category' | 'Payee' | null>(null);
+  const [groups, setGroups] = useState<TransactionGroup[]>([]);
+  const [showModal, setShowModal] = useState<'Category' | 'Payee' | 'Group' | null>(null);
   const [modalSearch, setModalSearch] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -95,12 +102,14 @@ export default function AddTransactionScreen() {
   useEffect(() => {
     const loadData = async () => {
       if (!session?.user?.id) return;
-      const [cats, p] = await Promise.all([
+      const [cats, p, g] = await Promise.all([
         getCategories(session.user.id),
         getPayees(session.user.id),
+        getTransactionGroups(session.user.id),
       ]);
       setCategories(cats);
       setPayees(p);
+      setGroups(g);
 
       const quickTx = route.params?.quickTransaction;
 
@@ -111,6 +120,11 @@ export default function AddTransactionScreen() {
         if (editTx.payee_id) {
           const payee = p.find((pay) => pay.id === editTx.payee_id);
           if (payee) setSelectedPayee(payee);
+        }
+
+        if (editTx.group_id) {
+          const group = g.find((grp) => grp.id === editTx.group_id);
+          if (group) setSelectedGroup(group);
         }
       } else if (quickTx) {
         setType(quickTx.type as 'Expense' | 'Income');
@@ -302,6 +316,8 @@ export default function AddTransactionScreen() {
         payee_id: selectedPayee?.id || null,
         payee_name: selectedPayee?.name || null,
         payee_logo: selectedPayee?.logo || null,
+        group_id: selectedGroup?.id || null,
+        group_name: selectedGroup?.name || null,
         type: type,
         user_id: session.user.id,
         product_link: productLink.trim() || null,
@@ -397,8 +413,10 @@ export default function AddTransactionScreen() {
               <TransactionSelectorRow
                 selectedPayee={selectedPayee}
                 selectedCategory={selectedCategory}
+                selectedGroup={selectedGroup}
                 onPressPayee={() => setShowModal('Payee')}
                 onPressCategory={() => setShowModal('Category')}
+                onPressGroup={() => setShowModal('Group')}
                 colors={colors}
                 currentIconBg={currentIconBg}
                 currentIconColor={currentIconColor}
@@ -522,6 +540,22 @@ export default function AddTransactionScreen() {
               selectedItemId={selectedPayee?.id}
               onSelect={(item) => {
                 setSelectedPayee(item.id === 'none' ? null : (item as Payee));
+                setShowModal(null);
+              }}
+              transactionType={type}
+            />
+            <ItemSelectorModal
+              visible={showModal === 'Group'}
+              onClose={() => setShowModal(null)}
+              type="Group"
+              data={
+                [{ id: 'none', name: 'None' }, ...groups] as (Category | Payee | TransactionGroup)[]
+              }
+              searchQuery={modalSearch}
+              onSearchChange={setModalSearch}
+              selectedItemId={selectedGroup?.id}
+              onSelect={(item) => {
+                setSelectedGroup(item.id === 'none' ? null : (item as TransactionGroup));
                 setShowModal(null);
               }}
               transactionType={type}

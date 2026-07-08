@@ -36,7 +36,9 @@ export const useReportData = ({ reportType, initialType = 'Expense' }: UseReport
   const maxDate = useMemo(() => endOfMonth(new Date()), []);
   const monthStr = (month + 1).toString().padStart(2, '0');
   const isSummary = ['monthlySummary', 'yearlySummary'].includes(reportType);
-  const isYearly = ['yearlySummary', 'transactionsByYear', 'yearlyPayees'].includes(reportType);
+  const isYearly = ['yearlySummary', 'transactionsByYear', 'yearlyPayees', 'yearlyGroup'].includes(
+    reportType,
+  );
 
   const isCurrentPeriod = useMemo(() => {
     const now = new Date();
@@ -149,7 +151,9 @@ export const useReportData = ({ reportType, initialType = 'Expense' }: UseReport
         year,
       );
       setDrillDownData(txs);
-      setDrillDownTitle(item.category_name || item.payee_name || item.name || 'Transactions');
+      setDrillDownTitle(
+        item.category_name || item.payee_name || item.group_name || item.name || 'Transactions',
+      );
       setShowDrillDown(true);
     } catch (e) {
       logger.error('Drilldown error:', e);

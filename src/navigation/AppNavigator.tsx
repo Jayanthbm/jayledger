@@ -28,6 +28,8 @@ import YearlyCategoryReportScreen from '../screens/reports/YearlyCategoryReportS
 import YearlyPayeeReportScreen from '../screens/reports/YearlyPayeeReportScreen';
 import PayeeOverviewReportScreen from '../screens/reports/PayeeOverviewReportScreen';
 import CategoryOverviewReportScreen from '../screens/reports/CategoryOverviewReportScreen';
+import GroupsScreen from '../screens/GroupsScreen';
+import GroupSummaryReportScreen from '../screens/reports/GroupSummaryReportScreen';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { TouchableOpacity } from 'react-native';
 
@@ -137,6 +139,15 @@ export default function AppNavigator() {
               })}
             />
             <Stack.Screen
+              name="GroupSummaryReport"
+              component={GroupSummaryReportScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
               name="MonthlySummaryReport"
               component={MonthlySummaryReportScreen}
               options={({ navigation }) => ({
@@ -206,6 +217,16 @@ export default function AppNavigator() {
               options={({ navigation }) => ({
                 headerShown: true,
                 title: 'Payees',
+                headerBackTitle: ' ',
+                headerLeft: () => standardHeaderLeft(navigation),
+              })}
+            />
+            <Stack.Screen
+              name="Groups"
+              component={GroupsScreen}
+              options={({ navigation }) => ({
+                headerShown: true,
+                title: 'Groups',
                 headerBackTitle: ' ',
                 headerLeft: () => standardHeaderLeft(navigation),
               })}

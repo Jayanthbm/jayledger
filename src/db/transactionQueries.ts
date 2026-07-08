@@ -41,8 +41,9 @@ export const insertOrUpdateTransaction = async (tx: Transaction, syncStatus: num
         id, amount, description, transaction_timestamp, date,
         category_id, category_name, category_icon, category_app_icon,
         payee_id, payee_name, payee_logo, type, user_id,
-        product_link, tid, latitude, longitude, sync_status, created_at, updated_at, deleted
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        product_link, tid, latitude, longitude, sync_status, created_at, updated_at, deleted,
+        group_id, group_name
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         tx.id,
         tx.amount,
@@ -66,6 +67,8 @@ export const insertOrUpdateTransaction = async (tx: Transaction, syncStatus: num
         tx.created_at || new Date().toISOString(),
         tx.updated_at || new Date().toISOString(),
         0,
+        tx.group_id || null,
+        tx.group_name || null,
       ],
     );
   } catch (err) {

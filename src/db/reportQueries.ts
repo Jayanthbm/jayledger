@@ -1,5 +1,6 @@
 import { getDb } from './database';
 import { subMonths, format, startOfMonth, endOfMonth } from 'date-fns';
+import { Transaction } from '../models/types';
 
 /**
  * Complex Aggregation Queries for Reports.
@@ -260,12 +261,15 @@ export const getAggregatedDataForPeriod = async (
   type: 'Expense' | 'Income',
   startDate: string,
   endDate: string,
-  groupBy: 'category' | 'payee',
+  groupBy: 'category' | 'payee' | 'group',
 ) => {
   const db = getDb();
-  const groupCol = groupBy === 'category' ? 'category_name' : 'payee_name';
-  const idCol = groupBy === 'category' ? 'category_id' : 'payee_id';
-  const iconCol = groupBy === 'category' ? 'category_app_icon' : 'payee_logo';
+  const groupCol =
+    groupBy === 'category' ? 'category_name' : groupBy === 'payee' ? 'payee_name' : 'group_name';
+  const idCol =
+    groupBy === 'category' ? 'category_id' : groupBy === 'payee' ? 'payee_id' : 'group_id';
+  const iconCol =
+    groupBy === 'category' ? 'category_app_icon' : groupBy === 'payee' ? 'payee_logo' : 'NULL';
 
   const query = `
     SELECT 
@@ -275,7 +279,7 @@ export const getAggregatedDataForPeriod = async (
       SUM(amount) as amount
     FROM transactions
     WHERE user_id = ? AND type = ? AND date >= ? AND date <= ? AND deleted = 0
-    AND ${idCol} IS NOT NULL AND ${idCol} != 'null'
+    AND ${idCol} IS NOT NULL AND ${idCol} != 'null' AND ${idCol} != 'undefined' AND ${idCol} != ''
     GROUP BY ${groupCol}
     ORDER BY amount DESC
   `;
@@ -286,4 +290,100 @@ export const getAggregatedDataForPeriod = async (
     startDate,
     endDate,
   ]);
+};
+
+export const getReportSummaryByGroup = async (
+  userId: string,
+  type: string,
+  month: string,
+  year: string,
+) => {
+  const db = getDb();
+  return db.getAllAsync<{
+    group_id: string;
+    group_name: string;
+    amount: number;
+  }>(
+    `SELECT group_id, group_name, SUM(amount) as amount
+     FROM transactions
+     WHERE user_id = ? AND deleted = 0 AND type = ?
+       AND strftime('%m', date) = ? AND strftime('%Y', date) = ?
+       AND group_id IS NOT NULL AND group_id != 'null' AND group_id != 'undefined' AND group_id != ''
+     GROUP BY group_name
+     ORDER BY amount DESC`,
+    [userId, type, month, year],
+  );
+};
+
+export const getReportYearlySummaryByGroup = async (userId: string, type: string, year: string) => {
+  const db = getDb();
+  return db.getAllAsync<{
+    group_id: string;
+    group_name: string;
+    amount: number;
+  }>(
+    `SELECT group_id, group_name, SUM(amount) as amount
+     FROM transactions
+     WHERE user_id = ? AND deleted = 0 AND type = ?
+       AND strftime('%Y', date) = ?
+       AND group_id IS NOT NULL AND group_id != 'null' AND group_id != 'undefined' AND group_id != ''
+     GROUP BY group_name
+     ORDER BY amount DESC`,
+    [userId, type, year],
+  );
+};
+
+export const getCategoriesSummaryByGroup = async (
+  userId: string,
+  groupId: string,
+  type: string,
+) => {
+  const db = getDb();
+  return db.getAllAsync<{
+    category_id: string;
+    category_name: string;
+    category_app_icon: string;
+    amount: number;
+  }>(
+    `SELECT category_id, category_name, category_app_icon, SUM(amount) as amount
+     FROM transactions
+     WHERE user_id = ? AND group_id = ? AND deleted = 0 AND type = ?
+     GROUP BY category_name
+     ORDER BY amount DESC`,
+    [userId, groupId, type],
+  );
+};
+
+export const getTransactionsByGroupAndCategory = async (
+  userId: string,
+  groupId: string,
+  categoryId: string,
+  type: string,
+) => {
+  const db = getDb();
+  return db.getAllAsync<Transaction>(
+    `SELECT * FROM transactions
+     WHERE user_id = ? AND group_id = ? AND category_id = ? AND deleted = 0 AND type = ?
+     ORDER BY date DESC, transaction_timestamp DESC`,
+    [userId, groupId, categoryId, type],
+  );
+};
+
+export const getReportGroupsOverview = async (userId: string, type: string) => {
+  const db = getDb();
+  return db.getAllAsync<{
+    group_id: string;
+    group_name: string;
+    amount: number;
+    priority: number;
+  }>(
+    `SELECT t.group_id, t.group_name, SUM(t.amount) as amount, COALESCE(g.priority, 9999) as priority
+     FROM transactions t
+     LEFT JOIN transaction_groups g ON t.group_id = g.id
+     WHERE t.user_id = ? AND t.deleted = 0 AND t.type = ?
+       AND t.group_id IS NOT NULL AND t.group_id != 'null' AND t.group_id != 'undefined' AND t.group_id != ''
+     GROUP BY t.group_name 
+     ORDER BY priority ASC, amount DESC`,
+    [userId, type],
+  );
 };

@@ -33,7 +33,8 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
   const isIncome = itemType === 'Income';
 
   const isPayee = !!(item.payee_name || item.payee_id);
-  const name = item.category_name || item.payee_name || item.name || 'Unknown';
+  const isGroup = !!(item.group_name || item.group_id);
+  const name = item.category_name || item.payee_name || item.group_name || item.name || 'Unknown';
 
   const diff = item.diffPercentage || 0;
   const hasDiff = item.prevAmount !== undefined;
@@ -109,7 +110,9 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
       }
       icon={
         (!leftNode
-          ? item.category_app_icon || item.app_icon || 'receipt'
+          ? isGroup
+            ? 'folder'
+            : item.category_app_icon || item.app_icon || 'receipt'
           : undefined) as MaterialIconName
       }
       iconColor={colors.primary}
@@ -119,18 +122,20 @@ export const ReportListItem: React.FC<ReportListItemProps> = ({
       onPress={onPress}
       containerStyle={styles.reportItemContainer}
     >
-      <View style={styles.progressContainer}>
-        <ProgressBar
-          progress={progressPercent}
-          color={isIncome ? colors.success : colors.danger}
-          backgroundColor={isDark ? '#333' : '#eee'}
-          height={6}
-          style={common.flex1}
-        />
-        <Text style={[styles.progressPercent, { color: colors.textSecondary }]}>
-          {progressPercent.toFixed(0)}%
-        </Text>
-      </View>
+      {!isGroup && (
+        <View style={styles.progressContainer}>
+          <ProgressBar
+            progress={progressPercent}
+            color={isIncome ? colors.success : colors.danger}
+            backgroundColor={isDark ? '#333' : '#eee'}
+            height={6}
+            style={common.flex1}
+          />
+          <Text style={[styles.progressPercent, { color: colors.textSecondary }]}>
+            {progressPercent.toFixed(0)}%
+          </Text>
+        </View>
+      )}
     </FinancialListItem>
   );
 };

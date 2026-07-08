@@ -113,10 +113,21 @@ export const TransactionCard = React.memo(
             <Icon name="person" size={10} color={colors.textSecondary} />
           </View>
         )}
-        <Text style={[styles.payeeName, { color: colors.textSecondary }]}>
+        <Text style={[styles.payeeName, { color: colors.textSecondary }]} numberOfLines={1}>
           {transaction.payee_name}
         </Text>
       </TouchableOpacity>
+    ) : null;
+
+    const groupNode = transaction.group_name ? (
+      <View style={styles.groupRow}>
+        <View style={[styles.groupIconBg, { backgroundColor: colors.primary + '15' }]}>
+          <Icon name="folder" size={10} color={colors.primary} />
+        </View>
+        <Text style={[styles.groupName, { color: colors.textSecondary }]} numberOfLines={1}>
+          {transaction.group_name}
+        </Text>
+      </View>
     ) : null;
 
     const linkNode = transaction.product_link ? (
@@ -154,7 +165,13 @@ export const TransactionCard = React.memo(
     const footerNode = (
       <View style={styles.footerRow}>
         {payeeNode}
-        {payeeNode && (linkNode || mapNode) && <View style={styles.footerSeparator} />}
+        {payeeNode && groupNode && (
+          <View style={[styles.footerSeparator, { backgroundColor: colors.border }]} />
+        )}
+        {groupNode}
+        {(payeeNode || groupNode) && (linkNode || mapNode) && (
+          <View style={[styles.footerSeparator, { backgroundColor: colors.border }]} />
+        )}
         <View style={styles.iconContainer}>
           {linkNode}
           {mapNode}
@@ -221,6 +238,24 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   payeeName: {
+    fontSize: 12,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+  groupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  groupIconBg: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  groupName: {
     fontSize: 12,
     fontWeight: '500',
     flexShrink: 1,

@@ -39,6 +39,16 @@ jest.mock('../../src/services/sync/payeeSync', () => ({
   pushLocalPayees: jest.fn(),
 }));
 
+jest.mock('../../src/services/sync/groupSync', () => ({
+  syncGroups: jest.fn(),
+  pushLocalGroups: jest.fn(),
+}));
+
+jest.mock('../../src/services/sync/quickTransactionSync', () => ({
+  syncQuickTransactions: jest.fn(),
+  pushLocalQuickTransactions: jest.fn(),
+}));
+
 jest.mock('../../src/services/supabase', () => ({
   supabase: {
     from: jest.fn(() => ({
@@ -58,6 +68,8 @@ import { syncGoals } from '../../src/services/sync/goalSync';
 import { syncBudgets } from '../../src/services/sync/budgetSync';
 import { syncCategories } from '../../src/services/sync/categorySync';
 import { syncPayees } from '../../src/services/sync/payeeSync';
+import { syncGroups } from '../../src/services/sync/groupSync';
+import { syncQuickTransactions } from '../../src/services/sync/quickTransactionSync';
 
 jest.mock('../../src/services/sync/transactionSync', () => ({
   syncTransactions: jest.fn(),
@@ -84,6 +96,16 @@ jest.mock('../../src/services/sync/payeeSync', () => ({
   pushLocalPayees: jest.fn(),
 }));
 
+jest.mock('../../src/services/sync/groupSync', () => ({
+  syncGroups: jest.fn(),
+  pushLocalGroups: jest.fn(),
+}));
+
+jest.mock('../../src/services/sync/quickTransactionSync', () => ({
+  syncQuickTransactions: jest.fn(),
+  pushLocalQuickTransactions: jest.fn(),
+}));
+
 describe('syncService Coordination', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -101,6 +123,8 @@ describe('syncService Coordination', () => {
       expect(syncBudgets).toHaveBeenCalledWith('user123');
       expect(syncCategories).toHaveBeenCalledWith('user123');
       expect(syncPayees).toHaveBeenCalledWith('user123');
+      expect(syncQuickTransactions).toHaveBeenCalledWith('user123');
+      expect(syncGroups).toHaveBeenCalledWith('user123');
 
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         expect.stringContaining('@last_sync_master_user123'),

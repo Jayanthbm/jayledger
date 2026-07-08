@@ -46,6 +46,7 @@ export type RootStackParamList = {
   CategoryOverviewReport: { title?: string; reportType: string };
   Categories: undefined;
   Payees: undefined;
+  Groups: undefined;
   QuickTransactions: undefined;
   Settings: undefined;
   AddQuickTransaction:
@@ -53,6 +54,7 @@ export type RootStackParamList = {
         quickTransaction?: QuickTransaction;
       }
     | undefined;
+  GroupSummaryReport: { title?: string; reportType: string };
 };
 
 export type AppNavigation = NativeStackNavigationProp<RootStackParamList>;

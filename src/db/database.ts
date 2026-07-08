@@ -119,8 +119,26 @@ export const initDB = async () => {
       );
     `);
 
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS transaction_groups (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        user_id TEXT NOT NULL,
+        priority INTEGER DEFAULT 0,
+        sync_status INTEGER DEFAULT 0
+      );
+    `);
+
     logger.log('[DB] Running migrations...');
-    const coreTables = ['transactions', 'goals', 'budgets', 'categories', 'payees'];
+    const coreTables = [
+      'transactions',
+      'goals',
+      'budgets',
+      'categories',
+      'payees',
+      'transaction_groups',
+    ];
     for (const table of coreTables) {
       try {
         await db.execAsync(`ALTER TABLE ${table} ADD COLUMN sync_status INTEGER DEFAULT 0;`);
@@ -153,6 +171,8 @@ export const initDB = async () => {
       'ALTER TABLE quick_transactions ADD COLUMN deleted INTEGER DEFAULT 0;',
       'ALTER TABLE categories ADD COLUMN priority INTEGER DEFAULT 0;',
       'ALTER TABLE payees ADD COLUMN priority INTEGER DEFAULT 0;',
+      'ALTER TABLE transactions ADD COLUMN group_id TEXT;',
+      'ALTER TABLE transactions ADD COLUMN group_name TEXT;',
     ];
 
     for (const m of migrations) {
@@ -173,6 +193,7 @@ export const initDB = async () => {
         CREATE INDEX IF NOT EXISTS idx_sync_status ON transactions(sync_status);
         CREATE INDEX IF NOT EXISTS idx_transactions_catname ON transactions(category_name);
         CREATE INDEX IF NOT EXISTS idx_transactions_tid ON transactions(tid);
+        CREATE INDEX IF NOT EXISTS idx_transactions_group ON transactions(group_id);
       `);
     } catch (e) {
       logger.warn('[DB] Index creation warning:', e);

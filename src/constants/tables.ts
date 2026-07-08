@@ -11,6 +11,7 @@ export const TABLES = {
   PROFILES: 'profiles',
   ATTACHMENTS: 'attachments',
   SYNC_LOG: 'sync_log',
+  TRANSACTION_GROUPS: 'transaction_groups',
 } as const;
 
 /**

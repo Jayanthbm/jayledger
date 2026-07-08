@@ -16,6 +16,13 @@ const cardWidth = (width - 48) / 2;
 
 const reportsList = [
   {
+    title: 'Transactions By Group',
+    description: 'History by group',
+    icon: 'folder',
+    view: 'groups',
+    color: '#8b5cf6',
+  },
+  {
     title: 'Monthly Living Costs',
     description: 'Essential monthly expenses',
     icon: 'home',
@@ -217,6 +224,9 @@ export default function ReportsScreen() {
                     break;
                   case 'summaryByPayee':
                     screen = 'PayeeSummaryReport';
+                    break;
+                  case 'groups':
+                    screen = 'GroupSummaryReport';
                     break;
                   case 'summaryByCategory':
                     screen = 'CategorySummaryReport';

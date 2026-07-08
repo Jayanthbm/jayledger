@@ -43,6 +43,7 @@ export const pushLocalTransactions = async (userId: string) => {
       description: tx.description || '',
       category_id: tx.category_id,
       payee_id: tx.payee_id === 'null' ? null : tx.payee_id || null,
+      group_id: tx.group_id === 'null' ? null : tx.group_id || null,
       type: tx.type || 'Expense',
       product_link: tx.product_link || null,
       latitude: tx.latitude || null,
@@ -114,6 +115,9 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
         payees:payee_id (
           name,
           logo
+        ),
+        transaction_groups:group_id (
+          name
         )
       `,
       )
@@ -132,6 +136,7 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
         item: Transaction & {
           categories: { name: string; icon: string; app_icon: string } | null;
           payees: { name: string; logo: string } | null;
+          transaction_groups: { name: string } | null;
         },
       ) => ({
         ...item,
@@ -140,6 +145,7 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
         category_app_icon: item.categories?.app_icon,
         payee_name: item.payees?.name,
         payee_logo: item.payees?.logo,
+        group_name: item.transaction_groups?.name,
       }),
     );
 
@@ -155,11 +161,12 @@ export const syncTransactions = async (userId: string, isPartial = true) => {
           description: (item.description || '').replace(/'/g, "''"),
           category_name: (item.category_name || '').replace(/'/g, "''"),
           payee_name: (item.payee_name || '').replace(/'/g, "''"),
+          group_name: (item.group_name || '').replace(/'/g, "''"),
         };
 
         await db.execAsync(
-          `INSERT OR REPLACE INTO transactions (id, amount, description, transaction_timestamp, date, category_id, category_name, category_icon, category_app_icon, payee_id, payee_name, payee_logo, type, user_id, product_link, tid, latitude, longitude, sync_status)
-           VALUES ('${sanitized.id}', ${sanitized.amount}, '${sanitized.description}', '${sanitized.transaction_timestamp}', '${getTransactionDate(sanitized.transaction_timestamp)}', '${sanitized.category_id}', '${sanitized.category_name}', '${sanitized.category_icon}', '${sanitized.category_app_icon}', '${sanitized.payee_id}', '${sanitized.payee_name}', '${sanitized.payee_logo}', '${sanitized.type}', '${userId}', '${sanitized.product_link || ''}', ${sanitized.tid}, ${sanitized.latitude || 'NULL'}, ${sanitized.longitude || 'NULL'}, 0)`,
+          `INSERT OR REPLACE INTO transactions (id, amount, description, transaction_timestamp, date, category_id, category_name, category_icon, category_app_icon, payee_id, payee_name, payee_logo, type, user_id, product_link, tid, latitude, longitude, sync_status, group_id, group_name)
+           VALUES ('${sanitized.id}', ${sanitized.amount}, '${sanitized.description}', '${sanitized.transaction_timestamp}', '${getTransactionDate(sanitized.transaction_timestamp)}', '${sanitized.category_id}', '${sanitized.category_name}', '${sanitized.category_icon}', '${sanitized.category_app_icon}', '${sanitized.payee_id}', '${sanitized.payee_name}', '${sanitized.payee_logo}', '${sanitized.type}', '${userId}', '${sanitized.product_link || ''}', ${sanitized.tid}, ${sanitized.latitude || 'NULL'}, ${sanitized.longitude || 'NULL'}, 0, '${sanitized.group_id || ''}', '${sanitized.group_name}')`,
         );
       }
     });

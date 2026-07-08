@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { Category, Payee, MaterialIconName } from '../../models/types';
+import { Category, Payee, TransactionGroup, MaterialIconName } from '../../models/types';
 import { useTheme } from '../../store/ThemeContext';
 import { common } from '../../styles/common';
 
@@ -21,12 +21,12 @@ const formatIconName = (name: string) => {
 export interface ItemSelectorModalProps {
   visible: boolean;
   onClose: () => void;
-  type: 'Category' | 'Payee';
-  data: (Category | Payee | { id: 'none'; name: string })[];
+  type: 'Category' | 'Payee' | 'Group';
+  data: (Category | Payee | TransactionGroup | { id: 'none'; name: string })[];
   searchQuery: string;
   onSearchChange: (text: string) => void;
   selectedItemId?: string;
-  onSelect: (item: Category | Payee | { id: 'none'; name: string }) => void;
+  onSelect: (item: Category | Payee | TransactionGroup | { id: 'none'; name: string }) => void;
   transactionType: 'Income' | 'Expense';
 }
 
@@ -73,6 +73,7 @@ export const ItemSelectorModal = ({
           renderItem={({ item }) => {
             const isSelected = selectedItemId === item.id;
             const isPayee = type === 'Payee';
+            const isGroup = type === 'Group';
             const isNone = item.id === 'none';
             const payee = item as Payee;
 
@@ -97,6 +98,8 @@ export const ItemSelectorModal = ({
                   </Text>
                 );
               }
+            } else if (isGroup && !isNone) {
+              iconNode = <Icon name="folder" size={24} color={isSelected ? 'white' : iconColor} />;
             } else {
               iconNode = (
                 <Icon

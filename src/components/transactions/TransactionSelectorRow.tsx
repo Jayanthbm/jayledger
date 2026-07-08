@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { Category, Payee, MaterialIconName } from '../../models/types';
+import { Category, Payee, TransactionGroup, MaterialIconName } from '../../models/types';
 import { common } from '../../styles/common';
 
 const formatIconName = (name: string) => {
@@ -17,8 +17,10 @@ const formatIconName = (name: string) => {
 export interface TransactionSelectorRowProps {
   selectedPayee: Payee | null;
   selectedCategory: Category | null;
+  selectedGroup: TransactionGroup | null;
   onPressPayee: () => void;
   onPressCategory: () => void;
+  onPressGroup: () => void;
   colors: Record<string, string>;
   currentIconBg: string;
   currentIconColor: string;
@@ -27,14 +29,17 @@ export interface TransactionSelectorRowProps {
 export const TransactionSelectorRow = ({
   selectedPayee,
   selectedCategory,
+  selectedGroup,
   onPressPayee,
   onPressCategory,
+  onPressGroup,
   colors,
   currentIconBg,
   currentIconColor,
 }: TransactionSelectorRowProps) => {
   return (
     <View style={styles.selectorRow}>
+      {/* Payee */}
       <TouchableOpacity
         style={[
           styles.selectorBtn,
@@ -46,13 +51,16 @@ export const TransactionSelectorRow = ({
           <Icon name="person-outline" size={18} color={colors.textSecondary} />
         </View>
         <View style={common.flex1}>
-          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Payee</Text>
+          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+            Payee
+          </Text>
           <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
             {selectedPayee?.name || 'Select'}
           </Text>
         </View>
       </TouchableOpacity>
 
+      {/* Category */}
       <TouchableOpacity
         style={[
           styles.selectorBtn,
@@ -72,9 +80,32 @@ export const TransactionSelectorRow = ({
           />
         </View>
         <View style={common.flex1}>
-          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Category</Text>
+          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+            Category
+          </Text>
           <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
             {selectedCategory?.name || 'Select'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* Group */}
+      <TouchableOpacity
+        style={[
+          styles.selectorBtn,
+          { backgroundColor: colors.background, borderColor: colors.border },
+        ]}
+        onPress={onPressGroup}
+      >
+        <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
+          <Icon name="folder-open" size={18} color={colors.textSecondary} />
+        </View>
+        <View style={common.flex1}>
+          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+            Group
+          </Text>
+          <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
+            {selectedGroup?.name || 'None'}
           </Text>
         </View>
       </TouchableOpacity>
@@ -85,33 +116,34 @@ export const TransactionSelectorRow = ({
 const styles = StyleSheet.create({
   selectorRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     marginBottom: 20,
   },
   selectorBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    gap: 10,
+    gap: 6,
   },
   selectorIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectorLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     textTransform: 'uppercase',
     marginBottom: 2,
   },
   selectorValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
 });

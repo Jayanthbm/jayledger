@@ -194,6 +194,13 @@ export default function SettingsScreen() {
             />
             <View style={styles.divider} />
             <SettingRow
+              icon="folder"
+              title="Transaction Groups"
+              value="Manage Groups"
+              onPress={() => navigation.navigate('Groups')}
+            />
+            <View style={styles.divider} />
+            <SettingRow
               icon="bolt"
               title="Quick Transactions"
               value="Manage Templates"
