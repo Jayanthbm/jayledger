@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,10 @@ import {
   ActivityIndicator,
   DeviceEventEmitter,
 } from 'react-native';
+import { format, parseISO } from 'date-fns';
 import { useTheme } from '../store/ThemeContext';
 import { useAuth } from '../store/AuthContext';
-import { Transaction, QuickTransaction } from '../models/types';
+import { Transaction, QuickTransaction, ThemeColors, MaterialIconName } from '../models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,6 +23,7 @@ import { FlashListItem } from '../utils/dataMappers';
 
 const FlashList: React.ElementType = ShopifyFlashList;
 import { TransactionFilterSelector } from '../components/transactions/TransactionFilterSelector';
+import { TransactionDateFilterModal } from '../components/transactions/TransactionDateFilterModal';
 import { TransactionDeleteModal } from '../components/transactions/TransactionDeleteModal';
 import { TransactionQuickModal } from '../components/transactions/TransactionQuickModal';
 import { TransactionStatsModal } from '../components/transactions/TransactionStatsModal';
@@ -39,6 +41,61 @@ import { useToast } from '../store/ToastContext';
 
 import { formatCurrency } from '../utils/formatters';
 import { logger } from '../utils/logger';
+
+interface FilterIconButtonProps {
+  icon: string;
+  label: string;
+  isActive: boolean;
+  count?: number;
+  onPress: () => void;
+  colors: ThemeColors;
+}
+
+const FilterIconButton = React.memo(
+  ({ icon, label, isActive, count = 0, onPress, colors }: FilterIconButtonProps) => {
+    return (
+      <TouchableOpacity style={styles.filterItem} onPress={onPress} activeOpacity={0.7}>
+        <View
+          style={[
+            styles.filterIconContainer,
+            {
+              backgroundColor: isActive ? colors.primary + '15' : colors.background,
+              borderColor: isActive ? colors.primary : colors.border,
+            },
+          ]}
+        >
+          <Icon
+            name={icon as MaterialIconName}
+            size={20}
+            color={isActive ? colors.primary : colors.textSecondary}
+          />
+          {isActive && count > 0 ? (
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: colors.primary,
+                  borderColor: colors.card,
+                },
+              ]}
+            >
+              <Text style={styles.badgeText}>{count}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text
+          style={[
+            styles.filterItemLabel,
+            { color: isActive ? colors.primary : colors.textSecondary },
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  },
+);
+FilterIconButton.displayName = 'FilterIconButton';
 
 export default function TransactionsScreen() {
   const { colors } = useTheme();
@@ -75,21 +132,29 @@ export default function TransactionsScreen() {
     setSelectedCats,
     selectedPayees,
     setSelectedPayees,
+    selectedGroups,
+    setSelectedGroups,
     tempSelectedCats,
     setTempSelectedCats,
     tempSelectedPayees,
     setTempSelectedPayees,
+    tempSelectedGroups,
+    setTempSelectedGroups,
     categories,
     payees,
+    groups,
     showFilterModal,
     setShowFilterModal,
     modalSearch,
     setModalSearch,
     startDate,
+    setStartDate,
     endDate,
+    setEndDate,
     loadFilterData,
     loadData,
     loadStatsBreakdown,
+    clearFilters,
   } = filters;
 
   const scrollToTop = useCallback(() => {
@@ -201,21 +266,52 @@ export default function TransactionsScreen() {
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [search, selectedCats, selectedPayees, startDate, endDate, scrollToTop, listData.length]);
+  }, [
+    search,
+    selectedCats,
+    selectedPayees,
+    selectedGroups,
+    startDate,
+    endDate,
+    scrollToTop,
+    listData.length,
+  ]);
 
-  const themedStyles = useMemo(
-    () => ({
-      selectedFilterChip: {
-        backgroundColor: colors.primary + '15',
-        borderColor: colors.primary,
-      },
-      inactiveFilterChip: {
-        backgroundColor: 'transparent',
-        borderColor: colors.border,
-      },
-    }),
-    [colors.border, colors.primary],
-  );
+  const hasAnyFilter =
+    !!startDate ||
+    !!endDate ||
+    selectedCats.length > 0 ||
+    selectedPayees.length > 0 ||
+    selectedGroups.length > 0;
+
+  const getFilterSummaryText = () => {
+    const parts: string[] = [];
+    if (startDate || endDate) {
+      try {
+        if (startDate && endDate) {
+          parts.push(
+            `${format(parseISO(startDate), 'dd MMM')} - ${format(parseISO(endDate), 'dd MMM')}`,
+          );
+        } else if (startDate) {
+          parts.push(`From ${format(parseISO(startDate), 'dd MMM')}`);
+        } else if (endDate) {
+          parts.push(`To ${format(parseISO(endDate), 'dd MMM')}`);
+        }
+      } catch {
+        parts.push('Custom Dates');
+      }
+    }
+    if (selectedCats.length > 0) {
+      parts.push(`${selectedCats.length} Cat${selectedCats.length > 1 ? 's' : ''}`);
+    }
+    if (selectedPayees.length > 0) {
+      parts.push(`${selectedPayees.length} Payee${selectedPayees.length > 1 ? 's' : ''}`);
+    }
+    if (selectedGroups.length > 0) {
+      parts.push(`${selectedGroups.length} Group${selectedGroups.length > 1 ? 's' : ''}`);
+    }
+    return parts.join(' • ');
+  };
 
   return (
     <DataErrorBoundary colors={colors} onReset={loadData}>
@@ -231,7 +327,7 @@ export default function TransactionsScreen() {
           />
         </View>
 
-        {listData.length > 0 && (selectedCats.length > 0 || selectedPayees.length > 0) && (
+        {listData.length > 0 && hasAnyFilter && (
           <View style={styles.statsRow}>
             <TouchableOpacity
               style={[
@@ -259,101 +355,64 @@ export default function TransactionsScreen() {
           </View>
         )}
 
-        <View style={styles.filterRow}>
-          <View style={styles.row}>
-            <View
-              style={[
-                styles.filterChip,
-                selectedCats.length > 0
-                  ? themedStyles.selectedFilterChip
-                  : themedStyles.inactiveFilterChip,
-              ]}
-            >
-              <TouchableOpacity
-                onPress={() => setShowFilterModal('Category')}
-                style={styles.filterChipButton}
-              >
-                <Icon
-                  name="category"
-                  size={16}
-                  color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
-                  style={styles.filterIcon}
-                />
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    { color: selectedCats.length > 0 ? colors.primary : colors.textSecondary },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {selectedCats.length > 0 ? `${selectedCats.length} Mixed` : 'Categories'}
-                </Text>
-                <Icon
-                  name="arrow-drop-down"
-                  size={20}
-                  color={selectedCats.length > 0 ? colors.primary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-              {selectedCats.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedCats([]);
-                    setTempSelectedCats([]);
-                  }}
-                  style={styles.smallClose}
-                >
-                  <Icon name="close" size={14} color={colors.primary} />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <View
-              style={[
-                styles.filterChip,
-                selectedPayees.length > 0
-                  ? themedStyles.selectedFilterChip
-                  : themedStyles.inactiveFilterChip,
-              ]}
-            >
-              <TouchableOpacity
-                onPress={() => setShowFilterModal('Payee')}
-                style={styles.filterChipButton}
-              >
-                <Icon
-                  name="person"
-                  size={16}
-                  color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
-                  style={common.mr4}
-                />
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    { color: selectedPayees.length > 0 ? colors.primary : colors.textSecondary },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {selectedPayees.length > 0 ? `${selectedPayees.length} Payees` : 'Payees'}
-                </Text>
-                <Icon
-                  name="arrow-drop-down"
-                  size={20}
-                  color={selectedPayees.length > 0 ? colors.primary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-              {selectedPayees.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedPayees([]);
-                    setTempSelectedPayees([]);
-                  }}
-                  style={styles.smallClose}
-                >
-                  <Icon name="close" size={14} color={colors.primary} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+        {/* Modern unified 4-icon filter toolbar */}
+        <View
+          style={[
+            styles.filterToolbar,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
+        >
+          <FilterIconButton
+            icon="calendar-today"
+            label="Date"
+            isActive={!!startDate || !!endDate}
+            count={startDate || endDate ? 1 : 0}
+            onPress={() => setShowFilterModal('Calendar')}
+            colors={colors}
+          />
+          <FilterIconButton
+            icon="category"
+            label="Category"
+            isActive={selectedCats.length > 0}
+            count={selectedCats.length}
+            onPress={() => setShowFilterModal('Category')}
+            colors={colors}
+          />
+          <FilterIconButton
+            icon="person"
+            label="Payee"
+            isActive={selectedPayees.length > 0}
+            count={selectedPayees.length}
+            onPress={() => setShowFilterModal('Payee')}
+            colors={colors}
+          />
+          <FilterIconButton
+            icon="folder"
+            label="Groups"
+            isActive={selectedGroups.length > 0}
+            count={selectedGroups.length}
+            onPress={() => setShowFilterModal('Group')}
+            colors={colors}
+          />
         </View>
+
+        {/* Active Filters Summary */}
+        {hasAnyFilter && (
+          <View style={styles.activeFiltersSummaryRow}>
+            <Text
+              style={[styles.activeFiltersText, { color: colors.textSecondary }]}
+              numberOfLines={1}
+            >
+              {getFilterSummaryText()}
+            </Text>
+            <TouchableOpacity
+              onPress={clearFilters}
+              style={[styles.clearFiltersButton, { backgroundColor: colors.primary + '15' }]}
+            >
+              <Text style={[styles.clearFiltersText, { color: colors.primary }]}>Clear All</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {search.length > 0 && listData.length === 0 && (
           <View style={common.ph16}>
@@ -469,6 +528,39 @@ export default function TransactionsScreen() {
           modalSearch={modalSearch}
           setModalSearch={setModalSearch}
         />
+        <TransactionFilterSelector
+          type="Group"
+          visible={showFilterModal === 'Group'}
+          onClose={() => {
+            setShowFilterModal(null);
+            setModalSearch('');
+          }}
+          categories={categories}
+          payees={payees}
+          groups={groups}
+          tempSelectedItems={tempSelectedGroups}
+          setTempSelectedItems={setTempSelectedGroups}
+          onApply={(selected) => {
+            setSelectedGroups(selected);
+            setShowFilterModal(null);
+            setModalSearch('');
+          }}
+          colors={colors}
+          modalSearch={modalSearch}
+          setModalSearch={setModalSearch}
+        />
+        <TransactionDateFilterModal
+          visible={showFilterModal === 'Calendar'}
+          onClose={() => setShowFilterModal(null)}
+          startDate={startDate}
+          endDate={endDate}
+          onApply={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+            setShowFilterModal(null);
+          }}
+          colors={colors}
+        />
         <TransactionDeleteModal
           transaction={deleteConfirmTx}
           onCancel={() => setDeleteConfirmTx(null)}
@@ -515,40 +607,82 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  filterRow: {
+  filterToolbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1.5,
-    overflow: 'hidden',
-    flexShrink: 1,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  filterChipButton: {
+  filterItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterIconContainer: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    position: 'relative',
+  },
+  filterItemLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+  },
+  badgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  activeFiltersSummaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  filterIcon: {
-    marginRight: 5,
+  activeFiltersText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 8,
   },
-  filterChipText: {
-    fontSize: 13,
+  clearFiltersButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  clearFiltersText: {
+    fontSize: 12,
     fontWeight: '700',
-  },
-  smallClose: {
-    padding: 6,
-    borderLeftWidth: 1,
-    borderLeftColor: 'rgba(0,0,0,0.05)',
   },
   listContent: {
     paddingBottom: 100,

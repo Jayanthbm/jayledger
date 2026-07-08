@@ -1,6 +1,11 @@
 import { getDb } from '../db/database';
 import { Transaction } from '../models/types';
-import { getCategories, getPayees, getMonthlyFilteredStats } from '../db/queries';
+import {
+  getCategories,
+  getPayees,
+  getMonthlyFilteredStats,
+  getTransactionGroups,
+} from '../db/queries';
 
 import { mapTransactionsToFlashList, FlashListItem } from '../utils/dataMappers';
 
@@ -9,6 +14,7 @@ export interface TransactionFetchParams {
   search?: string;
   selectedCats?: string[];
   selectedPayees?: string[];
+  selectedGroups?: string[];
   startDate?: string | null;
   endDate?: string | null;
 }
@@ -18,6 +24,7 @@ export const fetchTransactions = async ({
   search = '',
   selectedCats = [],
   selectedPayees = [],
+  selectedGroups = [],
   startDate = null,
   endDate = null,
 }: TransactionFetchParams): Promise<{
@@ -50,6 +57,11 @@ export const fetchTransactions = async ({
     query += ` AND payee_id IN (${payeeIdsString})`;
   }
 
+  if (selectedGroups.length > 0) {
+    const groupIdsString = selectedGroups.map((id) => `'${id}'`).join(',');
+    query += ` AND group_id IN (${groupIdsString})`;
+  }
+
   if (startDate) {
     query += ` AND date >= '${startDate}'`;
   }
@@ -64,17 +76,28 @@ export const fetchTransactions = async ({
 };
 
 export const fetchTransactionFilterData = async (userId: string) => {
-  const [cats, p] = await Promise.all([getCategories(userId), getPayees(userId)]);
-  return { categories: cats, payees: p };
+  const [cats, p, g] = await Promise.all([
+    getCategories(userId),
+    getPayees(userId),
+    getTransactionGroups(userId),
+  ]);
+  return { categories: cats, payees: p, groups: g };
 };
 
 export const fetchStatsBreakdown = async (
   userId: string,
   selectedCats: string[],
   selectedPayees: string[],
+  selectedGroups: string[],
   search: string,
 ) => {
-  return await getMonthlyFilteredStats(userId, selectedCats, selectedPayees, search);
+  return await getMonthlyFilteredStats(
+    userId,
+    selectedCats,
+    selectedPayees,
+    selectedGroups,
+    search,
+  );
 };
 
 export const formatIconName = (name: string) => {

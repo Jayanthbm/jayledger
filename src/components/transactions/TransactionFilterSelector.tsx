@@ -1,19 +1,25 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-// import { Image } from 'expo-image'; // Removed to use initials for payees
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { BottomSheet } from '../BottomSheet';
 import { SearchBar } from '../SearchBar';
-import { Category, MaterialIconName, Payee, ThemeColors } from '../../models/types';
+import {
+  Category,
+  MaterialIconName,
+  Payee,
+  ThemeColors,
+  TransactionGroup,
+} from '../../models/types';
 import { formatIconName } from '../../services/transactionService';
 import { common } from '../../styles/common';
 
 interface TransactionFilterSelectorProps {
-  type: 'Category' | 'Payee';
+  type: 'Category' | 'Payee' | 'Group';
   visible: boolean;
   onClose: () => void;
   categories: Category[];
   payees: Payee[];
+  groups?: TransactionGroup[];
   tempSelectedItems: string[];
   setTempSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
   onApply: (selected: string[]) => void;
@@ -29,6 +35,7 @@ export const TransactionFilterSelector = React.memo(
     onClose,
     categories,
     payees,
+    groups = [],
     tempSelectedItems,
     setTempSelectedItems,
     onApply,
@@ -36,8 +43,8 @@ export const TransactionFilterSelector = React.memo(
     modalSearch,
     setModalSearch,
   }: TransactionFilterSelectorProps) => {
-    const data = (type === 'Category' ? categories : payees).filter((item) =>
-      item.name.toLowerCase().includes(modalSearch.toLowerCase()),
+    const data = (type === 'Category' ? categories : type === 'Payee' ? payees : groups).filter(
+      (item) => item.name.toLowerCase().includes(modalSearch.toLowerCase()),
     );
 
     const toggleTempSelection = (id: string) => {
@@ -46,12 +53,14 @@ export const TransactionFilterSelector = React.memo(
       );
     };
 
+    const getTitle = () => {
+      if (type === 'Category') return 'Categories';
+      if (type === 'Payee') return 'Payees';
+      return 'Groups';
+    };
+
     return (
-      <BottomSheet
-        visible={visible}
-        onClose={onClose}
-        title={`Select ${type === 'Category' ? 'Categories' : 'Payees'}`}
-      >
+      <BottomSheet visible={visible} onClose={onClose} title={`Select ${getTitle()}`}>
         <View style={common.pb16}>
           <SearchBar
             value={modalSearch}
@@ -89,9 +98,10 @@ export const TransactionFilterSelector = React.memo(
           keyExtractor={(item) => item.id}
           numColumns={4}
           keyboardShouldPersistTaps="always"
-          renderItem={({ item }: { item: Category | Payee }) => {
+          renderItem={({ item }: { item: Category | Payee | TransactionGroup }) => {
             const isSelected = tempSelectedItems.includes(item.id);
             const isPayee = type === 'Payee';
+            const isGroup = type === 'Group';
 
             let iconNode;
 
@@ -102,13 +112,15 @@ export const TransactionFilterSelector = React.memo(
                   {item.name.charAt(0).toUpperCase()}
                 </Text>
               );
+            } else if (isGroup) {
+              iconNode = (
+                <Icon name="folder" size={24} color={isSelected ? 'white' : colors.textSecondary} />
+              );
             } else {
               iconNode = (
                 <Icon
                   name={
-                    formatIconName(
-                      (item as Category).app_icon || (type === 'Category' ? 'category' : 'person'),
-                    ) as MaterialIconName
+                    formatIconName((item as Category).app_icon || 'category') as MaterialIconName
                   }
                   size={24}
                   color={isSelected ? 'white' : colors.textSecondary}

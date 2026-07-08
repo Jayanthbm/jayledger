@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { Category, Payee, MonthlyStatsBreakdown } from '../models/types';
+import { Category, Payee, MonthlyStatsBreakdown, TransactionGroup } from '../models/types';
 import {
   fetchTransactions,
   fetchTransactionFilterData,
@@ -34,12 +34,17 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
   const [search, setSearch] = useState('');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [selectedPayees, setSelectedPayees] = useState<string[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [tempSelectedCats, setTempSelectedCats] = useState<string[]>([]);
   const [tempSelectedPayees, setTempSelectedPayees] = useState<string[]>([]);
+  const [tempSelectedGroups, setTempSelectedGroups] = useState<string[]>([]);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
-  const [showFilterModal, setShowFilterModal] = useState<'Category' | 'Payee' | null>(null);
+  const [groups, setGroups] = useState<TransactionGroup[]>([]);
+  const [showFilterModal, setShowFilterModal] = useState<
+    'Category' | 'Payee' | 'Group' | 'Calendar' | null
+  >(null);
   const [modalSearch, setModalSearch] = useState('');
 
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -47,9 +52,14 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
 
   const loadFilterData = useCallback(async () => {
     if (!session?.user?.id) return;
-    const { categories: cats, payees: p } = await fetchTransactionFilterData(session.user.id);
+    const {
+      categories: cats,
+      payees: p,
+      groups: g,
+    } = await fetchTransactionFilterData(session.user.id);
     setCategories(cats);
     setPayees(p);
+    setGroups(g);
   }, [session]);
 
   const loadData = useCallback(async () => {
@@ -67,6 +77,7 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
       search,
       selectedCats,
       selectedPayees,
+      selectedGroups,
       startDate,
       endDate,
     });
@@ -75,7 +86,7 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
     setStickyHeaderIndices(indices);
     setTotalFiltered(total);
     setLoading(false);
-  }, [session, search, selectedCats, selectedPayees, startDate, endDate]);
+  }, [session, search, selectedCats, selectedPayees, selectedGroups, startDate, endDate]);
 
   const loadStatsBreakdown = async () => {
     if (!session?.user?.id) return;
@@ -86,6 +97,7 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
         session.user.id,
         selectedCats,
         selectedPayees,
+        selectedGroups,
         search,
       );
       setStatsBreakdown(stats);
@@ -144,8 +156,10 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
     setSearch('');
     setSelectedCats([]);
     setSelectedPayees([]);
+    setSelectedGroups([]);
     setTempSelectedCats([]);
     setTempSelectedPayees([]);
+    setTempSelectedGroups([]);
     setStartDate(null);
     setEndDate(null);
   }, []);
@@ -165,18 +179,25 @@ export const useTransactionFilters = ({ session, params }: UseTransactionFilters
     setSelectedCats,
     selectedPayees,
     setSelectedPayees,
+    selectedGroups,
+    setSelectedGroups,
     tempSelectedCats,
     setTempSelectedCats,
     tempSelectedPayees,
     setTempSelectedPayees,
+    tempSelectedGroups,
+    setTempSelectedGroups,
     categories,
     payees,
+    groups,
     showFilterModal,
     setShowFilterModal,
     modalSearch,
     setModalSearch,
     startDate,
+    setStartDate,
     endDate,
+    setEndDate,
     loadFilterData,
     loadData,
     loadStatsBreakdown,

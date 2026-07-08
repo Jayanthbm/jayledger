@@ -213,6 +213,7 @@ export const getMonthlyFilteredStats = async (
   userId: string,
   categoryIds: string[],
   payeeIds: string[],
+  groupIds: string[],
   search: string,
 ) => {
   const db = getDb();
@@ -235,6 +236,11 @@ export const getMonthlyFilteredStats = async (
       const placeholders = payeeIds.map(() => '?').join(',');
       query += ` AND payee_id IN (${placeholders})`;
       params.push(...payeeIds);
+    }
+    if (groupIds.length > 0) {
+      const placeholders = groupIds.map(() => '?').join(',');
+      query += ` AND group_id IN (${placeholders})`;
+      params.push(...groupIds);
     }
     if (search.trim()) {
       const s = search.trim();

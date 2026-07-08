@@ -17,10 +17,10 @@ const formatIconName = (name: string) => {
 export interface TransactionSelectorRowProps {
   selectedPayee: Payee | null;
   selectedCategory: Category | null;
-  selectedGroup: TransactionGroup | null;
+  selectedGroup?: TransactionGroup | null;
   onPressPayee: () => void;
   onPressCategory: () => void;
-  onPressGroup: () => void;
+  onPressGroup?: () => void;
   colors: Record<string, string>;
   currentIconBg: string;
   currentIconColor: string;
@@ -90,25 +90,27 @@ export const TransactionSelectorRow = ({
       </TouchableOpacity>
 
       {/* Group */}
-      <TouchableOpacity
-        style={[
-          styles.selectorBtn,
-          { backgroundColor: colors.background, borderColor: colors.border },
-        ]}
-        onPress={onPressGroup}
-      >
-        <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
-          <Icon name="folder-open" size={18} color={colors.textSecondary} />
-        </View>
-        <View style={common.flex1}>
-          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]} numberOfLines={1}>
-            Group
-          </Text>
-          <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
-            {selectedGroup?.name || 'None'}
-          </Text>
-        </View>
-      </TouchableOpacity>
+      {onPressGroup && (
+        <TouchableOpacity
+          style={[
+            styles.selectorBtn,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+          onPress={onPressGroup}
+        >
+          <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
+            <Icon name="folder-open" size={18} color={colors.textSecondary} />
+          </View>
+          <View style={common.flex1}>
+            <Text style={[styles.selectorLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+              Group
+            </Text>
+            <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
+              {selectedGroup?.name || 'None'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

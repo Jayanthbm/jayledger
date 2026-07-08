@@ -114,6 +114,18 @@
     {
       "path": "src/hooks/useDashboardSync.ts",
       "description": "Manages dashboard sync state and manual/initial sync actions."
+    },
+    {
+      "path": "src/db/groupQueries.ts",
+      "description": "Transaction group database queries (fetching, inserting, updating priorities, and deletions)."
+    },
+    {
+      "path": "src/services/groupService.ts",
+      "description": "Service orchestration for transaction groups, including local CRUD, sorting, and Supabase synchronization."
+    },
+    {
+      "path": "src/screens/GroupsScreen.tsx",
+      "description": "Transaction groups listing, reordering, creation, and details screen."
     }
   ],
   "architecture": {
@@ -176,6 +188,14 @@
         "src/hooks/useDashboardSync.ts",
         "src/components/dashboard",
         "src/screens/DashboardScreen.tsx"
+      ]
+    },
+    {
+      "task": "Change transaction groups behavior",
+      "files": [
+        "src/db/groupQueries.ts",
+        "src/services/groupService.ts",
+        "src/screens/GroupsScreen.tsx"
       ]
     },
     {

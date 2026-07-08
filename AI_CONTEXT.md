@@ -58,7 +58,9 @@
 - `src/db/transactionQueries.ts`: Transaction CRUD, date lookups, net worth, and sync-status helpers.
 - `src/db/reportQueries.ts`: Report data aggregation queries.
 - `src/db/budgetQueries.ts`: Budget-specific SQLite queries.
+- `src/db/groupQueries.ts`: Transaction group database queries (fetching, inserting, updating priorities, and deletions).
 - `src/services/transactionService.ts`: Transaction list fetching, filtering, stats, and list mapping.
+- `src/services/groupService.ts`: Service orchestration for transaction groups, including local CRUD, sorting, and Supabase synchronization.
 - `src/services/dashboardService.ts`: Dashboard metrics and calculations.
 - `src/services/reportService.ts`: Report data service layer.
 - `src/services/sync/baseSync.ts`: Shared sync/network helpers.
@@ -66,6 +68,7 @@
 - `src/hooks/useDashboardData.ts`: Loads dashboard metrics for the current user.
 - `src/hooks/useDashboardSync.ts`: Dashboard sync state and initial/manual sync behavior.
 - `src/navigation/navigationTypes.ts`: Typed route names and params.
+- `src/screens/GroupsScreen.tsx`: Transaction groups listing, reordering, creation, and details screen.
 
 ## Agent Working Rules
 
@@ -86,6 +89,7 @@
 - Add or modify a screen: edit `src/screens`, wire routes in `src/navigation/AppNavigator.tsx` or `src/navigation/MainTabs.tsx`, and update `src/navigation/navigationTypes.ts`.
 - Add reusable UI: place feature components under `src/components/<feature>` or shared primitives under `src/components/common`.
 - Change transaction behavior: start with `src/services/transactionService.ts`, `src/db/transactionQueries.ts`, `src/hooks/useTransactions.ts`, and transaction screens/components.
+- Change transaction groups behavior: use `src/db/groupQueries.ts`, `src/services/groupService.ts`, and `src/screens/GroupsScreen.tsx`.
 - Change dashboard behavior: use `src/services/dashboardService.ts`, `src/hooks/useDashboardData.ts`, `src/hooks/useDashboardSync.ts`, and dashboard components.
 - Change reports: use `src/db/reportQueries.ts`, `src/services/reportService.ts`, `src/hooks/useReports.ts`, and `src/screens/reports`.
 - Change local schema: update `src/db/database.ts`, related query modules, `src/models/types.ts`, and SQLite tests.
