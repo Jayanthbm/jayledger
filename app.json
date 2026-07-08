@@ -28,7 +28,6 @@
         "resizeMode": "contain",
         "backgroundColor": "#f0f0f0"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.jayanth.jmoney",
       "versionCode": 9,
@@ -81,7 +80,8 @@
             }
           ]
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {

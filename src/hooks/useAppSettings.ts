@@ -71,7 +71,7 @@ export const useAppSettings = (
           `@initial_payees_sync_checked_${session.user.id}`,
           'reports_view_mode',
         ];
-        await AsyncStorage.multiRemove(keysToClear);
+        await AsyncStorage.removeMany(keysToClear);
         if (onComplete) onComplete();
         navigation.reset({
           index: 0,
