@@ -16,12 +16,12 @@
 
 ## Architecture Overview
 
-- `src/screens`: Top-level app screens for dashboard, transactions, budgets, goals, reports, settings, auth, and setup flows.
-- `src/components`: Reusable UI components grouped by feature area plus common shared UI.
+- `src/screens`: Top-level app screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.
+- `src/components`: Reusable UI components grouped by feature area (`budgets`, `calendar`, `categories`, `common`, `dashboard`, `goals`, `payees`, `reports`, `transactions`) plus legacy root-level shared components.
 - `src/navigation`: Stack/tab navigation definitions and typed route params.
 - `src/store`: React contexts for auth, theme, and toast state.
-- `src/db`: SQLite database initialization plus query modules for entities and reports.
-- `src/services`: Business/data services and Supabase sync orchestration.
+- `src/db`: SQLite database initialization plus query modules for all entities and reports. `queries.ts` is the barrel re-export; entity-specific logic lives in dedicated query files.
+- `src/services`: Business/data services and Supabase sync orchestration. `src/services/sync` contains per-entity sync modules.
 - `src/hooks`: Screen-level and feature-level data/loading/sync hooks.
 - `src/models`: Shared TypeScript interfaces and app data shapes.
 - `src/utils`: Formatting, validation, date, mapping, timestamp, and logging helpers.
@@ -50,25 +50,83 @@
 - `eslint.config.js`: ESLint flat config for TypeScript, React, React Native, hooks, and unused imports.
 - `babel.config.js`: Expo Babel configuration.
 - `jest-setup.ts`: Jest environment setup.
-- `src/models/types.ts`: Core entity interfaces for transactions, budgets, goals, categories, payees, reports, and themes.
+- `src/models/types.ts`: Core entity interfaces for transactions, budgets, goals, categories, payees, quick transactions, reports, and themes.
 - `src/store/AuthContext.tsx`: Supabase session state and sign-in/sign-out behavior.
 - `src/store/ThemeContext.tsx`: Light/dark theme colors persisted in AsyncStorage.
 - `src/store/ToastContext.tsx`: Global toast state.
-- `src/db/queries.ts`: Shared SQLite query helpers for categories, payees, stats, and related data.
+
+### Database (src/db)
+
+- `src/db/queries.ts`: Barrel re-export of all query modules plus `resetAppData` global maintenance query.
 - `src/db/transactionQueries.ts`: Transaction CRUD, date lookups, net worth, and sync-status helpers.
-- `src/db/reportQueries.ts`: Report data aggregation queries.
+- `src/db/metaQueries.ts`: Category, payee, and goal CRUD queries including priority management and soft-delete.
 - `src/db/budgetQueries.ts`: Budget-specific SQLite queries.
+- `src/db/quickTransactionQueries.ts`: Quick transaction CRUD with priority management and sync support.
 - `src/db/groupQueries.ts`: Transaction group database queries (fetching, inserting, updating priorities, and deletions).
-- `src/services/transactionService.ts`: Transaction list fetching, filtering, stats, and list mapping.
-- `src/services/groupService.ts`: Service orchestration for transaction groups, including local CRUD, sorting, and Supabase synchronization.
+- `src/db/reportQueries.ts`: Report data aggregation queries.
+
+### Services (src/services)
+
+- `src/services/transactionService.ts`: Transaction list fetching, filtering, stats, and FlashList mapping.
 - `src/services/dashboardService.ts`: Dashboard metrics and calculations.
 - `src/services/reportService.ts`: Report data service layer.
+- `src/services/groupService.ts`: Service orchestration for transaction groups, including local CRUD, sorting, and Supabase synchronization.
+- `src/services/budgetService.ts`: Budget data service layer.
+- `src/services/goalService.ts`: Goal data service layer.
+- `src/services/categoryService.ts`: Category data service with create, update, and sort operations.
+- `src/services/payeeService.ts`: Payee data service with create, update, and sort operations.
+- `src/services/quickTransactionService.ts`: Quick transaction create, update, delete, and sort operations.
+- `src/services/calendarService.ts`: Calendar data aggregation service.
+- `src/services/notificationService.ts`: Local notification scheduling and management.
+- `src/services/supabase.ts`: Supabase client configuration with AsyncStorage-backed auth.
+- `src/services/syncService.ts`: Coordinates full sync and entity-level push/pull operations.
 - `src/services/sync/baseSync.ts`: Shared sync/network helpers.
-- `src/services/sync/transactionSync.ts`: Transaction Supabase push/pull sync.
+- `src/services/sync/transactionSync.ts`: Transaction-specific Supabase push/pull sync.
+- `src/services/sync/budgetSync.ts`: Budget-specific Supabase push/pull sync.
+- `src/services/sync/categorySync.ts`: Category-specific Supabase push/pull sync.
+- `src/services/sync/goalSync.ts`: Goal-specific Supabase push/pull sync.
+- `src/services/sync/groupSync.ts`: Transaction group Supabase push/pull sync.
+- `src/services/sync/payeeSync.ts`: Payee-specific Supabase push/pull sync.
+- `src/services/sync/quickTransactionSync.ts`: Quick transaction Supabase push/pull sync.
+
+### Hooks (src/hooks)
+
 - `src/hooks/useDashboardData.ts`: Loads dashboard metrics for the current user.
 - `src/hooks/useDashboardSync.ts`: Dashboard sync state and initial/manual sync behavior.
-- `src/navigation/navigationTypes.ts`: Typed route names and params.
-- `src/screens/GroupsScreen.tsx`: Transaction groups listing, reordering, creation, and details screen.
+- `src/hooks/useTransactionFilters.ts`: Transaction list state management including search, category/payee/group/date filters, stats modal, and filter data loading.
+- `src/hooks/useTransactionSync.ts`: Transaction sync state with auto-sync on focus and manual sync.
+- `src/hooks/useTransactions.ts`: Transaction list data loading hook.
+- `src/hooks/useReports.ts`: Report monthly summary, by-category, and by-payee data loading.
+- `src/hooks/useReportData.ts`: Extended report data hook for detailed report screens.
+- `src/hooks/useAppSettings.ts`: App settings state (biometrics, notifications, pay day, daily limit, etc.).
+- `src/hooks/useBiometrics.ts`: Biometric authentication hook.
+- `src/hooks/useAsyncOperation.ts`: Generic async operation wrapper with loading/error state.
+- `src/hooks/useTransactionDateTime.ts`: Transaction date/time picker state helper.
+
+### Navigation (src/navigation)
+
+- `src/navigation/AppNavigator.tsx`: Auth-aware root stack navigator for login, main app, modals, and reports.
+- `src/navigation/MainTabs.tsx`: Authenticated bottom-tab navigator for dashboard, transactions, budgets, goals, reports, and settings.
+- `src/navigation/navigationTypes.ts`: Typed route names and params for navigation.
+
+### Screens (src/screens)
+
+- `src/screens/DashboardScreen.tsx`: Main dashboard screen.
+- `src/screens/TransactionsScreen.tsx`: Transaction list with search, filters, and sync.
+- `src/screens/AddTransactionScreen.tsx`: Add/edit transaction form.
+- `src/screens/BudgetsScreen.tsx`: Budget list and management.
+- `src/screens/GoalsScreen.tsx`: Goals list and management.
+- `src/screens/ReportsScreen.tsx`: Reports entry screen.
+- `src/screens/GroupsScreen.tsx`: Transaction groups listing, reordering, creation, and details.
+- `src/screens/CategoriesScreen.tsx`: Category list management.
+- `src/screens/PayeesScreen.tsx`: Payee list management.
+- `src/screens/QuickTransactionsScreen.tsx`: Quick transaction presets management.
+- `src/screens/AddQuickTransactionScreen.tsx`: Add/edit quick transaction form.
+- `src/screens/CalendarViewScreen.tsx`: Calendar-based transaction view.
+- `src/screens/SettingsScreen.tsx`: App settings screen.
+- `src/screens/LoginScreen.tsx`: Authentication screen.
+- `src/screens/DailyLimitDetailScreen.tsx`: Daily spending limit detail view.
+- `src/screens/reports/`: Sub-screens for Category, Payee, Group, Monthly, Yearly, Living Costs, and Subscription report types.
 
 ## Agent Working Rules
 
@@ -88,10 +146,12 @@
 
 - Add or modify a screen: edit `src/screens`, wire routes in `src/navigation/AppNavigator.tsx` or `src/navigation/MainTabs.tsx`, and update `src/navigation/navigationTypes.ts`.
 - Add reusable UI: place feature components under `src/components/<feature>` or shared primitives under `src/components/common`.
-- Change transaction behavior: start with `src/services/transactionService.ts`, `src/db/transactionQueries.ts`, `src/hooks/useTransactions.ts`, and transaction screens/components.
-- Change transaction groups behavior: use `src/db/groupQueries.ts`, `src/services/groupService.ts`, and `src/screens/GroupsScreen.tsx`.
+- Change transaction behavior: start with `src/services/transactionService.ts`, `src/db/transactionQueries.ts`, `src/hooks/useTransactionFilters.ts`, `src/hooks/useTransactions.ts`, and transaction screens/components.
+- Change transaction groups behavior: use `src/db/groupQueries.ts`, `src/services/groupService.ts`, `src/services/sync/groupSync.ts`, and `src/screens/GroupsScreen.tsx`.
 - Change dashboard behavior: use `src/services/dashboardService.ts`, `src/hooks/useDashboardData.ts`, `src/hooks/useDashboardSync.ts`, and dashboard components.
-- Change reports: use `src/db/reportQueries.ts`, `src/services/reportService.ts`, `src/hooks/useReports.ts`, and `src/screens/reports`.
+- Change reports: use `src/db/reportQueries.ts`, `src/services/reportService.ts`, `src/hooks/useReports.ts`, `src/hooks/useReportData.ts`, and `src/screens/reports`.
+- Change categories or payees: use `src/db/metaQueries.ts`, `src/services/categoryService.ts` or `src/services/payeeService.ts`, and the relevant sync module in `src/services/sync`.
+- Change quick transactions: use `src/db/quickTransactionQueries.ts`, `src/services/quickTransactionService.ts`, `src/services/sync/quickTransactionSync.ts`, and related screens.
 - Change local schema: update `src/db/database.ts`, related query modules, `src/models/types.ts`, and SQLite tests.
 - Change sync behavior: update `src/services/syncService.ts` and the relevant file in `src/services/sync`.
 - Change authentication: update `src/store/AuthContext.tsx`, `src/services/supabase.ts`, and `src/screens/LoginScreen.tsx`.
@@ -116,7 +176,8 @@
 ## Notes
 
 - Local SQLite is the source of offline app data; Supabase is used for auth and remote synchronization.
-- `transactions`, `budgets`, and `goals` use soft-delete columns; sync code depends on `sync_status`.
+- `transactions`, `budgets`, `goals`, `quick_transactions`, and `transaction_groups` use soft-delete columns; sync code depends on `sync_status`.
+- `src/db/queries.ts` is a barrel re-export; all entity-specific queries live in their dedicated files (`metaQueries.ts`, `transactionQueries.ts`, `quickTransactionQueries.ts`, etc.).
 - App boot waits for `initDB()` before rendering navigation.
 - The root navigator shows `LoginScreen` when no Supabase session exists and authenticated stacks otherwise.
 - Query code mixes parameterized SQL and constructed SQL; preserve existing behavior but prefer parameterized queries for new code.

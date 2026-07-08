@@ -52,24 +52,8 @@
       "description": "Typed route names and params for navigation."
     },
     {
-      "path": "src/db/database.ts",
-      "description": "SQLite open/init logic, schema creation, migrations, and indexes."
-    },
-    {
-      "path": "src/db/queries.ts",
-      "description": "Shared SQLite query helpers for categories, payees, stats, and related data."
-    },
-    {
-      "path": "src/db/transactionQueries.ts",
-      "description": "Transaction CRUD, date lookups, net worth, and sync-status helpers."
-    },
-    {
-      "path": "src/db/reportQueries.ts",
-      "description": "SQLite aggregation queries for report screens."
-    },
-    {
       "path": "src/models/types.ts",
-      "description": "Core TypeScript interfaces for app entities and report data."
+      "description": "Core TypeScript interfaces for all app entities (transactions, budgets, goals, categories, payees, quick transactions, groups, reports, themes)."
     },
     {
       "path": "src/store/AuthContext.tsx",
@@ -78,6 +62,86 @@
     {
       "path": "src/store/ThemeContext.tsx",
       "description": "Light/dark theme colors and persisted theme preference."
+    },
+    {
+      "path": "src/store/ToastContext.tsx",
+      "description": "Global toast notification state and helpers."
+    },
+    {
+      "path": "src/db/database.ts",
+      "description": "SQLite open/init logic, schema creation, migrations, and indexes."
+    },
+    {
+      "path": "src/db/queries.ts",
+      "description": "Barrel re-export of all entity query modules plus resetAppData global maintenance query."
+    },
+    {
+      "path": "src/db/transactionQueries.ts",
+      "description": "Transaction CRUD, date lookups, net worth, and sync-status helpers."
+    },
+    {
+      "path": "src/db/metaQueries.ts",
+      "description": "Category, payee, and goal CRUD queries including priority management and soft-delete."
+    },
+    {
+      "path": "src/db/budgetQueries.ts",
+      "description": "Budget-specific SQLite queries."
+    },
+    {
+      "path": "src/db/quickTransactionQueries.ts",
+      "description": "Quick transaction CRUD with priority management and sync support."
+    },
+    {
+      "path": "src/db/groupQueries.ts",
+      "description": "Transaction group database queries (fetching, inserting, updating priorities, and deletions)."
+    },
+    {
+      "path": "src/db/reportQueries.ts",
+      "description": "SQLite aggregation queries for report screens."
+    },
+    {
+      "path": "src/services/transactionService.ts",
+      "description": "Transaction list fetching, filtering, stats, and FlashList mapping."
+    },
+    {
+      "path": "src/services/dashboardService.ts",
+      "description": "Dashboard metrics and financial calculations."
+    },
+    {
+      "path": "src/services/reportService.ts",
+      "description": "Service layer for report data retrieval."
+    },
+    {
+      "path": "src/services/groupService.ts",
+      "description": "Service orchestration for transaction groups, including local CRUD, sorting, and Supabase synchronization."
+    },
+    {
+      "path": "src/services/budgetService.ts",
+      "description": "Budget data service layer (load, save, delete)."
+    },
+    {
+      "path": "src/services/goalService.ts",
+      "description": "Goal data service layer (load, save, delete)."
+    },
+    {
+      "path": "src/services/categoryService.ts",
+      "description": "Category data service with create, update, and sort operations."
+    },
+    {
+      "path": "src/services/payeeService.ts",
+      "description": "Payee data service with create, update, and sort operations."
+    },
+    {
+      "path": "src/services/quickTransactionService.ts",
+      "description": "Quick transaction create, update, delete, and sort operations."
+    },
+    {
+      "path": "src/services/calendarService.ts",
+      "description": "Calendar data aggregation service."
+    },
+    {
+      "path": "src/services/notificationService.ts",
+      "description": "Local notification scheduling and management."
     },
     {
       "path": "src/services/supabase.ts",
@@ -93,19 +157,31 @@
     },
     {
       "path": "src/services/sync/transactionSync.ts",
-      "description": "Transaction-specific Supabase synchronization."
+      "description": "Transaction-specific Supabase push/pull sync."
     },
     {
-      "path": "src/services/transactionService.ts",
-      "description": "Transaction list fetching, filtering, stats, and FlashList mapping."
+      "path": "src/services/sync/budgetSync.ts",
+      "description": "Budget-specific Supabase push/pull sync."
     },
     {
-      "path": "src/services/dashboardService.ts",
-      "description": "Dashboard metrics and financial calculations."
+      "path": "src/services/sync/categorySync.ts",
+      "description": "Category-specific Supabase push/pull sync."
     },
     {
-      "path": "src/services/reportService.ts",
-      "description": "Service layer for report data retrieval."
+      "path": "src/services/sync/goalSync.ts",
+      "description": "Goal-specific Supabase push/pull sync."
+    },
+    {
+      "path": "src/services/sync/groupSync.ts",
+      "description": "Transaction group Supabase push/pull sync."
+    },
+    {
+      "path": "src/services/sync/payeeSync.ts",
+      "description": "Payee-specific Supabase push/pull sync."
+    },
+    {
+      "path": "src/services/sync/quickTransactionSync.ts",
+      "description": "Quick transaction Supabase push/pull sync."
     },
     {
       "path": "src/hooks/useDashboardData.ts",
@@ -116,25 +192,85 @@
       "description": "Manages dashboard sync state and manual/initial sync actions."
     },
     {
-      "path": "src/db/groupQueries.ts",
-      "description": "Transaction group database queries (fetching, inserting, updating priorities, and deletions)."
+      "path": "src/hooks/useTransactionFilters.ts",
+      "description": "Transaction list state management including search, category/payee/group/date filters, stats modal, and filter data loading."
     },
     {
-      "path": "src/services/groupService.ts",
-      "description": "Service orchestration for transaction groups, including local CRUD, sorting, and Supabase synchronization."
+      "path": "src/hooks/useTransactionSync.ts",
+      "description": "Transaction sync state with auto-sync on focus and manual sync."
+    },
+    {
+      "path": "src/hooks/useTransactions.ts",
+      "description": "Transaction list data loading hook."
+    },
+    {
+      "path": "src/hooks/useReports.ts",
+      "description": "Report monthly summary, by-category, and by-payee data loading."
+    },
+    {
+      "path": "src/hooks/useReportData.ts",
+      "description": "Extended report data hook for detailed report screens."
+    },
+    {
+      "path": "src/hooks/useAppSettings.ts",
+      "description": "App settings state (biometrics, notifications, pay day, daily limit, etc.)."
+    },
+    {
+      "path": "src/hooks/useBiometrics.ts",
+      "description": "Biometric authentication hook."
+    },
+    {
+      "path": "src/hooks/useAsyncOperation.ts",
+      "description": "Generic async operation wrapper with loading/error state."
+    },
+    {
+      "path": "src/hooks/useTransactionDateTime.ts",
+      "description": "Transaction date/time picker state helper."
     },
     {
       "path": "src/screens/GroupsScreen.tsx",
       "description": "Transaction groups listing, reordering, creation, and details screen."
+    },
+    {
+      "path": "src/screens/TransactionsScreen.tsx",
+      "description": "Transaction list with search, filters, and sync."
+    },
+    {
+      "path": "src/screens/AddTransactionScreen.tsx",
+      "description": "Add/edit transaction form."
+    },
+    {
+      "path": "src/screens/CategoriesScreen.tsx",
+      "description": "Category list management screen."
+    },
+    {
+      "path": "src/screens/PayeesScreen.tsx",
+      "description": "Payee list management screen."
+    },
+    {
+      "path": "src/screens/QuickTransactionsScreen.tsx",
+      "description": "Quick transaction presets management screen."
+    },
+    {
+      "path": "src/screens/AddQuickTransactionScreen.tsx",
+      "description": "Add/edit quick transaction form screen."
+    },
+    {
+      "path": "src/screens/CalendarViewScreen.tsx",
+      "description": "Calendar-based transaction view screen."
+    },
+    {
+      "path": "src/screens/DailyLimitDetailScreen.tsx",
+      "description": "Daily spending limit detail view screen."
     }
   ],
   "architecture": {
-    "src/screens": "Top-level screens for dashboard, transactions, budgets, goals, reports, settings, auth, and setup flows.",
-    "src/components": "Reusable UI components grouped by feature plus shared common components.",
+    "src/screens": "Top-level screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.",
+    "src/components": "Reusable UI components grouped by feature (budgets, calendar, categories, common, dashboard, goals, payees, reports, transactions) plus legacy root-level shared components.",
     "src/navigation": "React Navigation stack/tab setup and route typing.",
     "src/store": "React contexts for auth, theme, and toast state.",
-    "src/db": "SQLite database initialization and query modules.",
-    "src/services": "Business/data services plus Supabase sync orchestration.",
+    "src/db": "SQLite database initialization and query modules. queries.ts is a barrel re-export; entity-specific logic lives in dedicated files (metaQueries, transactionQueries, quickTransactionQueries, etc.).",
+    "src/services": "Business/data services plus Supabase sync orchestration. src/services/sync contains per-entity sync modules.",
     "src/hooks": "Feature and screen hooks for data loading, filtering, sync, and settings.",
     "src/models": "Shared TypeScript data interfaces.",
     "src/utils": "Date, formatting, validation, mapping, timestamp, and logging helpers.",
@@ -176,6 +312,7 @@
       "files": [
         "src/services/transactionService.ts",
         "src/db/transactionQueries.ts",
+        "src/hooks/useTransactionFilters.ts",
         "src/hooks/useTransactions.ts",
         "src/screens/TransactionsScreen.tsx"
       ]
@@ -195,6 +332,7 @@
       "files": [
         "src/db/groupQueries.ts",
         "src/services/groupService.ts",
+        "src/services/sync/groupSync.ts",
         "src/screens/GroupsScreen.tsx"
       ]
     },
@@ -204,7 +342,30 @@
         "src/db/reportQueries.ts",
         "src/services/reportService.ts",
         "src/hooks/useReports.ts",
+        "src/hooks/useReportData.ts",
         "src/screens/reports"
+      ]
+    },
+    {
+      "task": "Change categories or payees",
+      "files": [
+        "src/db/metaQueries.ts",
+        "src/services/categoryService.ts",
+        "src/services/payeeService.ts",
+        "src/services/sync/categorySync.ts",
+        "src/services/sync/payeeSync.ts",
+        "src/screens/CategoriesScreen.tsx",
+        "src/screens/PayeesScreen.tsx"
+      ]
+    },
+    {
+      "task": "Change quick transactions",
+      "files": [
+        "src/db/quickTransactionQueries.ts",
+        "src/services/quickTransactionService.ts",
+        "src/services/sync/quickTransactionSync.ts",
+        "src/screens/QuickTransactionsScreen.tsx",
+        "src/screens/AddQuickTransactionScreen.tsx"
       ]
     },
     {
