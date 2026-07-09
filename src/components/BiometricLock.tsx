@@ -6,6 +6,7 @@ import Icon from '@expo/vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { common } from '../styles/common';
 import { logger } from '../utils/logger';
+import { triggerSuccess, triggerError } from '../utils/haptics';
 
 interface BiometricLockProps {
   onUnlock: () => void;
@@ -27,11 +28,14 @@ export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
       });
 
       if (result.success) {
+        triggerSuccess();
         onUnlock();
       } else {
+        triggerError();
         setError('Authentication failed');
       }
     } catch (e) {
+      triggerError();
       setError('An error occurred during authentication');
       logger.error(e);
     } finally {

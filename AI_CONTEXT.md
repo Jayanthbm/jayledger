@@ -8,17 +8,17 @@
 ## Tech Stack
 
 - TypeScript, React 19, React Native 0.86, Expo 57
-- React Navigation native stack, bottom tabs, and material top tabs
+- Expo Router file-system routing with native stack and bottom tab layouts
 - Expo SQLite for local persistence
 - Supabase JS for authentication and remote sync
-- AsyncStorage, Expo Local Authentication, Expo Location, Expo Notifications
+- AsyncStorage, Expo Local Authentication, Expo Location, Expo Notifications, Expo Haptics
 - Jest, ts-jest, React Native Testing Library, ESLint, Prettier, Husky
 
 ## Architecture Overview
 
-- `src/screens`: Top-level app screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.
+- `app/`: File-system routes representing top-level app screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.
 - `src/components`: Reusable UI components grouped by feature area (`budgets`, `calendar`, `categories`, `common`, `dashboard`, `goals`, `payees`, `reports`, `transactions`) plus legacy root-level shared components.
-- `src/navigation`: Stack/tab navigation definitions and typed route params.
+- `src/navigation`: Typed route types and navigation definitions.
 - `src/store`: React contexts for auth, theme, and toast state.
 - `src/db`: SQLite database initialization plus query modules for all entities and reports. `queries.ts` is the barrel re-export; entity-specific logic lives in dedicated query files.
 - `src/services`: Business/data services and Supabase sync orchestration. `src/services/sync` contains per-entity sync modules.
@@ -34,10 +34,9 @@
 
 ## Key Entry Points
 
-- `index.ts`: Registers the root Expo component.
-- `App.tsx`: Initializes SQLite, handles biometric lock, and mounts providers plus navigation.
-- `src/navigation/AppNavigator.tsx`: Auth-aware root stack navigator and modal/report routes.
-- `src/navigation/MainTabs.tsx`: Main authenticated bottom-tab navigation.
+- `app/_layout.tsx`: Root layout component initializing SQLite, handling biometric lock, and mounting providers/stacks.
+- `app/index.tsx`: Session checking loader and root path router redirect.
+- `app/(tabs)/_layout.tsx` & `app/(auth)/_layout.tsx`: Layout structures for bottom tabs and authentication screens.
 - `src/db/database.ts`: Opens SQLite database, creates tables, runs migrations, and creates indexes.
 - `src/services/supabase.ts`: Creates the Supabase client and configures persisted auth sessions.
 - `src/services/syncService.ts`: Coordinates full sync and entity-level push/pull operations.
@@ -54,6 +53,7 @@
 - `src/store/AuthContext.tsx`: Supabase session state and sign-in/sign-out behavior.
 - `src/store/ThemeContext.tsx`: Light/dark theme colors persisted in AsyncStorage.
 - `src/store/ToastContext.tsx`: Global toast state.
+- `src/utils/haptics.ts`: Helper utility wrapper for `expo-haptics` that checks settings preferences before vibrating.
 
 ### Database (src/db)
 
@@ -105,28 +105,27 @@
 
 ### Navigation (src/navigation)
 
-- `src/navigation/AppNavigator.tsx`: Auth-aware root stack navigator for login, main app, modals, and reports.
-- `src/navigation/MainTabs.tsx`: Authenticated bottom-tab navigator for dashboard, transactions, budgets, goals, reports, and settings.
 - `src/navigation/navigationTypes.ts`: Typed route names and params for navigation.
 
-### Screens (src/screens)
+### Screens (app/)
 
-- `src/screens/DashboardScreen.tsx`: Main dashboard screen.
-- `src/screens/TransactionsScreen.tsx`: Transaction list with search, filters, and sync.
-- `src/screens/AddTransactionScreen.tsx`: Add/edit transaction form.
-- `src/screens/BudgetsScreen.tsx`: Budget list and management.
-- `src/screens/GoalsScreen.tsx`: Goals list and management.
-- `src/screens/ReportsScreen.tsx`: Reports entry screen.
-- `src/screens/GroupsScreen.tsx`: Transaction groups listing, reordering, creation, and details.
-- `src/screens/CategoriesScreen.tsx`: Category list management.
-- `src/screens/PayeesScreen.tsx`: Payee list management.
-- `src/screens/QuickTransactionsScreen.tsx`: Quick transaction presets management.
-- `src/screens/AddQuickTransactionScreen.tsx`: Add/edit quick transaction form.
-- `src/screens/CalendarViewScreen.tsx`: Calendar-based transaction view.
-- `src/screens/SettingsScreen.tsx`: App settings screen.
-- `src/screens/LoginScreen.tsx`: Authentication screen.
-- `src/screens/DailyLimitDetailScreen.tsx`: Daily spending limit detail view.
-- `src/screens/reports/`: Sub-screens for Category, Payee, Group, Monthly, Yearly, Living Costs, and Subscription report types.
+- `app/index.tsx`: Session checking loader and initial root redirect screen.
+- `app/(auth)/login.tsx`: User login and authentication screen.
+- `app/(tabs)/dashboard.tsx`: Main financial overview dashboard.
+- `app/(tabs)/transactions.tsx`: Transaction list with search, filters, and sync.
+- `app/(tabs)/budgets.tsx`: Budget list and management.
+- `app/(tabs)/goals.tsx`: Goals list and management.
+- `app/(tabs)/reports.tsx`: Reports selection screen.
+- `app/(tabs)/settings.tsx`: App settings (biometrics, notifications, etc.).
+- `app/add-transaction.tsx`: Modal sheet to create/edit transactions.
+- `app/add-quick-transaction.tsx`: Modal sheet to create/edit quick transaction presets.
+- `app/calendar-view.tsx`: Calendar-based transaction view.
+- `app/categories.tsx`: Category management.
+- `app/payees.tsx`: Payee management.
+- `app/groups.tsx`: Transaction group listing, creation, and reordering.
+- `app/quick-transactions.tsx`: Quick transaction presets management.
+- `app/daily-limit-detail.tsx`: Daily spending limit detail view.
+- `app/reports/`: Sub-screens for Category, Payee, Group, Monthly, Yearly, Living Costs, and Subscription report sheets.
 
 ## Agent Working Rules
 
@@ -144,17 +143,17 @@
 
 ## Common Tasks Guide
 
-- Add or modify a screen: edit `src/screens`, wire routes in `src/navigation/AppNavigator.tsx` or `src/navigation/MainTabs.tsx`, and update `src/navigation/navigationTypes.ts`.
+- Add or modify a screen: place it inside the `app/` folder, map any layouts, and update `src/navigation/navigationTypes.ts`.
 - Add reusable UI: place feature components under `src/components/<feature>` or shared primitives under `src/components/common`.
 - Change transaction behavior: start with `src/services/transactionService.ts`, `src/db/transactionQueries.ts`, `src/hooks/useTransactionFilters.ts`, `src/hooks/useTransactions.ts`, and transaction screens/components.
-- Change transaction groups behavior: use `src/db/groupQueries.ts`, `src/services/groupService.ts`, `src/services/sync/groupSync.ts`, and `src/screens/GroupsScreen.tsx`.
-- Change dashboard behavior: use `src/services/dashboardService.ts`, `src/hooks/useDashboardData.ts`, `src/hooks/useDashboardSync.ts`, and dashboard components.
-- Change reports: use `src/db/reportQueries.ts`, `src/services/reportService.ts`, `src/hooks/useReports.ts`, `src/hooks/useReportData.ts`, and `src/screens/reports`.
-- Change categories or payees: use `src/db/metaQueries.ts`, `src/services/categoryService.ts` or `src/services/payeeService.ts`, and the relevant sync module in `src/services/sync`.
-- Change quick transactions: use `src/db/quickTransactionQueries.ts`, `src/services/quickTransactionService.ts`, `src/services/sync/quickTransactionSync.ts`, and related screens.
+- Change transaction groups behavior: use `src/db/groupQueries.ts`, `src/services/groupService.ts`, `src/services/sync/groupSync.ts`, and `app/groups.tsx`.
+- Change dashboard behavior: use `src/services/dashboardService.ts`, `src/hooks/useDashboardData.ts`, `src/hooks/useDashboardSync.ts`, and `app/(tabs)/dashboard.tsx`.
+- Change reports: use `src/db/reportQueries.ts`, `src/services/reportService.ts`, `src/hooks/useReports.ts`, `src/hooks/useReportData.ts`, and routes under `app/reports/`.
+- Change categories or payees: use `src/db/metaQueries.ts`, `src/services/categoryService.ts` or `src/services/payeeService.ts`, sync modules, and screens in `app/categories.tsx` or `app/payees.tsx`.
+- Change quick transactions: use `src/db/quickTransactionQueries.ts`, `src/services/quickTransactionService.ts`, sync modules, and screens `app/quick-transactions.tsx` or `app/add-quick-transaction.tsx`.
 - Change local schema: update `src/db/database.ts`, related query modules, `src/models/types.ts`, and SQLite tests.
 - Change sync behavior: update `src/services/syncService.ts` and the relevant file in `src/services/sync`.
-- Change authentication: update `src/store/AuthContext.tsx`, `src/services/supabase.ts`, and `src/screens/LoginScreen.tsx`.
+- Change authentication: update `src/store/AuthContext.tsx`, `src/services/supabase.ts`, and `app/(auth)/login.tsx`.
 - Change app theme/styles: use `src/store/ThemeContext.tsx` and shared files in `src/styles`.
 - Run validation: use `npm test` for Jest tests and `npm run lint` for linting.
 
@@ -179,5 +178,5 @@
 - `transactions`, `budgets`, `goals`, `quick_transactions`, and `transaction_groups` use soft-delete columns; sync code depends on `sync_status`.
 - `src/db/queries.ts` is a barrel re-export; all entity-specific queries live in their dedicated files (`metaQueries.ts`, `transactionQueries.ts`, `quickTransactionQueries.ts`, etc.).
 - App boot waits for `initDB()` before rendering navigation.
-- The root navigator shows `LoginScreen` when no Supabase session exists and authenticated stacks otherwise.
+- Root navigation redirects dynamically based on authentication state from `RootLayoutNav` in `app/_layout.tsx`.
 - Query code mixes parameterized SQL and constructed SQL; preserve existing behavior but prefer parameterized queries for new code.

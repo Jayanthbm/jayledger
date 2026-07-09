@@ -18,6 +18,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from 'expo-router/react-navigation';
 import { SearchBar } from '@/components/SearchBar';
 import { useToast } from '@/store/ToastContext';
+import { triggerSelection } from '@/utils/haptics';
 import { getRelativeTime } from '@/utils/dateUtils';
 import { BottomSheet } from '@/components/BottomSheet';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
@@ -134,6 +135,7 @@ export default function GroupsScreen() {
   };
 
   const toggleReorderMode = () => {
+    triggerSelection();
     if (isReordering && user?.id) {
       backgroundPushGroups(user.id);
     }
@@ -146,6 +148,7 @@ export default function GroupsScreen() {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newData.length) return;
 
+    triggerSelection();
     [newData[index], newData[targetIndex]] = [newData[targetIndex], newData[index]];
 
     const updatedItems = newData.map((item, i) => ({ ...item, priority: i + 1 }));

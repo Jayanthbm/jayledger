@@ -5,19 +5,20 @@
     "React 19.2",
     "React Native 0.86",
     "Expo 57",
-    "React Navigation",
+    "Expo Router",
     "Expo SQLite",
     "Supabase",
     "AsyncStorage",
     "Jest",
     "ESLint",
-    "Prettier"
+    "Prettier",
+    "Expo Haptics"
   ],
   "entry_points": [
-    "index.ts",
-    "App.tsx",
-    "src/navigation/AppNavigator.tsx",
-    "src/navigation/MainTabs.tsx",
+    "app/_layout.tsx",
+    "app/index.tsx",
+    "app/(tabs)/_layout.tsx",
+    "app/(auth)/_layout.tsx",
     "src/db/database.ts",
     "src/services/supabase.ts",
     "src/services/syncService.ts"
@@ -32,20 +33,20 @@
       "description": "Expo app metadata, native IDs, plugins, EAS project, and updates config."
     },
     {
-      "path": "App.tsx",
-      "description": "Initializes SQLite, handles biometric lock, and mounts providers/navigation."
+      "path": "app/_layout.tsx",
+      "description": "Root layout component initializing SQLite, handling biometric lock, and mounting providers/stacks."
     },
     {
-      "path": "index.ts",
-      "description": "Registers the Expo root component."
+      "path": "app/index.tsx",
+      "description": "Session checking loader and initial root redirect screen."
     },
     {
-      "path": "src/navigation/AppNavigator.tsx",
-      "description": "Auth-aware root stack navigator for login, main app, modals, and reports."
+      "path": "app/(tabs)/_layout.tsx",
+      "description": "Tab navigator layout structure."
     },
     {
-      "path": "src/navigation/MainTabs.tsx",
-      "description": "Authenticated bottom-tab navigator for dashboard, transactions, budgets, goals, reports, and settings."
+      "path": "app/(auth)/_layout.tsx",
+      "description": "Auth navigator layout structure."
     },
     {
       "path": "src/navigation/navigationTypes.ts",
@@ -57,7 +58,7 @@
     },
     {
       "path": "src/store/AuthContext.tsx",
-      "description": "Supabase session state plus sign-in, sign-out, and post-login sync."
+      "description": "Supabase session state plus sign-in and sign-out behaviors."
     },
     {
       "path": "src/store/ThemeContext.tsx",
@@ -66,6 +67,10 @@
     {
       "path": "src/store/ToastContext.tsx",
       "description": "Global toast notification state and helpers."
+    },
+    {
+      "path": "src/utils/haptics.ts",
+      "description": "Tactile haptic utility wrapper that manages user preferences for vibrations and coordinates calls to expo-haptics."
     },
     {
       "path": "src/db/database.ts",
@@ -228,46 +233,46 @@
       "description": "Transaction date/time picker state helper."
     },
     {
-      "path": "src/screens/GroupsScreen.tsx",
-      "description": "Transaction groups listing, reordering, creation, and details screen."
+      "path": "app/groups.tsx",
+      "description": "Transaction groups listing, creation, and details screen."
     },
     {
-      "path": "src/screens/TransactionsScreen.tsx",
-      "description": "Transaction list with search, filters, and sync."
+      "path": "app/(tabs)/transactions.tsx",
+      "description": "Transaction list screen with search, filters, and sync."
     },
     {
-      "path": "src/screens/AddTransactionScreen.tsx",
-      "description": "Add/edit transaction form."
+      "path": "app/add-transaction.tsx",
+      "description": "Add/edit transaction modal form."
     },
     {
-      "path": "src/screens/CategoriesScreen.tsx",
+      "path": "app/categories.tsx",
       "description": "Category list management screen."
     },
     {
-      "path": "src/screens/PayeesScreen.tsx",
+      "path": "app/payees.tsx",
       "description": "Payee list management screen."
     },
     {
-      "path": "src/screens/QuickTransactionsScreen.tsx",
+      "path": "app/quick-transactions.tsx",
       "description": "Quick transaction presets management screen."
     },
     {
-      "path": "src/screens/AddQuickTransactionScreen.tsx",
-      "description": "Add/edit quick transaction form screen."
+      "path": "app/add-quick-transaction.tsx",
+      "description": "Add/edit quick transaction modal form screen."
     },
     {
-      "path": "src/screens/CalendarViewScreen.tsx",
+      "path": "app/calendar-view.tsx",
       "description": "Calendar-based transaction view screen."
     },
     {
-      "path": "src/screens/DailyLimitDetailScreen.tsx",
+      "path": "app/daily-limit-detail.tsx",
       "description": "Daily spending limit detail view screen."
     }
   ],
   "architecture": {
-    "src/screens": "Top-level screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.",
+    "app": "File-system routes representing top-level screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.",
     "src/components": "Reusable UI components grouped by feature (budgets, calendar, categories, common, dashboard, goals, payees, reports, transactions) plus legacy root-level shared components.",
-    "src/navigation": "React Navigation stack/tab setup and route typing.",
+    "src/navigation": "Typed route types and navigation definitions.",
     "src/store": "React contexts for auth, theme, and toast state.",
     "src/db": "SQLite database initialization and query modules. queries.ts is a barrel re-export; entity-specific logic lives in dedicated files (metaQueries, transactionQueries, quickTransactionQueries, etc.).",
     "src/services": "Business/data services plus Supabase sync orchestration. src/services/sync contains per-entity sync modules.",
@@ -296,12 +301,7 @@
   "common_tasks": [
     {
       "task": "Add or modify a screen",
-      "files": [
-        "src/screens",
-        "src/navigation/AppNavigator.tsx",
-        "src/navigation/MainTabs.tsx",
-        "src/navigation/navigationTypes.ts"
-      ]
+      "files": ["app", "src/navigation/navigationTypes.ts"]
     },
     {
       "task": "Add reusable UI",
@@ -314,7 +314,7 @@
         "src/db/transactionQueries.ts",
         "src/hooks/useTransactionFilters.ts",
         "src/hooks/useTransactions.ts",
-        "src/screens/TransactionsScreen.tsx"
+        "app/(tabs)/transactions.tsx"
       ]
     },
     {
@@ -324,7 +324,7 @@
         "src/hooks/useDashboardData.ts",
         "src/hooks/useDashboardSync.ts",
         "src/components/dashboard",
-        "src/screens/DashboardScreen.tsx"
+        "app/(tabs)/dashboard.tsx"
       ]
     },
     {
@@ -333,7 +333,7 @@
         "src/db/groupQueries.ts",
         "src/services/groupService.ts",
         "src/services/sync/groupSync.ts",
-        "src/screens/GroupsScreen.tsx"
+        "app/groups.tsx"
       ]
     },
     {
@@ -343,7 +343,7 @@
         "src/services/reportService.ts",
         "src/hooks/useReports.ts",
         "src/hooks/useReportData.ts",
-        "src/screens/reports"
+        "app/reports"
       ]
     },
     {
@@ -354,8 +354,8 @@
         "src/services/payeeService.ts",
         "src/services/sync/categorySync.ts",
         "src/services/sync/payeeSync.ts",
-        "src/screens/CategoriesScreen.tsx",
-        "src/screens/PayeesScreen.tsx"
+        "app/categories.tsx",
+        "app/payees.tsx"
       ]
     },
     {
@@ -364,8 +364,8 @@
         "src/db/quickTransactionQueries.ts",
         "src/services/quickTransactionService.ts",
         "src/services/sync/quickTransactionSync.ts",
-        "src/screens/QuickTransactionsScreen.tsx",
-        "src/screens/AddQuickTransactionScreen.tsx"
+        "app/quick-transactions.tsx",
+        "app/add-quick-transaction.tsx"
       ]
     },
     {
@@ -378,11 +378,7 @@
     },
     {
       "task": "Change authentication",
-      "files": [
-        "src/store/AuthContext.tsx",
-        "src/services/supabase.ts",
-        "src/screens/LoginScreen.tsx"
-      ]
+      "files": ["src/store/AuthContext.tsx", "src/services/supabase.ts", "app/(auth)/login.tsx"]
     },
     {
       "task": "Change app theme/styles",

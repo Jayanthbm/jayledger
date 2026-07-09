@@ -14,6 +14,7 @@ import {
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { useToast } from '@/store/ToastContext';
+import { triggerSuccess } from '@/utils/haptics';
 import {
   getCategories,
   getPayees,
@@ -22,9 +23,7 @@ import {
 } from '@/db/queries';
 import { BottomSheet } from '@/components/BottomSheet';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { useNavigation, useRoute, RouteProp } from 'expo-router/react-navigation';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useNavigation, useRoute } from 'expo-router/react-navigation';
 import { Category, Payee, QuickTransaction } from '@/models/types';
 import { generateUUID } from '@/utils/commonUtils';
 import { validateAmount } from '@/utils/validators';
@@ -36,8 +35,8 @@ import { logger } from '@/utils/logger';
 export default function AddQuickTransactionScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'add-quick-transaction'>>();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const editQt = route.params?.quickTransaction as QuickTransaction | undefined;
   const { showToast } = useToast();
 
@@ -137,6 +136,8 @@ export default function AddQuickTransactionScreen() {
       } else {
         await insertQuickTransaction(qt);
       }
+
+      triggerSuccess();
 
       DeviceEventEmitter.emit('module_refreshed', { module: 'Transactions' });
       DeviceEventEmitter.emit('module_refreshed', { module: 'Dashboard' });

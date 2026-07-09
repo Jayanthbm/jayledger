@@ -20,6 +20,7 @@ import { SettingRow } from '@/components/common/SettingRow';
 import { useBiometrics } from '@/hooks/useBiometrics';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { loadHapticsSetting, setHapticsEnabled, triggerSelection } from '@/utils/haptics';
 
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
@@ -47,6 +48,23 @@ export default function SettingsScreen() {
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [resetModalVisible, setResetModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [hapticsEnabled, setHapticsEnabledState] = useState(true);
+
+  useEffect(() => {
+    const initHaptics = async () => {
+      const enabled = await loadHapticsSetting();
+      setHapticsEnabledState(enabled);
+    };
+    initHaptics();
+  }, []);
+
+  const handleHapticsToggle = async (val: boolean) => {
+    setHapticsEnabledState(val);
+    await setHapticsEnabled(val);
+    if (val) {
+      triggerSelection();
+    }
+  };
 
   useEffect(() => {
     loadSettingsData();
@@ -60,8 +78,10 @@ export default function SettingsScreen() {
   }, [navigation]);
 
   const setAppTheme = (mode: 'Light' | 'Dark') => {
-    if (mode === 'Light' && isDark) toggleTheme();
-    if (mode === 'Dark' && !isDark) toggleTheme();
+    if ((mode === 'Light' && isDark) || (mode === 'Dark' && !isDark)) {
+      triggerSelection();
+      toggleTheme();
+    }
   };
 
   const formatTime = (timeStr: string) => {
@@ -75,6 +95,7 @@ export default function SettingsScreen() {
   const onTimeSelect = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowTimePicker(false);
     if (selectedDate) {
+      triggerSelection();
       const h = selectedDate.getHours().toString().padStart(2, '0');
       const m = selectedDate.getMinutes().toString().padStart(2, '0');
       handleNotificationChange(`${h}:${m}`);
@@ -170,6 +191,24 @@ export default function SettingsScreen() {
                 onValueChange={handleBiometricToggle}
                 trackColor={{ false: colors.border, true: colors.primary + '80' }}
                 thumbColor={biometricsEnabled ? colors.primary : '#f4f3f4'}
+              />
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.settingRow}>
+              <View style={[styles.iconBox, { backgroundColor: colors.primary + '15' }]}>
+                <Icon name="vibration" size={22} color={colors.primary} />
+              </View>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingTitle, { color: colors.text }]}>Haptic Feedback</Text>
+                <Text style={[styles.settingValue, { color: colors.textSecondary }]}>
+                  Tactile feedback for button clicks and actions
+                </Text>
+              </View>
+              <Switch
+                value={hapticsEnabled}
+                onValueChange={handleHapticsToggle}
+                trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                thumbColor={hapticsEnabled ? colors.primary : '#f4f3f4'}
               />
             </View>
           </View>
