@@ -4,9 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useRouter, useNavigation } from 'expo-router';
-import { useAuth } from '@/store/AuthContext';
-import { syncTransactions } from '@/services/syncService';
-import { ActivityIndicator } from 'react-native';
 import { common } from '@/styles/common';
 import { logger } from '@/utils/logger';
 
@@ -95,11 +92,9 @@ const reportsList = [
 
 export default function ReportsScreen() {
   const { colors } = useTheme();
-  const { session } = useAuth();
   const navigation = useNavigation();
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [isSyncing, setIsSyncing] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   const scrollToTop = useCallback(() => {
@@ -117,18 +112,6 @@ export default function ReportsScreen() {
     }
   }, []);
 
-  const handleManualSync = useCallback(async () => {
-    if (!session?.user?.id || isSyncing) return;
-    setIsSyncing(true);
-    try {
-      await syncTransactions(session.user.id, true);
-    } catch (e) {
-      logger.error('Manual sync error:', e);
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [session, isSyncing]);
-
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
@@ -141,22 +124,8 @@ export default function ReportsScreen() {
         </TouchableOpacity>
       ),
       headerTitleAlign: 'left',
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={handleManualSync}
-          style={common.headerRightBtn}
-          disabled={isSyncing}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        >
-          {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Icon name="refresh" size={24} color={colors.text} />
-          )}
-        </TouchableOpacity>
-      ),
     });
-  }, [navigation, isSyncing, colors.text, colors.primary, handleManualSync, scrollToTop]);
+  }, [navigation, colors.text, scrollToTop]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

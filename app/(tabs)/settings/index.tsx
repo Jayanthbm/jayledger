@@ -73,6 +73,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     navigation.setOptions({
+      title: 'Settings',
       headerTitleAlign: 'left',
     });
   }, [navigation]);
@@ -116,7 +117,12 @@ export default function SettingsScreen() {
           >
             <View style={styles.themeSelector}>
               <TouchableOpacity
-                style={[styles.themeOption, !isDark && { backgroundColor: colors.primary + '15' }]}
+                style={[
+                  styles.themeOption,
+                  !isDark && {
+                    backgroundColor: isDark ? colors.primary + '15' : colors.primary + '20',
+                  },
+                ]}
                 onPress={() => setAppTheme('Light')}
               >
                 <Icon
@@ -127,14 +133,19 @@ export default function SettingsScreen() {
                 <Text
                   style={[
                     styles.themeOptionText,
-                    { color: !isDark ? colors.text : colors.textSecondary },
+                    { color: !isDark ? colors.primary : colors.textSecondary },
                   ]}
                 >
                   Light
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.themeOption, isDark && { backgroundColor: colors.primary + '15' }]}
+                style={[
+                  styles.themeOption,
+                  isDark && {
+                    backgroundColor: isDark ? colors.primary + '15' : colors.primary + '20',
+                  },
+                ]}
                 onPress={() => setAppTheme('Dark')}
               >
                 <Icon
@@ -145,7 +156,7 @@ export default function SettingsScreen() {
                 <Text
                   style={[
                     styles.themeOptionText,
-                    { color: isDark ? colors.text : colors.textSecondary },
+                    { color: isDark ? colors.primary : colors.textSecondary },
                   ]}
                 >
                   Dark
@@ -218,6 +229,13 @@ export default function SettingsScreen() {
           <View
             style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.border }]}
           >
+            <SettingRow
+              icon="flag"
+              title="Goals"
+              value="Manage Savings Goals"
+              onPress={() => router.push('/goals')}
+            />
+            <View style={styles.divider} />
             <SettingRow
               icon="category"
               title="Categories"

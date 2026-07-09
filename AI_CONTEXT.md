@@ -35,7 +35,8 @@
 
 - `app/_layout.tsx`: Root layout component initializing SQLite, handling biometric lock, and mounting providers/stacks.
 - `app/index.tsx`: Session checking loader and root path router redirect.
-- `app/(tabs)/_layout.tsx` & `app/(auth)/_layout.tsx`: Layout structures for bottom tabs and authentication screens.
+- `app/(tabs)/_layout.tsx`: NativeTabs bottom navigator layout structure.
+- `app/(auth)/_layout.tsx`: Auth navigator layout structure.
 - `src/db/database.ts`: Opens SQLite database, creates tables, runs migrations, and creates indexes.
 - `src/services/supabase.ts`: Creates the Supabase client and configures persisted auth sessions.
 - `src/services/syncService.ts`: Coordinates full sync and entity-level push/pull operations.
@@ -44,10 +45,10 @@
 
 - `package.json`: Scripts, dependencies, Jest config, and lint-staged setup.
 - `app.json`: Expo app metadata, native package IDs, plugins, EAS project, and updates config.
-- `tsconfig.json`: Strict TypeScript configuration based on Expo defaults.
-- `eslint.config.js`: ESLint flat config for TypeScript, React, React Native, hooks, and unused imports.
-- `babel.config.js`: Expo Babel configuration.
-- `jest-setup.ts`: Jest environment setup.
+- `app/_layout.tsx`: Root layout component initializing SQLite, handling biometric lock, and mounting providers/stacks.
+- `app/index.tsx`: Session checking loader and root path router redirect.
+- `app/(tabs)/_layout.tsx`: NativeTabs bottom navigator layout structure.
+- `app/(auth)/_layout.tsx`: Auth navigator layout structure.
 - `src/models/types.ts`: Core entity interfaces for transactions, budgets, goals, categories, payees, quick transactions, reports, and themes.
 - `src/store/AuthContext.tsx`: Supabase session state and sign-in/sign-out behavior.
 - `src/store/ThemeContext.tsx`: Light/dark theme colors persisted in AsyncStorage.
@@ -106,12 +107,12 @@
 
 - `app/index.tsx`: Session checking loader and initial root redirect screen.
 - `app/(auth)/login.tsx`: User login and authentication screen.
-- `app/(tabs)/dashboard.tsx`: Main financial overview dashboard.
-- `app/(tabs)/transactions.tsx`: Transaction list with search, filters, and sync.
-- `app/(tabs)/budgets.tsx`: Budget list and management.
-- `app/(tabs)/goals.tsx`: Goals list and management.
-- `app/(tabs)/reports.tsx`: Reports selection screen.
-- `app/(tabs)/settings.tsx`: App settings (biometrics, notifications, etc.).
+- `app/(tabs)/dashboard/index.tsx`: Main financial overview dashboard.
+- `app/(tabs)/transactions/index.tsx`: Transaction list with search, filters, and sync.
+- `app/(tabs)/budgets/index.tsx`: Budget list and management.
+- `app/(tabs)/reports/index.tsx`: Reports selection screen.
+- `app/(tabs)/settings/index.tsx`: App settings (biometrics, notifications, etc.).
+- `app/goals.tsx`: Goals list and management (navigated from Settings).
 - `app/add-transaction.tsx`: Modal sheet to create/edit transactions.
 - `app/add-quick-transaction.tsx`: Modal sheet to create/edit quick transaction presets.
 - `app/calendar-view.tsx`: Calendar-based transaction view.
@@ -141,7 +142,7 @@
 - Add reusable UI: place feature components under `src/components/<feature>` or shared primitives under `src/components/common`.
 - Change transaction behavior: start with `src/services/transactionService.ts`, `src/db/transactionQueries.ts`, `src/hooks/useTransactionFilters.ts`, `src/hooks/useTransactions.ts`, and transaction screens/components.
 - Change transaction groups behavior: use `src/db/groupQueries.ts`, `src/services/groupService.ts`, `src/services/sync/groupSync.ts`, and `app/groups.tsx`.
-- Change dashboard behavior: use `src/services/dashboardService.ts`, `src/hooks/useDashboardData.ts`, `src/hooks/useDashboardSync.ts`, and `app/(tabs)/dashboard.tsx`.
+- Change dashboard behavior: use `src/services/dashboardService.ts`, `src/hooks/useDashboardData.ts`, `src/hooks/useDashboardSync.ts`, and `app/(tabs)/dashboard/index.tsx`.
 - Change reports: use `src/db/reportQueries.ts`, `src/services/reportService.ts`, `src/hooks/useReports.ts`, `src/hooks/useReportData.ts`, and routes under `app/reports/`.
 - Change categories or payees: use `src/db/metaQueries.ts`, `src/services/categoryService.ts` or `src/services/payeeService.ts`, sync modules, and screens in `app/categories.tsx` or `app/payees.tsx`.
 - Change quick transactions: use `src/db/quickTransactionQueries.ts`, `src/services/quickTransactionService.ts`, sync modules, and screens `app/quick-transactions.tsx` or `app/add-quick-transaction.tsx`.

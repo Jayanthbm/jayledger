@@ -1,63 +1,90 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { Tabs } from 'expo-router';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useTheme } from '../../src/store/ThemeContext';
-import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+
+  const selectedIconColor = isDark ? '#000000' : colors.primary;
+  const indicatorColor = isDark ? '#FFFFFF' : colors.primary + '18';
+  const selectedLabelColor = isDark ? '#FFFFFF' : colors.primary;
 
   return (
-    <Tabs
-      initialRouteName="dashboard"
+    <NativeTabs
       backBehavior="history"
-      screenOptions={({ route }) => ({
-        headerShown: true,
-        headerStyle: { backgroundColor: colors.card },
-        headerTintColor: colors.text,
-        headerShadowVisible: false,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            backgroundColor: colors.card,
-            borderTopColor: colors.border,
-            height: 84 + (insets.bottom > 0 ? insets.bottom : 0),
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 14,
-          },
-        ],
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarShowLabel: false,
-        tabBarIcon: ({ color, focused }) => {
-          let iconName: keyof typeof Icon.glyphMap = 'help';
-          if (route.name === 'dashboard')
-            iconName = focused ? 'home-variant' : 'home-variant-outline';
-          else if (route.name === 'transactions') iconName = 'swap-vertical';
-          else if (route.name === 'budgets') iconName = focused ? 'wallet' : 'wallet-outline';
-          else if (route.name === 'goals') iconName = focused ? 'bullseye-arrow' : 'bullseye';
-          else if (route.name === 'reports') iconName = focused ? 'chart-box' : 'chart-box-outline';
-          else if (route.name === 'settings') iconName = focused ? 'tune' : 'tune-variant';
-
-          return <Icon name={iconName} size={26} color={color} />;
-        },
-      })}
+      backgroundColor={colors.card}
+      tintColor={colors.primary}
+      iconColor={{
+        default: colors.textSecondary,
+        selected: selectedIconColor,
+      }}
+      labelStyle={{
+        color: colors.textSecondary,
+      }}
     >
-      <Tabs.Screen name="dashboard" options={{ title: 'Dashboard' }} />
-      <Tabs.Screen name="transactions" options={{ title: 'Transactions' }} />
-      <Tabs.Screen name="budgets" options={{ title: 'Budgets' }} />
-      <Tabs.Screen name="goals" options={{ title: 'Goals' }} />
-      <Tabs.Screen name="reports" options={{ title: 'Reports' }} />
-      <Tabs.Screen name="settings" options={{ title: 'settings' }} />
-    </Tabs>
+      <NativeTabs.Trigger
+        name="dashboard"
+        indicatorColor={indicatorColor}
+        rippleColor={colors.primary + '10'}
+      >
+        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
+        <NativeTabs.Trigger.Label selectedStyle={{ color: selectedLabelColor }}>
+          Dashboard
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
+        name="transactions"
+        indicatorColor={indicatorColor}
+        rippleColor={colors.primary + '10'}
+      >
+        <NativeTabs.Trigger.Icon sf="arrow.up.arrow.down" md="swap_vert" />
+        <NativeTabs.Trigger.Label selectedStyle={{ color: selectedLabelColor }}>
+          Transactions
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
+        name="budgets"
+        indicatorColor={indicatorColor}
+        rippleColor={colors.primary + '10'}
+      >
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'wallet.bifold', selected: 'wallet.bifold.fill' }}
+          md="wallet"
+        />
+        <NativeTabs.Trigger.Label selectedStyle={{ color: selectedLabelColor }}>
+          Budgets
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
+        name="reports"
+        indicatorColor={indicatorColor}
+        rippleColor={colors.primary + '10'}
+      >
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'chart.bar', selected: 'chart.bar.fill' }}
+          md="bar_chart"
+        />
+        <NativeTabs.Trigger.Label selectedStyle={{ color: selectedLabelColor }}>
+          Reports
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
+        name="settings"
+        indicatorColor={indicatorColor}
+        rippleColor={colors.primary + '10'}
+      >
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'gearshape', selected: 'gearshape.fill' }}
+          md="tune"
+        />
+        <NativeTabs.Trigger.Label selectedStyle={{ color: selectedLabelColor }}>
+          Settings
+        </NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    paddingTop: 14,
-    borderTopWidth: 1,
-    elevation: 0,
-  },
-});

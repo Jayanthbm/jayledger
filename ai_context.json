@@ -233,7 +233,7 @@
       "description": "Transaction groups listing, creation, and details screen."
     },
     {
-      "path": "app/(tabs)/transactions.tsx",
+      "path": "app/(tabs)/transactions/index.tsx",
       "description": "Transaction list screen with search, filters, and sync."
     },
     {
@@ -308,7 +308,7 @@
         "src/db/transactionQueries.ts",
         "src/hooks/useTransactionFilters.ts",
         "src/hooks/useTransactions.ts",
-        "app/(tabs)/transactions.tsx"
+        "app/(tabs)/transactions/index.tsx"
       ]
     },
     {
@@ -318,7 +318,7 @@
         "src/hooks/useDashboardData.ts",
         "src/hooks/useDashboardSync.ts",
         "src/components/dashboard",
-        "app/(tabs)/dashboard.tsx"
+        "app/(tabs)/dashboard/index.tsx"
       ]
     },
     {
