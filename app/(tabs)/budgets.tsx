@@ -20,7 +20,7 @@ import {
   getMinTransactionDate,
 } from '@/db/queries';
 import { Budget, Transaction, Category } from '@/models/types';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useNavigation } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import {
   format,
@@ -51,7 +51,6 @@ import { BudgetDrillDownModal } from '@/components/budgets/BudgetDrillDownModal'
 import { BudgetAddEditModal } from '@/components/budgets/BudgetAddEditModal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
-import { AppNavigation } from '@/navigation/navigationTypes';
 import { logger } from '@/utils/logger';
 
 const currentYearNum = new Date().getFullYear();
@@ -59,7 +58,7 @@ const currentYearNum = new Date().getFullYear();
 export default function BudgetsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
   const { showToast } = useToast();
 
   const [data, setData] = useState<EnrichedBudget[]>([]);

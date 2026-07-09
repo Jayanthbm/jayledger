@@ -49,10 +49,6 @@
       "description": "Auth navigator layout structure."
     },
     {
-      "path": "src/navigation/navigationTypes.ts",
-      "description": "Typed route names and params for navigation."
-    },
-    {
       "path": "src/models/types.ts",
       "description": "Core TypeScript interfaces for all app entities (transactions, budgets, goals, categories, payees, quick transactions, groups, reports, themes)."
     },
@@ -272,7 +268,6 @@
   "architecture": {
     "app": "File-system routes representing top-level screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.",
     "src/components": "Reusable UI components grouped by feature (budgets, calendar, categories, common, dashboard, goals, payees, reports, transactions) plus legacy root-level shared components.",
-    "src/navigation": "Typed route types and navigation definitions.",
     "src/store": "React contexts for auth, theme, and toast state.",
     "src/db": "SQLite database initialization and query modules. queries.ts is a barrel re-export; entity-specific logic lives in dedicated files (metaQueries, transactionQueries, quickTransactionQueries, etc.).",
     "src/services": "Business/data services plus Supabase sync orchestration. src/services/sync contains per-entity sync modules.",
@@ -295,13 +290,12 @@
     "Keep Supabase sync status and soft-delete fields consistent",
     "Use existing hooks/services before adding new screen-level data logic",
     "Use shared styles from src/styles and theme colors from ThemeContext",
-    "Update navigation types when adding or changing routes",
     "Add or update focused Jest tests for query, service, or utility changes"
   ],
   "common_tasks": [
     {
       "task": "Add or modify a screen",
-      "files": ["app", "src/navigation/navigationTypes.ts"]
+      "files": ["app"]
     },
     {
       "task": "Add reusable UI",

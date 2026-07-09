@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DashboardCard } from './DashboardCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import type { AppNavigation } from '../../navigation/navigationTypes';
+import { useRouter } from 'expo-router';
 
 import { CircularProgress } from '../CircularProgress';
 
@@ -16,12 +16,12 @@ interface DashboardDailyLimitProps {
     remainingToday: number;
     remainingPercentage: number;
   };
-  navigation: AppNavigation;
   colors: ThemeColors;
 }
 
 export const DashboardDailyLimit = React.memo(
-  ({ dailyLimitCalc, navigation, colors }: DashboardDailyLimitProps) => {
+  ({ dailyLimitCalc, colors }: DashboardDailyLimitProps) => {
+    const router = useRouter();
     const { remainingToday, spentToday, remainingPercentage } = dailyLimitCalc;
 
     const progressColor = remainingToday > 0 ? colors.success : colors.danger;
@@ -31,7 +31,7 @@ export const DashboardDailyLimit = React.memo(
         colors={colors}
         title="DAILY LIMIT"
         icon="speed"
-        onPress={() => navigation.navigate('daily-limit-detail')}
+        onPress={() => router.push('/daily-limit-detail')}
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
       >
         <View style={styles.rowBetween}>

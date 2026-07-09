@@ -9,18 +9,19 @@ import {
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
 import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportSummary } from '@/components/reports/ReportSummary';
 import { ReportEmptyState } from '@/components/reports/ReportEmptyState';
 import { common } from '@/styles/common';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'reports/monthly-summary'>;
-
-export default function MonthlySummaryReportScreen({ route, navigation }: Props) {
-  const { title = 'Monthly Summary', reportType = 'monthlySummary' } = route.params || {};
+export default function MonthlySummaryReportScreen() {
+  const navigation = useNavigation();
+  const { title = 'Monthly Summary', reportType = 'monthlySummary' } = useLocalSearchParams<{
+    title: string;
+    reportType: string;
+  }>();
   const { colors } = useTheme();
 
   const report = useReportData({ reportType });

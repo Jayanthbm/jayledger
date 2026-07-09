@@ -13,11 +13,10 @@ import { useAuth } from '@/store/AuthContext';
 import { deleteQuickTransaction, updateQuickTransactionPriorities } from '@/db/queries';
 import { QuickTransaction } from '@/models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation, useFocusEffect } from 'expo-router/react-navigation';
+import { useRouter, useNavigation, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
-import { AppNavigation } from '@/navigation/navigationTypes';
 import { logger } from '@/utils/logger';
 import { QuickTransactionCard } from '@/components/transactions/QuickTransactionCard';
 import { SearchBar } from '@/components/SearchBar';
@@ -34,7 +33,8 @@ export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const { showToast } = useToast();
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
+  const router = useRouter();
 
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
@@ -216,7 +216,10 @@ export default function QuickTransactionsScreen() {
 
   const handleEdit = (item: QuickTransaction) => {
     if (isReordering) return;
-    navigation.navigate('add-quick-transaction', { quickTransaction: item });
+    router.push({
+      pathname: '/add-quick-transaction',
+      params: { quickTransaction: JSON.stringify(item) },
+    });
   };
 
   const renderItem = ({ item, index }: { item: QuickTransaction; index: number }) => {
@@ -372,7 +375,7 @@ export default function QuickTransactionsScreen() {
       />
       {!isReordering && (
         <FloatingActionButton
-          onPress={() => navigation.navigate('add-quick-transaction')}
+          onPress={() => router.push('/add-quick-transaction')}
           iconName="add"
           backgroundColor={colors.primary}
           style={dynamicStyles.fab}

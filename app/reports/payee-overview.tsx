@@ -9,8 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
 import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportSummary } from '@/components/reports/ReportSummary';
@@ -22,10 +21,12 @@ import { SearchBar } from '@/components/SearchBar';
 import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'reports/payee-overview'>;
-
-export default function PayeeOverviewReportScreen({ route, navigation }: Props) {
-  const { title = 'payees', reportType = 'payees' } = route.params || {};
+export default function PayeeOverviewReportScreen() {
+  const navigation = useNavigation();
+  const { title = 'payees', reportType = 'payees' } = useLocalSearchParams<{
+    title: string;
+    reportType: string;
+  }>();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 

@@ -11,8 +11,7 @@ import {
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
 import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportSummary } from '@/components/reports/ReportSummary';
@@ -26,10 +25,13 @@ import { getCategories, toggleCategoryLivingCost } from '@/db/queries';
 import { Category } from '@/models/types';
 
 const { width } = Dimensions.get('window');
-type Props = NativeStackScreenProps<RootStackParamList, 'reports/living-costs'>;
 
-export default function LivingCostsReportScreen({ route, navigation }: Props) {
-  const { title = 'Living Costs', reportType } = route.params;
+export default function LivingCostsReportScreen() {
+  const navigation = useNavigation();
+  const { title = 'Living Costs', reportType } = useLocalSearchParams<{
+    title: string;
+    reportType: string;
+  }>();
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
   const insets = useSafeAreaInsets();

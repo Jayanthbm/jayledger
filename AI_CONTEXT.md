@@ -18,7 +18,6 @@
 
 - `app/`: File-system routes representing top-level app screens for dashboard, transactions, budgets, goals, reports, settings, auth, calendar, categories, payees, quick transactions, and setup flows.
 - `src/components`: Reusable UI components grouped by feature area (`budgets`, `calendar`, `categories`, `common`, `dashboard`, `goals`, `payees`, `reports`, `transactions`) plus legacy root-level shared components.
-- `src/navigation`: Typed route types and navigation definitions.
 - `src/store`: React contexts for auth, theme, and toast state.
 - `src/db`: SQLite database initialization plus query modules for all entities and reports. `queries.ts` is the barrel re-export; entity-specific logic lives in dedicated query files.
 - `src/services`: Business/data services and Supabase sync orchestration. `src/services/sync` contains per-entity sync modules.
@@ -103,10 +102,6 @@
 - `src/hooks/useAsyncOperation.ts`: Generic async operation wrapper with loading/error state.
 - `src/hooks/useTransactionDateTime.ts`: Transaction date/time picker state helper.
 
-### Navigation (src/navigation)
-
-- `src/navigation/navigationTypes.ts`: Typed route names and params for navigation.
-
 ### Screens (app/)
 
 - `app/index.tsx`: Session checking loader and initial root redirect screen.
@@ -138,12 +133,11 @@
   - Keep Supabase sync status and soft-delete fields consistent
   - Use existing hooks/services before adding new screen-level data logic
   - Use shared styles from `src/styles` and theme colors from `ThemeContext`
-  - Update navigation types when adding or changing routes
   - Add or update focused Jest tests for query, service, or utility changes
 
 ## Common Tasks Guide
 
-- Add or modify a screen: place it inside the `app/` folder, map any layouts, and update `src/navigation/navigationTypes.ts`.
+- Add or modify a screen: place it inside the `app/` folder and map any layouts in app/\_layout.tsx.
 - Add reusable UI: place feature components under `src/components/<feature>` or shared primitives under `src/components/common`.
 - Change transaction behavior: start with `src/services/transactionService.ts`, `src/db/transactionQueries.ts`, `src/hooks/useTransactionFilters.ts`, `src/hooks/useTransactions.ts`, and transaction screens/components.
 - Change transaction groups behavior: use `src/db/groupQueries.ts`, `src/services/groupService.ts`, `src/services/sync/groupSync.ts`, and `app/groups.tsx`.

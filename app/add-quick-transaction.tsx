@@ -23,7 +23,7 @@ import {
 } from '@/db/queries';
 import { BottomSheet } from '@/components/BottomSheet';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { useNavigation, useRoute } from 'expo-router/react-navigation';
+import { useNavigation, useLocalSearchParams } from 'expo-router';
 import { Category, Payee, QuickTransaction } from '@/models/types';
 import { generateUUID } from '@/utils/commonUtils';
 import { validateAmount } from '@/utils/validators';
@@ -35,9 +35,15 @@ import { logger } from '@/utils/logger';
 export default function AddQuickTransactionScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const editQt = route.params?.quickTransaction as QuickTransaction | undefined;
+  const navigation = useNavigation();
+  const params = useLocalSearchParams<{ quickTransaction?: string }>();
+  const editQt = React.useMemo(
+    () =>
+      params.quickTransaction
+        ? (JSON.parse(params.quickTransaction) as QuickTransaction)
+        : undefined,
+    [params.quickTransaction],
+  );
   const { showToast } = useToast();
 
   const [name, setName] = useState(editQt?.name || '');

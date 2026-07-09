@@ -9,8 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
 import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportSummary } from '@/components/reports/ReportSummary';
@@ -20,11 +19,10 @@ import { ReportDrillDownModal } from '@/components/reports/ReportDrillDownModal'
 import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'reports/subscription-bills'>;
-
-export default function SubscriptionBillsReportScreen({ route, navigation }: Props) {
+export default function SubscriptionBillsReportScreen() {
+  const navigation = useNavigation();
   const { title = 'Subscription and Bills', reportType = 'subscriptionAndBills' } =
-    route.params || {};
+    useLocalSearchParams<{ title: string; reportType: string }>();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 

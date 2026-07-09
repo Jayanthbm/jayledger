@@ -11,7 +11,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { Payee } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useRouter, useNavigation } from 'expo-router';
 import { SearchBar } from '@/components/SearchBar';
 import { useToast } from '@/store/ToastContext';
 import { getRelativeTime } from '@/utils/dateUtils';
@@ -32,7 +32,6 @@ import { PayeeAddModal } from '@/components/payees/PayeeAddModal';
 import { PayeeSortModal } from '@/components/payees/PayeeSortModal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
-import { AppNavigation } from '@/navigation/navigationTypes';
 import { logger } from '@/utils/logger';
 
 export default function PayeesScreen() {
@@ -40,7 +39,8 @@ export default function PayeesScreen() {
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
+  const router = useRouter();
 
   const [payees, setPayees] = useState<Payee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -366,8 +366,8 @@ export default function PayeesScreen() {
                 viewMode={viewMode}
                 colors={colors}
                 onPress={(p) =>
-                  navigation.navigate('(tabs)', {
-                    screen: 'transactions',
+                  router.push({
+                    pathname: '/(tabs)/transactions',
                     params: { initialSelectedPayees: [p.id] },
                   })
                 }

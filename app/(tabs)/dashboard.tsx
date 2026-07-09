@@ -11,7 +11,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useRouter, useNavigation } from 'expo-router';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
 import { DashboardRemainingCard } from '@/components/dashboard/DashboardRemainingCard';
@@ -22,12 +22,12 @@ import { DashboardTopCategories } from '@/components/dashboard/DashboardTopCateg
 import { DashboardNetWorth } from '@/components/dashboard/DashboardNetWorth';
 import { DashboardSyncModal } from '@/components/dashboard/DashboardSyncModal';
 import { common } from '@/styles/common';
-import { AppNavigation } from '@/navigation/navigationTypes';
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
+  const router = useRouter();
   const scrollRef = useRef<ScrollView>(null);
 
   const scrollToTop = useCallback(() => {
@@ -111,11 +111,7 @@ export default function DashboardScreen() {
       style={[common.screenPadding16, { backgroundColor: colors.background }]}
       showsVerticalScrollIndicator={false}
     >
-      <DashboardDailyLimit
-        dailyLimitCalc={dailyLimitCalc}
-        navigation={navigation}
-        colors={colors}
-      />
+      <DashboardDailyLimit dailyLimitCalc={dailyLimitCalc} colors={colors} />
 
       <DashboardRemainingCard
         monthIncome={metrics.month.income}
@@ -123,17 +119,11 @@ export default function DashboardScreen() {
         colors={colors}
       />
 
-      <DashboardPayDay
-        payDayInfo={payDayInfo}
-        isDark={isDark}
-        navigation={navigation}
-        colors={colors}
-      />
+      <DashboardPayDay payDayInfo={payDayInfo} isDark={isDark} colors={colors} />
 
       <DashboardTopCategories
         topCategories={metrics.topCategories}
         totalExpense={metrics.month.expense}
-        navigation={navigation}
         colors={colors}
       />
 
@@ -145,9 +135,12 @@ export default function DashboardScreen() {
         prevIncome={metrics.prevMonthComp.income}
         prevExpense={metrics.prevMonthComp.expense}
         onPress={() =>
-          navigation.navigate('reports/monthly-summary', {
-            reportType: 'monthlySummary',
-            title: 'Monthly Summary',
+          router.push({
+            pathname: '/reports/monthly-summary',
+            params: {
+              reportType: 'monthlySummary',
+              title: 'Monthly Summary',
+            },
           })
         }
         colors={colors}
@@ -161,9 +154,12 @@ export default function DashboardScreen() {
         prevIncome={metrics.prevYearComp.income}
         prevExpense={metrics.prevYearComp.expense}
         onPress={() =>
-          navigation.navigate('reports/yearly-summary', {
-            reportType: 'yearlySummary',
-            title: 'Yearly Summary',
+          router.push({
+            pathname: '/reports/yearly-summary',
+            params: {
+              reportType: 'yearlySummary',
+              title: 'Yearly Summary',
+            },
           })
         }
         colors={colors}

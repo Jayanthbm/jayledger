@@ -13,8 +13,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { Transaction, QuickTransaction, ThemeColors, MaterialIconName } from '@/models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation, useFocusEffect, useRoute, RouteProp } from 'expo-router/react-navigation';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect, useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { TransactionCard } from '@/components/TransactionCard';
 import { SearchBar } from '@/components/SearchBar';
 import { deleteTransactionAsync, getQuickTransactions } from '@/db/queries';
@@ -30,7 +29,6 @@ import { TransactionStatsModal } from '@/components/transactions/TransactionStat
 import { TransactionSectionHeader } from '@/components/transactions/TransactionSectionHeader';
 import { syncTransactions } from '@/services/syncService';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
-import { MainTabParamList, RootStackParamList } from '@/navigation/navigationTypes';
 import { common } from '@/styles/common';
 import { DataErrorBoundary } from '@/components/common/ErrorBoundaries';
 import { SyncFeedback } from '@/components/common/SyncFeedback';
@@ -101,9 +99,9 @@ export default function TransactionsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const { showToast } = useToast();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<MainTabParamList, 'transactions'>>();
-  const params = route.params;
+  const navigation = useNavigation();
+  const router = useRouter();
+  const params = useLocalSearchParams<any>();
 
   const filters = useTransactionFilters({ session, params });
   const { isSyncing, lastSyncTime, handleManualSync } = useTransactionSync(
@@ -255,7 +253,10 @@ export default function TransactionsScreen() {
   };
 
   const handleEditTransaction = (tx: Transaction) => {
-    navigation.navigate('add-transaction', { transaction: tx });
+    router.push({
+      pathname: '/add-transaction',
+      params: { transaction: JSON.stringify(tx) },
+    });
   };
 
   // Auto-scroll to top when data updates due to filter changes
@@ -469,7 +470,7 @@ export default function TransactionsScreen() {
                   icon="receipt"
                   title="No Transactions"
                   subtitle="Start tracking your finances by adding your first transaction!"
-                  onAction={() => navigation.navigate('add-transaction')}
+                  onAction={() => router.push('/add-transaction')}
                   actionLabel="Add Transaction"
                 />
               ) : (
@@ -572,7 +573,10 @@ export default function TransactionsScreen() {
           quickTransactions={quickTransactions}
           onSelect={(item) => {
             setShowQuickModal(false);
-            navigation.navigate('add-transaction', { quickTransaction: item });
+            router.push({
+              pathname: '/add-transaction',
+              params: { quickTransaction: JSON.stringify(item) },
+            });
           }}
         />
 
@@ -583,7 +587,7 @@ export default function TransactionsScreen() {
           <Icon name="bolt" size={28} color={colors.primary} />
         </TouchableOpacity>
         <FloatingActionButton
-          onPress={() => navigation.navigate('add-transaction')}
+          onPress={() => router.push('/add-transaction')}
           iconName="add"
           backgroundColor={colors.primary}
           style={styles.fab}

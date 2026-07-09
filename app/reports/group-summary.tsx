@@ -8,8 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
 import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportEmptyState } from '@/components/reports/ReportEmptyState';
@@ -25,10 +24,12 @@ import { ReportItem, Transaction, MaterialIconName } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { logger } from '@/utils/logger';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'reports/group-summary'>;
-
-export default function GroupSummaryReportScreen({ route, navigation }: Props) {
-  const { title = 'Transactions By Group', reportType = 'groups' } = route.params || {};
+export default function GroupSummaryReportScreen() {
+  const navigation = useNavigation();
+  const { title = 'Transactions By Group', reportType = 'groups' } = useLocalSearchParams<{
+    title: string;
+    reportType: string;
+  }>();
   const { colors } = useTheme();
   const { session } = useAuth();
   const userId = session?.user?.id;

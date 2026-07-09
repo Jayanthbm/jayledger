@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DashboardCard } from './DashboardCard';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import type { AppNavigation } from '../../navigation/navigationTypes';
+import { useRouter } from 'expo-router';
 
 import { CircularProgress } from '../CircularProgress';
 
@@ -15,12 +15,12 @@ interface DashboardPayDayProps {
     nextMonth: string;
   };
   isDark: boolean;
-  navigation: AppNavigation;
   colors: ThemeColors;
 }
 
 export const DashboardPayDay = React.memo(
-  ({ payDayInfo, isDark, navigation, colors }: DashboardPayDayProps) => {
+  ({ payDayInfo, isDark, colors }: DashboardPayDayProps) => {
+    const router = useRouter();
     const percentage =
       ((payDayInfo.daysInMonth - payDayInfo.remaining) / payDayInfo.daysInMonth) * 100;
 
@@ -29,7 +29,7 @@ export const DashboardPayDay = React.memo(
         colors={colors}
         title="PAY DAY"
         icon="event"
-        onPress={() => navigation.navigate('calendar-view')}
+        onPress={() => router.push('/calendar-view')}
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
       >
         <View style={styles.rowBetween}>

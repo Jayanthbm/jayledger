@@ -11,7 +11,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { Category } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useRouter, useNavigation } from 'expo-router';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { SearchBar } from '@/components/SearchBar';
 import { useToast } from '@/store/ToastContext';
@@ -33,7 +33,6 @@ import { CategoryAddModal } from '@/components/categories/CategoryAddModal';
 import { CategorySortModal } from '@/components/categories/CategorySortModal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
-import { AppNavigation } from '@/navigation/navigationTypes';
 import { logger } from '@/utils/logger';
 
 export default function CategoriesScreen() {
@@ -41,7 +40,8 @@ export default function CategoriesScreen() {
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
+  const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -391,8 +391,8 @@ export default function CategoriesScreen() {
                 viewMode={viewMode}
                 colors={colors}
                 onPress={(cat) =>
-                  navigation.navigate('(tabs)', {
-                    screen: 'transactions',
+                  router.push({
+                    pathname: '/(tabs)/transactions',
                     params: { initialSelectedCats: [cat.id] },
                   })
                 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,9 +16,7 @@ import { useAuth } from '@/store/AuthContext';
 import { useToast } from '@/store/ToastContext';
 import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useNavigation, useRoute, RouteProp } from 'expo-router/react-navigation';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useNavigation, useLocalSearchParams } from 'expo-router';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
@@ -30,7 +28,7 @@ import {
 } from '@/db/queries';
 import { BottomSheet } from '@/components/BottomSheet';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { Category, Payee, Transaction, TransactionGroup } from '@/models/types';
+import { Category, Payee, Transaction, TransactionGroup, QuickTransaction } from '@/models/types';
 import { generateUUID } from '@/utils/commonUtils';
 import { syncTransactions } from '@/services/syncService';
 import { common } from '@/styles/common';
@@ -47,9 +45,19 @@ export default function AddTransactionScreen() {
   useKeepAwake();
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'add-transaction'>>();
-  const editTx = route.params?.transaction;
+  const navigation = useNavigation();
+  const params = useLocalSearchParams<{ transaction?: string; quickTransaction?: string }>();
+  const editTx = useMemo(
+    () => (params.transaction ? (JSON.parse(params.transaction) as Transaction) : undefined),
+    [params.transaction],
+  );
+  const quickTx = useMemo(
+    () =>
+      params.quickTransaction
+        ? (JSON.parse(params.quickTransaction) as QuickTransaction)
+        : undefined,
+    [params.quickTransaction],
+  );
   const { showToast } = useToast();
 
   const [amount, setAmount] = useState(editTx ? editTx.amount.toString() : '');
@@ -113,8 +121,6 @@ export default function AddTransactionScreen() {
       setPayees(p);
       setGroups(g);
 
-      const quickTx = route.params?.quickTransaction;
-
       if (editTx) {
         const cat = cats.find((c) => c.id === editTx.category_id);
         if (cat) setSelectedCategory(cat);
@@ -150,11 +156,11 @@ export default function AddTransactionScreen() {
       loadData();
     }, 0);
     return () => clearTimeout(timer);
-  }, [session, editTx, route.params]);
+  }, [session, editTx, quickTx]);
 
   useEffect(() => {
     // Apply default categories when type changes (only for new transactions and non-quick-tx)
-    if (!editTx && !route.params?.quickTransaction && categories.length > 0) {
+    if (!editTx && !quickTx && categories.length > 0) {
       const timer = setTimeout(() => {
         if (type === 'Income') {
           const salCat = categories.find((c) => c.name.toLowerCase() === 'salary');
@@ -166,7 +172,7 @@ export default function AddTransactionScreen() {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [type, editTx, categories, route.params]);
+  }, [type, editTx, categories, quickTx]);
 
   const fetchLocation = useCallback(async () => {
     setFetchingLocation(true);

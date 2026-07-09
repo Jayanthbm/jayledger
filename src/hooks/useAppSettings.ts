@@ -2,16 +2,13 @@ import { useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleReminder } from '../services/notificationService';
 import { runFullSync } from '../services/syncService';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
+import { useRouter } from 'expo-router';
 import { resetAppData } from '../db/queries';
 import { Session } from '@supabase/supabase-js';
 import { logger } from '../utils/logger';
 
-export const useAppSettings = (
-  session: Session | null,
-  navigation: NativeStackNavigationProp<RootStackParamList>,
-) => {
+export const useAppSettings = (session: Session | null) => {
+  const router = useRouter();
   const [notificationPref, setNotificationPref] = useState('None');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -73,17 +70,14 @@ export const useAppSettings = (
         ];
         await AsyncStorage.multiRemove(keysToClear);
         if (onComplete) onComplete();
-        navigation.reset({
-          index: 0,
-          routes: [{ name: '(tabs)' }],
-        });
+        router.replace('/(tabs)/dashboard');
       } catch (e) {
         logger.error('Reset error', e);
       } finally {
         setIsResetting(false);
       }
     },
-    [session, navigation],
+    [session, router],
   );
 
   return {

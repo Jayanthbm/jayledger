@@ -9,8 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
 import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportSummary } from '@/components/reports/ReportSummary';
@@ -22,10 +21,12 @@ import { SearchBar } from '@/components/SearchBar';
 import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'reports/category-overview'>;
-
-export default function CategoryOverviewReportScreen({ route, navigation }: Props) {
-  const { title = 'categories', reportType = 'categories' } = route.params || {};
+export default function CategoryOverviewReportScreen() {
+  const navigation = useNavigation();
+  const { title = 'categories', reportType = 'categories' } = useLocalSearchParams<{
+    title: string;
+    reportType: string;
+  }>();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 

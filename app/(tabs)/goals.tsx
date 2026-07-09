@@ -13,7 +13,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { insertGoal, deleteGoalAsync } from '@/db/queries';
 import { Goal } from '@/models/types';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useNavigation } from 'expo-router';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { getRelativeTime } from '@/utils/dateUtils';
 import { useToast } from '@/store/ToastContext';
@@ -29,14 +29,13 @@ import { GoalDeleteModal } from '@/components/goals/GoalDeleteModal';
 import { GoalAddEditModal } from '@/components/goals/GoalAddEditModal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
-import { AppNavigation } from '@/navigation/navigationTypes';
 import { logger } from '@/utils/logger';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const user = session?.user;
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
   const { showToast } = useToast();
 
   const [data, setData] = useState<Goal[]>([]);

@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useRouter, useNavigation } from 'expo-router';
 import { useAuth } from '@/store/AuthContext';
 import { syncTransactions } from '@/services/syncService';
 import { ActivityIndicator } from 'react-native';
 import { common } from '@/styles/common';
-import { AppNavigation, RootStackParamList } from '@/navigation/navigationTypes';
 import { logger } from '@/utils/logger';
 
 const { width } = Dimensions.get('window');
@@ -97,7 +96,8 @@ const reportsList = [
 export default function ReportsScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isSyncing, setIsSyncing] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -213,7 +213,7 @@ export default function ReportsScreen() {
               activeOpacity={0.7}
               onPress={() => {
                 const view = item.view;
-                let screen: keyof RootStackParamList;
+                let screen: string;
 
                 switch (view) {
                   case 'monthlyLivingCosts':
@@ -253,9 +253,12 @@ export default function ReportsScreen() {
                     screen = 'reports/category-overview';
                 }
 
-                navigation.navigate(screen, {
-                  reportType: item.view,
-                  title: item.title,
+                router.push({
+                  pathname: `/${screen}`,
+                  params: {
+                    reportType: item.view,
+                    title: item.title,
+                  },
                 });
               }}
             >

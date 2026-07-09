@@ -11,11 +11,10 @@ import {
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useRouter, useNavigation } from 'expo-router';
 import { getRelativeTime } from '@/utils/dateUtils';
 import { BottomSheet } from '@/components/BottomSheet';
 import { ConfirmationSheet } from '@/components/common/ConfirmationSheet';
-import { AppNavigation } from '@/navigation/navigationTypes';
 import { SettingRow } from '@/components/common/SettingRow';
 import { useBiometrics } from '@/hooks/useBiometrics';
 import { useAppSettings } from '@/hooks/useAppSettings';
@@ -26,7 +25,8 @@ export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const { session, signOut } = useAuth();
   const user = session?.user;
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
+  const router = useRouter();
 
   const {
     useBiometrics: biometricsEnabled,
@@ -42,7 +42,7 @@ export default function SettingsScreen() {
     handleNotificationChange,
     handleManualSync,
     handleResetData,
-  } = useAppSettings(session, navigation);
+  } = useAppSettings(session);
 
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
@@ -222,28 +222,28 @@ export default function SettingsScreen() {
               icon="category"
               title="Categories"
               value="Manage Categories"
-              onPress={() => navigation.navigate('categories')}
+              onPress={() => router.push('/categories')}
             />
             <View style={styles.divider} />
             <SettingRow
               icon="storefront"
               title="Payees"
               value="Manage Payees"
-              onPress={() => navigation.navigate('payees')}
+              onPress={() => router.push('/payees')}
             />
             <View style={styles.divider} />
             <SettingRow
               icon="folder"
               title="Transaction Groups"
               value="Manage Groups"
-              onPress={() => navigation.navigate('groups')}
+              onPress={() => router.push('/groups')}
             />
             <View style={styles.divider} />
             <SettingRow
               icon="bolt"
               title="Quick Transactions"
               value="Manage Templates"
-              onPress={() => navigation.navigate('quick-transactions')}
+              onPress={() => router.push('/quick-transactions')}
             />
             <View style={styles.divider} />
             <SettingRow

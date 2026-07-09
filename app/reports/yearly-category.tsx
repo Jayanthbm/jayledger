@@ -9,8 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
 import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportSummary } from '@/components/reports/ReportSummary';
@@ -20,10 +19,10 @@ import { ReportDrillDownModal } from '@/components/reports/ReportDrillDownModal'
 import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'reports/yearly-category'>;
-
-export default function YearlyCategoryReportScreen({ route, navigation }: Props) {
-  const { title = 'Transactions By Year', reportType = 'transactionsByYear' } = route.params || {};
+export default function YearlyCategoryReportScreen() {
+  const navigation = useNavigation();
+  const { title = 'Transactions By Year', reportType = 'transactionsByYear' } =
+    useLocalSearchParams<{ title: string; reportType: string }>();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 

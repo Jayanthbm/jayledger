@@ -1,17 +1,16 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialCommunityIcons';
-import { AppNavigation } from '../navigation/navigationTypes';
 
 export const SettingsButton = () => {
-  const navigation = useNavigation<AppNavigation>();
+  const router = useRouter();
   const { colors, isDark } = useTheme();
 
   return (
     <TouchableOpacity
-      onPress={() => navigation.navigate('settings')}
+      onPress={() => router.push('/settings')}
       style={[
         styles.container,
         isDark ? styles.containerDark : styles.containerLight,

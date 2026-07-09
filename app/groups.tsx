@@ -15,7 +15,7 @@ import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { TransactionGroup } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from 'expo-router/react-navigation';
+import { useNavigation } from 'expo-router';
 import { SearchBar } from '@/components/SearchBar';
 import { useToast } from '@/store/ToastContext';
 import { triggerSelection } from '@/utils/haptics';
@@ -23,7 +23,6 @@ import { getRelativeTime } from '@/utils/dateUtils';
 import { BottomSheet } from '@/components/BottomSheet';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
-import { AppNavigation } from '@/navigation/navigationTypes';
 import { logger } from '@/utils/logger';
 
 import {
@@ -43,7 +42,7 @@ export default function GroupsScreen() {
   const { session } = useAuth();
   const user = session?.user;
   const { showToast } = useToast();
-  const navigation = useNavigation<AppNavigation>();
+  const navigation = useNavigation();
 
   const [groups, setGroups] = useState<TransactionGroup[]>([]);
   const [loading, setLoading] = useState(true);
