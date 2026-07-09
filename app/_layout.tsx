@@ -148,6 +148,15 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen
+          name="goals"
+          options={{
+            headerShown: true,
+            title: 'Goals',
+            headerBackTitle: ' ',
+            headerLeft: () => standardHeaderLeft(),
+          }}
+        />
+        <Stack.Screen
           name="daily-limit-detail"
           options={{
             headerShown: true,
