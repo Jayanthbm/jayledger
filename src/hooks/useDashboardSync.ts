@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from '../constants';
 import { getRelativeTime } from '../utils/dateUtils';
 import { logger } from '../utils/logger';
 import { useToast } from '../store/ToastContext';
+import { triggerImpact } from '../utils/haptics';
 
 export const useDashboardSync = (userId: string | undefined, onRefresh: () => void) => {
   const { showToast } = useToast();
@@ -89,6 +90,7 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
 
   const handleManualSync = useCallback(async () => {
     if (!userId || isSyncing) return;
+    triggerImpact('medium');
     setIsSyncing(true);
     try {
       await syncTransactions(userId, true);

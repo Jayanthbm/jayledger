@@ -3,8 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { DashboardCard } from './DashboardCard';
 import { ThemeColors, ReportItem } from '../../models/types';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/navigationTypes';
+import { useRouter } from 'expo-router';
 import { common } from '../../styles/common';
 import { ProgressBar } from '../ProgressBar';
 import { formatCurrency } from '../../utils/formatters';
@@ -12,21 +11,24 @@ import { formatCurrency } from '../../utils/formatters';
 interface DashboardTopCategoriesProps {
   topCategories: ReportItem[];
   totalExpense: number;
-  navigation: NativeStackNavigationProp<RootStackParamList>;
   colors: ThemeColors;
 }
 
 export const DashboardTopCategories = React.memo(
-  ({ topCategories, totalExpense, navigation, colors }: DashboardTopCategoriesProps) => {
+  ({ topCategories, totalExpense, colors }: DashboardTopCategoriesProps) => {
+    const router = useRouter();
     return (
       <DashboardCard
         colors={colors}
         title="TOP CATEGORIES"
         icon="pie-chart"
         onPress={() =>
-          navigation.navigate('CategorySummaryReport', {
-            reportType: 'summaryByCategory',
-            title: 'Transactions By Category',
+          router.push({
+            pathname: '/reports/category-summary',
+            params: {
+              reportType: 'summaryByCategory',
+              title: 'Transactions By Category',
+            },
           })
         }
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}

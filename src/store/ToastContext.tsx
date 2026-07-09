@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { Toast, ToastType } from '../components/Toast';
+import { triggerSuccess, triggerWarning, triggerError, triggerSelection } from '../utils/haptics';
 
 interface ToastContextType {
   showToast: (message: string, type?: ToastType) => void;
@@ -23,6 +24,17 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const showToast = useCallback((msg: string, t: ToastType = 'info') => {
+    // Trigger haptics based on type
+    if (t === 'success') {
+      triggerSuccess();
+    } else if (t === 'error') {
+      triggerError();
+    } else if (t === 'warning') {
+      triggerWarning();
+    } else {
+      triggerSelection();
+    }
+
     // If already showing, hide first to re-trigger animation if possible,
     // or just update message. Re-triggering is better for user feedback.
     setVisible(false);

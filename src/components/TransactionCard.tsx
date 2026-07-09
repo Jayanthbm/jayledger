@@ -120,11 +120,17 @@ export const TransactionCard = React.memo(
     ) : null;
 
     const groupNode = transaction.group_name ? (
-      <View style={styles.groupRow}>
-        <View style={[styles.groupIconBg, { backgroundColor: colors.primary + '15' }]}>
-          <Icon name="folder" size={10} color={colors.primary} />
-        </View>
-        <Text style={[styles.groupName, { color: colors.textSecondary }]} numberOfLines={1}>
+      <View
+        style={[
+          styles.groupTag,
+          {
+            backgroundColor: colors.primary + '12',
+            borderColor: colors.primary + '30',
+          },
+        ]}
+      >
+        <Icon name="folder" size={10} color={colors.primary} style={styles.groupIcon} />
+        <Text style={[styles.groupName, { color: colors.primary }]} numberOfLines={1}>
           {transaction.group_name}
         </Text>
       </View>
@@ -162,20 +168,27 @@ export const TransactionCard = React.memo(
       </TouchableOpacity>
     ) : null;
 
+    const firstRowHasContent = payeeNode || linkNode || mapNode;
+
     const footerNode = (
-      <View style={styles.footerRow}>
-        {payeeNode}
-        {payeeNode && groupNode && (
-          <View style={[styles.footerSeparator, { backgroundColor: colors.border }]} />
+      <View style={styles.footerColumn}>
+        {firstRowHasContent && (
+          <View style={styles.footerRow}>
+            {payeeNode}
+            {payeeNode && (linkNode || mapNode) && (
+              <View style={[styles.footerSeparator, { backgroundColor: colors.border }]} />
+            )}
+            <View style={styles.iconContainer}>
+              {linkNode}
+              {mapNode}
+            </View>
+          </View>
         )}
-        {groupNode}
-        {(payeeNode || groupNode) && (linkNode || mapNode) && (
-          <View style={[styles.footerSeparator, { backgroundColor: colors.border }]} />
+        {groupNode && (
+          <View style={[styles.groupRowContainer, firstRowHasContent && { marginTop: 6 }]}>
+            {groupNode}
+          </View>
         )}
-        <View style={styles.iconContainer}>
-          {linkNode}
-          {mapNode}
-        </View>
       </View>
     );
 
@@ -242,22 +255,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flexShrink: 1,
   },
-  groupRow: {
+  groupTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 1,
-  },
-  groupIconBg: {
-    width: 16,
-    height: 16,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
+    borderWidth: 1,
+  },
+  groupIcon: {
+    marginRight: 4,
   },
   groupName: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
     flexShrink: 1,
   },
   actionsContainer: {
@@ -277,6 +289,14 @@ const styles = StyleSheet.create({
   },
   containerNormal: {
     marginHorizontal: 16,
+  },
+  footerColumn: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  groupRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   footerRow: {
     flexDirection: 'row',

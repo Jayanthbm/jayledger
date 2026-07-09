@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router/react-navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session } from '@supabase/supabase-js';
 import { syncTransactions, needsTransactionSync } from '../services/syncService';
