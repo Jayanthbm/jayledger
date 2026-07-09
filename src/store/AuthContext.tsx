@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import { Session } from '@supabase/supabase-js';
-import { runFullSync } from '../services/syncService';
 import { logger } from '../utils/logger';
 
 interface AuthContextProps {
@@ -82,11 +81,8 @@ export const AuthProvider = ({ children, onAuthReady }: AuthProviderProps) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    if (data.session?.user?.id) {
-      await runFullSync(data.session.user.id);
-    }
   };
 
   const signOut = async () => {
