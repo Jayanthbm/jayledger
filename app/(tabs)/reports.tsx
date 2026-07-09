@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../store/ThemeContext';
+import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../store/AuthContext';
-import { syncTransactions } from '../services/syncService';
+import { useNavigation } from 'expo-router/react-navigation';
+import { useAuth } from '@/store/AuthContext';
+import { syncTransactions } from '@/services/syncService';
 import { ActivityIndicator } from 'react-native';
-import { common } from '../styles/common';
-import { AppNavigation, RootStackParamList } from '../navigation/navigationTypes';
-import { logger } from '../utils/logger';
+import { common } from '@/styles/common';
+import { AppNavigation, RootStackParamList } from '@/navigation/navigationTypes';
+import { logger } from '@/utils/logger';
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2;
@@ -79,14 +79,14 @@ const reportsList = [
     color: '#3b82f6',
   },
   {
-    title: 'Payees',
+    title: 'payees',
     description: 'Overall payee analysis',
     icon: 'people',
     view: 'payees',
     color: '#06b6d4',
   },
   {
-    title: 'Categories',
+    title: 'categories',
     description: 'Overall category analysis',
     icon: 'category',
     view: 'categories',
@@ -217,40 +217,40 @@ export default function ReportsScreen() {
 
                 switch (view) {
                   case 'monthlyLivingCosts':
-                    screen = 'LivingCostsReport';
+                    screen = 'reports/living-costs';
                     break;
                   case 'subscriptionAndBills':
-                    screen = 'SubscriptionBillsReport';
+                    screen = 'reports/subscription-bills';
                     break;
                   case 'summaryByPayee':
-                    screen = 'PayeeSummaryReport';
+                    screen = 'reports/payee-summary';
                     break;
                   case 'groups':
-                    screen = 'GroupSummaryReport';
+                    screen = 'reports/group-summary';
                     break;
                   case 'summaryByCategory':
-                    screen = 'CategorySummaryReport';
+                    screen = 'reports/category-summary';
                     break;
                   case 'monthlySummary':
-                    screen = 'MonthlySummaryReport';
+                    screen = 'reports/monthly-summary';
                     break;
                   case 'yearlySummary':
-                    screen = 'YearlySummaryReport';
+                    screen = 'reports/yearly-summary';
                     break;
                   case 'transactionsByYear':
-                    screen = 'YearlyCategoryReport';
+                    screen = 'reports/yearly-category';
                     break;
                   case 'yearlyPayees':
-                    screen = 'YearlyPayeeReport';
+                    screen = 'reports/yearly-payee';
                     break;
                   case 'payees':
-                    screen = 'PayeeOverviewReport';
+                    screen = 'reports/payee-overview';
                     break;
                   case 'categories':
-                    screen = 'CategoryOverviewReport';
+                    screen = 'reports/category-overview';
                     break;
                   default:
-                    screen = 'CategoryOverviewReport';
+                    screen = 'reports/category-overview';
                 }
 
                 navigation.navigate(screen, {

@@ -11,33 +11,33 @@ import {
   ScrollView,
   DeviceEventEmitter,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { useToast } from '../store/ToastContext';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { useToast } from '@/store/ToastContext';
 import {
   getCategories,
   getPayees,
   insertQuickTransaction,
   updateQuickTransaction,
-} from '../db/queries';
-import { BottomSheet } from '../components/BottomSheet';
-import { SegmentedControl } from '../components/SegmentedControl';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
-import { Category, Payee, QuickTransaction } from '../models/types';
-import { generateUUID } from '../utils/commonUtils';
-import { validateAmount } from '../utils/validators';
-import { TransactionFormFields } from '../components/transactions/TransactionFormFields';
-import { TransactionSelectorRow } from '../components/transactions/TransactionSelectorRow';
-import { ItemSelectorModal } from '../components/transactions/ItemSelectorModal';
-import { logger } from '../utils/logger';
+} from '@/db/queries';
+import { BottomSheet } from '@/components/BottomSheet';
+import { SegmentedControl } from '@/components/SegmentedControl';
+import { useNavigation, useRoute, RouteProp } from 'expo-router/react-navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/navigationTypes';
+import { Category, Payee, QuickTransaction } from '@/models/types';
+import { generateUUID } from '@/utils/commonUtils';
+import { validateAmount } from '@/utils/validators';
+import { TransactionFormFields } from '@/components/transactions/TransactionFormFields';
+import { TransactionSelectorRow } from '@/components/transactions/TransactionSelectorRow';
+import { ItemSelectorModal } from '@/components/transactions/ItemSelectorModal';
+import { logger } from '@/utils/logger';
 
 export default function AddQuickTransactionScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'AddQuickTransaction'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'add-quick-transaction'>>();
   const editQt = route.params?.quickTransaction as QuickTransaction | undefined;
   const { showToast } = useToast();
 

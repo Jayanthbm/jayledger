@@ -59,7 +59,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
       delete asyncStorageStore[key];
       return Promise.resolve();
     }),
-    removeMany: jest.fn((keys: string[]) => {
+    multiRemove: jest.fn((keys: string[]) => {
       keys.forEach((k) => delete asyncStorageStore[k]);
       return Promise.resolve();
     }),
@@ -115,6 +115,26 @@ jest.mock('./src/services/supabase', () => ({
 jest.mock('@react-native-community/netinfo', () => ({
   fetch: jest.fn(() => Promise.resolve({ isConnected: true })),
   addEventListener: jest.fn(),
+}));
+
+// Mock expo-keep-awake
+jest.mock('expo-keep-awake', () => ({
+  useKeepAwake: jest.fn(),
+  activateKeepAwakeAsync: jest.fn(() => Promise.resolve()),
+  deactivateKeepAwake: jest.fn(),
+}));
+
+// Mock expo-router
+jest.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    setParams: jest.fn(),
+  }),
+  useLocalSearchParams: jest.fn(() => ({})),
+  Stack: ({ children }: any) => children,
+  Tabs: ({ children }: any) => children,
 }));
 
 // Silence unnecessary warnings

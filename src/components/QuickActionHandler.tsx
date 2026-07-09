@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { DeviceEventEmitter } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from 'expo-router/react-navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuickActionCallback } from 'expo-quick-actions/hooks';
 import { setItems } from 'expo-quick-actions';
 import type { Action } from 'expo-quick-actions';
@@ -30,11 +30,11 @@ export function QuickActionHandler() {
         // Use setTimeout to ensure navigation is fully ready
         setTimeout(() => {
           if (action.id === 'add_transaction') {
-            navigation.navigate('AddTransaction');
+            navigation.navigate('add-transaction');
             logger.info('[QuickActions] Navigated to AddTransaction');
           } else if (action.id === 'quick_transaction') {
             // Navigate to Transactions tab which will show the quick transaction modal
-            navigation.navigate('Main', { screen: 'Transactions' });
+            navigation.navigate('(tabs)', { screen: 'transactions' });
             // Trigger the quick transaction modal via event
             setTimeout(() => {
               DeviceEventEmitter.emit('show_quick_transaction_modal');

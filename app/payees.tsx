@@ -7,14 +7,14 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { Payee } from '../models/types';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { Payee } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { SearchBar } from '../components/SearchBar';
-import { useToast } from '../store/ToastContext';
-import { getRelativeTime } from '../utils/dateUtils';
+import { useNavigation } from 'expo-router/react-navigation';
+import { SearchBar } from '@/components/SearchBar';
+import { useToast } from '@/store/ToastContext';
+import { getRelativeTime } from '@/utils/dateUtils';
 
 import {
   fetchPayeesData,
@@ -23,17 +23,17 @@ import {
   performPayeeSync,
   backgroundPushPayees,
   filterAndSortPayees,
-} from '../services/payeeService';
-import { updatePayeePriorities } from '../db/queries';
+} from '@/services/payeeService';
+import { updatePayeePriorities } from '@/db/queries';
 
 // Modular Components
-import { PayeeCard } from '../components/payees/PayeeCard';
-import { PayeeAddModal } from '../components/payees/PayeeAddModal';
-import { PayeeSortModal } from '../components/payees/PayeeSortModal';
-import { FloatingActionButton } from '../components/FloatingActionButton';
-import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
-import { logger } from '../utils/logger';
+import { PayeeCard } from '@/components/payees/PayeeCard';
+import { PayeeAddModal } from '@/components/payees/PayeeAddModal';
+import { PayeeSortModal } from '@/components/payees/PayeeSortModal';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { common } from '@/styles/common';
+import { AppNavigation } from '@/navigation/navigationTypes';
+import { logger } from '@/utils/logger';
 
 export default function PayeesScreen() {
   const { colors } = useTheme();
@@ -366,8 +366,8 @@ export default function PayeesScreen() {
                 viewMode={viewMode}
                 colors={colors}
                 onPress={(p) =>
-                  navigation.navigate('Main', {
-                    screen: 'Transactions',
+                  navigation.navigate('(tabs)', {
+                    screen: 'transactions',
                     params: { initialSelectedPayees: [p.id] },
                   })
                 }

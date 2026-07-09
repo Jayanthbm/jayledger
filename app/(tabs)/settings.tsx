@@ -8,17 +8,17 @@ import {
   Switch,
   Platform,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { getRelativeTime } from '../utils/dateUtils';
-import { BottomSheet } from '../components/BottomSheet';
-import { ConfirmationSheet } from '../components/common/ConfirmationSheet';
-import { AppNavigation } from '../navigation/navigationTypes';
-import { SettingRow } from '../components/common/SettingRow';
-import { useBiometrics } from '../hooks/useBiometrics';
-import { useAppSettings } from '../hooks/useAppSettings';
+import { useNavigation } from 'expo-router/react-navigation';
+import { getRelativeTime } from '@/utils/dateUtils';
+import { BottomSheet } from '@/components/BottomSheet';
+import { ConfirmationSheet } from '@/components/common/ConfirmationSheet';
+import { AppNavigation } from '@/navigation/navigationTypes';
+import { SettingRow } from '@/components/common/SettingRow';
+import { useBiometrics } from '@/hooks/useBiometrics';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 export default function SettingsScreen() {
@@ -183,28 +183,28 @@ export default function SettingsScreen() {
               icon="category"
               title="Categories"
               value="Manage Categories"
-              onPress={() => navigation.navigate('Categories')}
+              onPress={() => navigation.navigate('categories')}
             />
             <View style={styles.divider} />
             <SettingRow
               icon="storefront"
               title="Payees"
               value="Manage Payees"
-              onPress={() => navigation.navigate('Payees')}
+              onPress={() => navigation.navigate('payees')}
             />
             <View style={styles.divider} />
             <SettingRow
               icon="folder"
               title="Transaction Groups"
               value="Manage Groups"
-              onPress={() => navigation.navigate('Groups')}
+              onPress={() => navigation.navigate('groups')}
             />
             <View style={styles.divider} />
             <SettingRow
               icon="bolt"
               title="Quick Transactions"
               value="Manage Templates"
-              onPress={() => navigation.navigate('QuickTransactions')}
+              onPress={() => navigation.navigate('quick-transactions')}
             />
             <View style={styles.divider} />
             <SettingRow

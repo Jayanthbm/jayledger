@@ -14,11 +14,11 @@ import {
   StatusBar,
   ScrollView,
 } from 'react-native';
-import { useAuth } from '../store/AuthContext';
-import { useTheme } from '../store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import appConfig from '../../app.json';
-import { useToast } from '../store/ToastContext';
+import { useToast } from '@/store/ToastContext';
 
 const { height } = Dimensions.get('window');
 

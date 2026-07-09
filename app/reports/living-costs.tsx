@@ -8,25 +8,25 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useTheme } from '../../store/ThemeContext';
-import { useAuth } from '../../store/AuthContext';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/navigationTypes';
-import { useReportData } from '../../hooks/useReportData';
-import { ReportSelectors } from '../../components/reports/ReportSelectors';
-import { ReportSummary } from '../../components/reports/ReportSummary';
-import { ReportListItem } from '../../components/reports/ReportListItem';
-import { ReportEmptyState } from '../../components/reports/ReportEmptyState';
-import { ReportDrillDownModal } from '../../components/reports/ReportDrillDownModal';
-import { ReportConfigModal } from '../../components/reports/ReportConfigModal';
-import { common } from '../../styles/common';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useReportData } from '@/hooks/useReportData';
+import { ReportSelectors } from '@/components/reports/ReportSelectors';
+import { ReportSummary } from '@/components/reports/ReportSummary';
+import { ReportListItem } from '@/components/reports/ReportListItem';
+import { ReportEmptyState } from '@/components/reports/ReportEmptyState';
+import { ReportDrillDownModal } from '@/components/reports/ReportDrillDownModal';
+import { ReportConfigModal } from '@/components/reports/ReportConfigModal';
+import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getCategories, toggleCategoryLivingCost } from '../../db/queries';
-import { Category } from '../../models/types';
+import { getCategories, toggleCategoryLivingCost } from '@/db/queries';
+import { Category } from '@/models/types';
 
 const { width } = Dimensions.get('window');
-type Props = NativeStackScreenProps<RootStackParamList, 'LivingCostsReport'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'reports/living-costs'>;
 
 export default function LivingCostsReportScreen({ route, navigation }: Props) {
   const { title = 'Living Costs', reportType } = route.params;

@@ -9,18 +9,18 @@ import {
   Platform,
   DeviceEventEmitter,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { useToast } from '../store/ToastContext';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { useToast } from '@/store/ToastContext';
 import {
   addBudget,
   updateBudget,
   deleteBudget,
   getCategories,
   getMinTransactionDate,
-} from '../db/queries';
-import { Budget, Transaction, Category } from '../models/types';
-import { useNavigation } from '@react-navigation/native';
+} from '@/db/queries';
+import { Budget, Transaction, Category } from '@/models/types';
+import { useNavigation } from 'expo-router/react-navigation';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import {
   format,
@@ -32,27 +32,27 @@ import {
   addMonths,
   subMonths,
 } from 'date-fns';
-import { BudgetCard } from '../components/BudgetCard';
+import { BudgetCard } from '@/components/BudgetCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getRelativeTime } from '../utils/dateUtils';
-import { STORAGE_KEYS } from '../constants';
+import { getRelativeTime } from '@/utils/dateUtils';
+import { STORAGE_KEYS } from '@/constants';
 import {
   fetchBudgetsWithSpending,
   fetchBudgetDrillDown,
   handleBudgetSync,
   EnrichedBudget,
-} from '../services/budgetService';
+} from '@/services/budgetService';
 
 // Modular Components
-import { BudgetHeader } from '../components/budgets/BudgetHeader';
-import { BudgetSortModal } from '../components/budgets/BudgetSortModal';
-import { BudgetDeleteModal } from '../components/budgets/BudgetDeleteModal';
-import { BudgetDrillDownModal } from '../components/budgets/BudgetDrillDownModal';
-import { BudgetAddEditModal } from '../components/budgets/BudgetAddEditModal';
-import { FloatingActionButton } from '../components/FloatingActionButton';
-import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
-import { logger } from '../utils/logger';
+import { BudgetHeader } from '@/components/budgets/BudgetHeader';
+import { BudgetSortModal } from '@/components/budgets/BudgetSortModal';
+import { BudgetDeleteModal } from '@/components/budgets/BudgetDeleteModal';
+import { BudgetDrillDownModal } from '@/components/budgets/BudgetDrillDownModal';
+import { BudgetAddEditModal } from '@/components/budgets/BudgetAddEditModal';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { common } from '@/styles/common';
+import { AppNavigation } from '@/navigation/navigationTypes';
+import { logger } from '@/utils/logger';
 
 const currentYearNum = new Date().getFullYear();
 

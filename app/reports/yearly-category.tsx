@@ -7,20 +7,20 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-import { useTheme } from '../../store/ThemeContext';
+import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/navigationTypes';
-import { useReportData } from '../../hooks/useReportData';
-import { ReportSelectors } from '../../components/reports/ReportSelectors';
-import { ReportSummary } from '../../components/reports/ReportSummary';
-import { ReportListItem } from '../../components/reports/ReportListItem';
-import { ReportEmptyState } from '../../components/reports/ReportEmptyState';
-import { ReportDrillDownModal } from '../../components/reports/ReportDrillDownModal';
-import { common } from '../../styles/common';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useReportData } from '@/hooks/useReportData';
+import { ReportSelectors } from '@/components/reports/ReportSelectors';
+import { ReportSummary } from '@/components/reports/ReportSummary';
+import { ReportListItem } from '@/components/reports/ReportListItem';
+import { ReportEmptyState } from '@/components/reports/ReportEmptyState';
+import { ReportDrillDownModal } from '@/components/reports/ReportDrillDownModal';
+import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'YearlyCategoryReport'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'reports/yearly-category'>;
 
 export default function YearlyCategoryReportScreen({ route, navigation }: Props) {
   const { title = 'Transactions By Year', reportType = 'transactionsByYear' } = route.params || {};

@@ -9,38 +9,38 @@ import {
   DeviceEventEmitter,
 } from 'react-native';
 import { format, parseISO } from 'date-fns';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { Transaction, QuickTransaction, ThemeColors, MaterialIconName } from '../models/types';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { Transaction, QuickTransaction, ThemeColors, MaterialIconName } from '@/models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { TransactionCard } from '../components/TransactionCard';
-import { SearchBar } from '../components/SearchBar';
-import { deleteTransactionAsync, getQuickTransactions } from '../db/queries';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from 'expo-router/react-navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { TransactionCard } from '@/components/TransactionCard';
+import { SearchBar } from '@/components/SearchBar';
+import { deleteTransactionAsync, getQuickTransactions } from '@/db/queries';
 import { FlashList as ShopifyFlashList, FlashListRef } from '@shopify/flash-list';
-import { FlashListItem } from '../utils/dataMappers';
+import { FlashListItem } from '@/utils/dataMappers';
 
 const FlashList: React.ElementType = ShopifyFlashList;
-import { TransactionFilterSelector } from '../components/transactions/TransactionFilterSelector';
-import { TransactionDateFilterModal } from '../components/transactions/TransactionDateFilterModal';
-import { TransactionDeleteModal } from '../components/transactions/TransactionDeleteModal';
-import { TransactionQuickModal } from '../components/transactions/TransactionQuickModal';
-import { TransactionStatsModal } from '../components/transactions/TransactionStatsModal';
-import { TransactionSectionHeader } from '../components/transactions/TransactionSectionHeader';
-import { syncTransactions } from '../services/syncService';
-import { FloatingActionButton } from '../components/FloatingActionButton';
-import { MainTabParamList, RootStackParamList } from '../navigation/navigationTypes';
-import { common } from '../styles/common';
-import { DataErrorBoundary } from '../components/common/ErrorBoundaries';
-import { SyncFeedback } from '../components/common/SyncFeedback';
-import { FeedbackPlaceholder } from '../components/common/FeedbackPlaceholder';
-import { useTransactionFilters } from '../hooks/useTransactionFilters';
-import { useTransactionSync } from '../hooks/useTransactionSync';
-import { useToast } from '../store/ToastContext';
+import { TransactionFilterSelector } from '@/components/transactions/TransactionFilterSelector';
+import { TransactionDateFilterModal } from '@/components/transactions/TransactionDateFilterModal';
+import { TransactionDeleteModal } from '@/components/transactions/TransactionDeleteModal';
+import { TransactionQuickModal } from '@/components/transactions/TransactionQuickModal';
+import { TransactionStatsModal } from '@/components/transactions/TransactionStatsModal';
+import { TransactionSectionHeader } from '@/components/transactions/TransactionSectionHeader';
+import { syncTransactions } from '@/services/syncService';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { MainTabParamList, RootStackParamList } from '@/navigation/navigationTypes';
+import { common } from '@/styles/common';
+import { DataErrorBoundary } from '@/components/common/ErrorBoundaries';
+import { SyncFeedback } from '@/components/common/SyncFeedback';
+import { FeedbackPlaceholder } from '@/components/common/FeedbackPlaceholder';
+import { useTransactionFilters } from '@/hooks/useTransactionFilters';
+import { useTransactionSync } from '@/hooks/useTransactionSync';
+import { useToast } from '@/store/ToastContext';
 
-import { formatCurrency } from '../utils/formatters';
-import { logger } from '../utils/logger';
+import { formatCurrency } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 
 interface FilterIconButtonProps {
   icon: string;
@@ -102,7 +102,7 @@ export default function TransactionsScreen() {
   const { session } = useAuth();
   const { showToast } = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<MainTabParamList, 'Transactions'>>();
+  const route = useRoute<RouteProp<MainTabParamList, 'transactions'>>();
   const params = route.params;
 
   const filters = useTransactionFilters({ session, params });
@@ -255,7 +255,7 @@ export default function TransactionsScreen() {
   };
 
   const handleEditTransaction = (tx: Transaction) => {
-    navigation.navigate('AddTransaction', { transaction: tx });
+    navigation.navigate('add-transaction', { transaction: tx });
   };
 
   // Auto-scroll to top when data updates due to filter changes
@@ -469,7 +469,7 @@ export default function TransactionsScreen() {
                   icon="receipt"
                   title="No Transactions"
                   subtitle="Start tracking your finances by adding your first transaction!"
-                  onAction={() => navigation.navigate('AddTransaction')}
+                  onAction={() => navigation.navigate('add-transaction')}
                   actionLabel="Add Transaction"
                 />
               ) : (
@@ -572,7 +572,7 @@ export default function TransactionsScreen() {
           quickTransactions={quickTransactions}
           onSelect={(item) => {
             setShowQuickModal(false);
-            navigation.navigate('AddTransaction', { quickTransaction: item });
+            navigation.navigate('add-transaction', { quickTransaction: item });
           }}
         />
 
@@ -583,7 +583,7 @@ export default function TransactionsScreen() {
           <Icon name="bolt" size={28} color={colors.primary} />
         </TouchableOpacity>
         <FloatingActionButton
-          onPress={() => navigation.navigate('AddTransaction')}
+          onPress={() => navigation.navigate('add-transaction')}
           iconName="add"
           backgroundColor={colors.primary}
           style={styles.fab}

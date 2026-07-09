@@ -2,17 +2,11 @@
   "expo": {
     "name": "Jmoney",
     "slug": "jmoney",
-    "version": "2.0.0",
+    "scheme": "jmoney",
+    "version": "2.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#f0f0f0"
-    },
-    "jsEngine": "hermes",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jayanth.jmoney",
@@ -21,11 +15,6 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#f0f0f0"
-      },
-      "splash": {
-        "image": "./assets/splash.png",
-        "resizeMode": "contain",
         "backgroundColor": "#f0f0f0"
       },
       "predictiveBackGestureEnabled": false,
@@ -81,7 +70,9 @@
           ]
         }
       ],
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-font",
+      "expo-router"
     ],
     "extra": {
       "eas": {

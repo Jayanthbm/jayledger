@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { getTransactionsByDate } from '../db/queries';
-import { Transaction } from '../models/types';
-import { TransactionCard } from '../components/TransactionCard';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { getTransactionsByDate } from '@/db/queries';
+import { Transaction } from '@/models/types';
+import { TransactionCard } from '@/components/TransactionCard';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-import { formatCurrency } from '../utils/formatters';
-import { logger } from '../utils/logger';
+import { formatCurrency } from '@/utils/formatters';
+import { logger } from '@/utils/logger';
 
 export default function DailyLimitDetailScreen() {
   const { colors } = useTheme();

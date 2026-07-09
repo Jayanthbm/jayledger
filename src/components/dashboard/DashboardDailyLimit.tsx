@@ -31,7 +31,7 @@ export const DashboardDailyLimit = React.memo(
         colors={colors}
         title="DAILY LIMIT"
         icon="speed"
-        onPress={() => navigation.navigate('DailyLimitDetail')}
+        onPress={() => navigation.navigate('daily-limit-detail')}
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
       >
         <View style={styles.rowBetween}>

@@ -7,22 +7,22 @@ import {
   ActivityIndicator,
   DeviceEventEmitter,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { useDashboardData } from '../hooks/useDashboardData';
-import { useDashboardSync } from '../hooks/useDashboardSync';
-import { DashboardRemainingCard } from '../components/dashboard/DashboardRemainingCard';
-import { DashboardDailyLimit } from '../components/dashboard/DashboardDailyLimit';
-import { DashboardPayDay } from '../components/dashboard/DashboardPayDay';
-import { DashboardSummaryCard } from '../components/dashboard/DashboardSummaryCard';
-import { DashboardTopCategories } from '../components/dashboard/DashboardTopCategories';
-import { DashboardNetWorth } from '../components/dashboard/DashboardNetWorth';
-import { DashboardSyncModal } from '../components/dashboard/DashboardSyncModal';
-import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
+import { useNavigation } from 'expo-router/react-navigation';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { useDashboardSync } from '@/hooks/useDashboardSync';
+import { DashboardRemainingCard } from '@/components/dashboard/DashboardRemainingCard';
+import { DashboardDailyLimit } from '@/components/dashboard/DashboardDailyLimit';
+import { DashboardPayDay } from '@/components/dashboard/DashboardPayDay';
+import { DashboardSummaryCard } from '@/components/dashboard/DashboardSummaryCard';
+import { DashboardTopCategories } from '@/components/dashboard/DashboardTopCategories';
+import { DashboardNetWorth } from '@/components/dashboard/DashboardNetWorth';
+import { DashboardSyncModal } from '@/components/dashboard/DashboardSyncModal';
+import { common } from '@/styles/common';
+import { AppNavigation } from '@/navigation/navigationTypes';
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
@@ -145,7 +145,7 @@ export default function DashboardScreen() {
         prevIncome={metrics.prevMonthComp.income}
         prevExpense={metrics.prevMonthComp.expense}
         onPress={() =>
-          navigation.navigate('MonthlySummaryReport', {
+          navigation.navigate('reports/monthly-summary', {
             reportType: 'monthlySummary',
             title: 'Monthly Summary',
           })
@@ -161,7 +161,7 @@ export default function DashboardScreen() {
         prevIncome={metrics.prevYearComp.income}
         prevExpense={metrics.prevYearComp.expense}
         onPress={() =>
-          navigation.navigate('YearlySummaryReport', {
+          navigation.navigate('reports/yearly-summary', {
             reportType: 'yearlySummary',
             title: 'Yearly Summary',
           })

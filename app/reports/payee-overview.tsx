@@ -7,25 +7,25 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-import { useTheme } from '../../store/ThemeContext';
+import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/navigationTypes';
-import { useReportData } from '../../hooks/useReportData';
-import { ReportSelectors } from '../../components/reports/ReportSelectors';
-import { ReportSummary } from '../../components/reports/ReportSummary';
-import { ReportListItem } from '../../components/reports/ReportListItem';
-import { ReportEmptyState } from '../../components/reports/ReportEmptyState';
-import { ReportSortPicker } from '../../components/reports/ReportSortPicker';
-import { ReportDrillDownModal } from '../../components/reports/ReportDrillDownModal';
-import { SearchBar } from '../../components/SearchBar';
-import { common } from '../../styles/common';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useReportData } from '@/hooks/useReportData';
+import { ReportSelectors } from '@/components/reports/ReportSelectors';
+import { ReportSummary } from '@/components/reports/ReportSummary';
+import { ReportListItem } from '@/components/reports/ReportListItem';
+import { ReportEmptyState } from '@/components/reports/ReportEmptyState';
+import { ReportSortPicker } from '@/components/reports/ReportSortPicker';
+import { ReportDrillDownModal } from '@/components/reports/ReportDrillDownModal';
+import { SearchBar } from '@/components/SearchBar';
+import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'PayeeOverviewReport'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'reports/payee-overview'>;
 
 export default function PayeeOverviewReportScreen({ route, navigation }: Props) {
-  const { title = 'Payees', reportType = 'payees' } = route.params || {};
+  const { title = 'payees', reportType = 'payees' } = route.params || {};
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 

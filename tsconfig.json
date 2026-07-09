@@ -5,6 +5,9 @@
     "jsx": "react",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "types": ["jest"]
+    "types": ["jest"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   }
 }

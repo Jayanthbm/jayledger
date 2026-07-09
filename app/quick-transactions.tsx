@@ -7,28 +7,28 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { BottomSheet } from '../components/BottomSheet';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { deleteQuickTransaction, updateQuickTransactionPriorities } from '../db/queries';
-import { QuickTransaction } from '../models/types';
+import { BottomSheet } from '@/components/BottomSheet';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { deleteQuickTransaction, updateQuickTransactionPriorities } from '@/db/queries';
+import { QuickTransaction } from '@/models/types';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from 'expo-router/react-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FloatingActionButton } from '../components/FloatingActionButton';
-import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
-import { logger } from '../utils/logger';
-import { QuickTransactionCard } from '../components/transactions/QuickTransactionCard';
-import { SearchBar } from '../components/SearchBar';
-import { useToast } from '../store/ToastContext';
-import { getRelativeTime } from '../utils/dateUtils';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { common } from '@/styles/common';
+import { AppNavigation } from '@/navigation/navigationTypes';
+import { logger } from '@/utils/logger';
+import { QuickTransactionCard } from '@/components/transactions/QuickTransactionCard';
+import { SearchBar } from '@/components/SearchBar';
+import { useToast } from '@/store/ToastContext';
+import { getRelativeTime } from '@/utils/dateUtils';
 import {
   fetchQuickTransactionsData,
   saveQuickTransactionViewMode,
   performQuickTransactionSync,
   backgroundPushQuickTransactions,
-} from '../services/quickTransactionService';
+} from '@/services/quickTransactionService';
 
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
@@ -216,7 +216,7 @@ export default function QuickTransactionsScreen() {
 
   const handleEdit = (item: QuickTransaction) => {
     if (isReordering) return;
-    navigation.navigate('AddQuickTransaction', { quickTransaction: item });
+    navigation.navigate('add-quick-transaction', { quickTransaction: item });
   };
 
   const renderItem = ({ item, index }: { item: QuickTransaction; index: number }) => {
@@ -372,7 +372,7 @@ export default function QuickTransactionsScreen() {
       />
       {!isReordering && (
         <FloatingActionButton
-          onPress={() => navigation.navigate('AddQuickTransaction')}
+          onPress={() => navigation.navigate('add-quick-transaction')}
           iconName="add"
           backgroundColor={colors.primary}
           style={dynamicStyles.fab}

@@ -11,19 +11,19 @@ import {
   Platform,
   Keyboard,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { TransactionGroup } from '../models/types';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { TransactionGroup } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { SearchBar } from '../components/SearchBar';
-import { useToast } from '../store/ToastContext';
-import { getRelativeTime } from '../utils/dateUtils';
-import { BottomSheet } from '../components/BottomSheet';
-import { FloatingActionButton } from '../components/FloatingActionButton';
-import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
-import { logger } from '../utils/logger';
+import { useNavigation } from 'expo-router/react-navigation';
+import { SearchBar } from '@/components/SearchBar';
+import { useToast } from '@/store/ToastContext';
+import { getRelativeTime } from '@/utils/dateUtils';
+import { BottomSheet } from '@/components/BottomSheet';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { common } from '@/styles/common';
+import { AppNavigation } from '@/navigation/navigationTypes';
+import { logger } from '@/utils/logger';
 
 import {
   fetchGroupsData,
@@ -34,8 +34,8 @@ import {
   performGroupSync,
   backgroundPushGroups,
   filterAndSortGroups,
-} from '../services/groupService';
-import { updateTransactionGroupPriorities } from '../db/queries';
+} from '@/services/groupService';
+import { updateTransactionGroupPriorities } from '@/db/queries';
 
 export default function GroupsScreen() {
   const { colors } = useTheme();

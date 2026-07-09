@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { DashboardCard } from './DashboardCard';
 import { ThemeColors, ReportItem } from '../../models/types';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/navigationTypes';
 import { common } from '../../styles/common';
 import { ProgressBar } from '../ProgressBar';
@@ -24,7 +24,7 @@ export const DashboardTopCategories = React.memo(
         title="TOP CATEGORIES"
         icon="pie-chart"
         onPress={() =>
-          navigation.navigate('CategorySummaryReport', {
+          navigation.navigate('reports/category-summary', {
             reportType: 'summaryByCategory',
             title: 'Transactions By Category',
           })

@@ -8,11 +8,11 @@ import {
   ActivityIndicator,
   LayoutAnimation,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { Transaction } from '../models/types';
-import { TransactionCard } from '../components/TransactionCard';
-import { YearMonthSelector } from '../components/YearMonthSelector';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { Transaction } from '@/models/types';
+import { TransactionCard } from '@/components/TransactionCard';
+import { YearMonthSelector } from '@/components/YearMonthSelector';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import {
   startOfMonth,
@@ -30,12 +30,12 @@ import {
   fetchTransactionsForDate,
   calculateDailyNetTotal,
   getNewDateForPeriod,
-} from '../services/calendarService';
+} from '@/services/calendarService';
 
 // Modular Components
-import { CalendarGrid } from '../components/calendar/CalendarGrid';
-import { CalendarDaySummary } from '../components/calendar/CalendarDaySummary';
-import { logger } from '../utils/logger';
+import { CalendarGrid } from '@/components/calendar/CalendarGrid';
+import { CalendarDaySummary } from '@/components/calendar/CalendarDaySummary';
+import { logger } from '@/utils/logger';
 
 export default function CalendarViewScreen() {
   const { colors } = useTheme();

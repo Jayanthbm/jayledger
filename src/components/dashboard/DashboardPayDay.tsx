@@ -29,7 +29,7 @@ export const DashboardPayDay = React.memo(
         colors={colors}
         title="PAY DAY"
         icon="event"
-        onPress={() => navigation.navigate('CalendarView')}
+        onPress={() => navigation.navigate('calendar-view')}
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
       >
         <View style={styles.rowBetween}>

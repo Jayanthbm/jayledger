@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scheduleReminder } from '../services/notificationService';
 import { runFullSync } from '../services/syncService';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { resetAppData } from '../db/queries';
 import { Session } from '@supabase/supabase-js';
@@ -71,11 +71,11 @@ export const useAppSettings = (
           `@initial_payees_sync_checked_${session.user.id}`,
           'reports_view_mode',
         ];
-        await AsyncStorage.removeMany(keysToClear);
+        await AsyncStorage.multiRemove(keysToClear);
         if (onComplete) onComplete();
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Main' }],
+          routes: [{ name: '(tabs)' }],
         });
       } catch (e) {
         logger.error('Reset error', e);

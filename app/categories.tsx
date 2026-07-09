@@ -7,15 +7,15 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { Category } from '../models/types';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { Category } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { SegmentedControl } from '../components/SegmentedControl';
-import { SearchBar } from '../components/SearchBar';
-import { useToast } from '../store/ToastContext';
-import { getRelativeTime } from '../utils/dateUtils';
+import { useNavigation } from 'expo-router/react-navigation';
+import { SegmentedControl } from '@/components/SegmentedControl';
+import { SearchBar } from '@/components/SearchBar';
+import { useToast } from '@/store/ToastContext';
+import { getRelativeTime } from '@/utils/dateUtils';
 
 import {
   fetchCategoriesData,
@@ -24,17 +24,17 @@ import {
   performCategorySync,
   backgroundPushCategories,
   filterAndSortCategories,
-} from '../services/categoryService';
-import { updateCategoryPriorities } from '../db/queries';
+} from '@/services/categoryService';
+import { updateCategoryPriorities } from '@/db/queries';
 
 // Modular Components
-import { CategoryCard } from '../components/categories/CategoryCard';
-import { CategoryAddModal } from '../components/categories/CategoryAddModal';
-import { CategorySortModal } from '../components/categories/CategorySortModal';
-import { FloatingActionButton } from '../components/FloatingActionButton';
-import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
-import { logger } from '../utils/logger';
+import { CategoryCard } from '@/components/categories/CategoryCard';
+import { CategoryAddModal } from '@/components/categories/CategoryAddModal';
+import { CategorySortModal } from '@/components/categories/CategorySortModal';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { common } from '@/styles/common';
+import { AppNavigation } from '@/navigation/navigationTypes';
+import { logger } from '@/utils/logger';
 
 export default function CategoriesScreen() {
   const { colors } = useTheme();
@@ -391,8 +391,8 @@ export default function CategoriesScreen() {
                 viewMode={viewMode}
                 colors={colors}
                 onPress={(cat) =>
-                  navigation.navigate('Main', {
-                    screen: 'Transactions',
+                  navigation.navigate('(tabs)', {
+                    screen: 'transactions',
                     params: { initialSelectedCats: [cat.id] },
                   })
                 }

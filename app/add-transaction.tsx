@@ -11,13 +11,14 @@ import {
   DeviceEventEmitter,
   Linking,
 } from 'react-native';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { useToast } from '../store/ToastContext';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { useToast } from '@/store/ToastContext';
 import * as Location from 'expo-location';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/navigationTypes';
+import { useKeepAwake } from 'expo-keep-awake';
+import { useNavigation, useRoute, RouteProp } from 'expo-router/react-navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/navigationTypes';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
@@ -26,27 +27,28 @@ import {
   getPayees,
   insertOrUpdateTransaction,
   getTransactionGroups,
-} from '../db/queries';
-import { BottomSheet } from '../components/BottomSheet';
-import { SegmentedControl } from '../components/SegmentedControl';
-import { Category, Payee, Transaction, TransactionGroup } from '../models/types';
-import { generateUUID } from '../utils/commonUtils';
-import { syncTransactions } from '../services/syncService';
-import { common } from '../styles/common';
-import { validateTransaction } from '../utils/validators';
-import { useTransactionDateTime } from '../hooks/useTransactionDateTime';
-import { TransactionFormFields } from '../components/transactions/TransactionFormFields';
-import { TransactionSelectorRow } from '../components/transactions/TransactionSelectorRow';
-import { ItemSelectorModal } from '../components/transactions/ItemSelectorModal';
-import { TransactionLocationEditRow } from '../components/transactions/TransactionLocationEditRow';
-import { LocationEditSheet } from '../components/transactions/LocationEditSheet';
-import { logger } from '../utils/logger';
+} from '@/db/queries';
+import { BottomSheet } from '@/components/BottomSheet';
+import { SegmentedControl } from '@/components/SegmentedControl';
+import { Category, Payee, Transaction, TransactionGroup } from '@/models/types';
+import { generateUUID } from '@/utils/commonUtils';
+import { syncTransactions } from '@/services/syncService';
+import { common } from '@/styles/common';
+import { validateTransaction } from '@/utils/validators';
+import { useTransactionDateTime } from '@/hooks/useTransactionDateTime';
+import { TransactionFormFields } from '@/components/transactions/TransactionFormFields';
+import { TransactionSelectorRow } from '@/components/transactions/TransactionSelectorRow';
+import { ItemSelectorModal } from '@/components/transactions/ItemSelectorModal';
+import { TransactionLocationEditRow } from '@/components/transactions/TransactionLocationEditRow';
+import { LocationEditSheet } from '@/components/transactions/LocationEditSheet';
+import { logger } from '@/utils/logger';
 
 export default function AddTransactionScreen() {
+  useKeepAwake();
   const { colors } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<RouteProp<RootStackParamList, 'AddTransaction'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'add-transaction'>>();
   const editTx = route.params?.transaction;
   const { showToast } = useToast();
 

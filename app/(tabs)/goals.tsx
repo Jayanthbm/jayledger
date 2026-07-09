@@ -9,28 +9,28 @@ import {
   DeviceEventEmitter,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../store/ThemeContext';
-import { useAuth } from '../store/AuthContext';
-import { insertGoal, deleteGoalAsync } from '../db/queries';
-import { Goal } from '../models/types';
-import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '@/store/ThemeContext';
+import { useAuth } from '@/store/AuthContext';
+import { insertGoal, deleteGoalAsync } from '@/db/queries';
+import { Goal } from '@/models/types';
+import { useNavigation } from 'expo-router/react-navigation';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { getRelativeTime } from '../utils/dateUtils';
-import { useToast } from '../store/ToastContext';
-import { generateUUID } from '../utils/commonUtils';
+import { getRelativeTime } from '@/utils/dateUtils';
+import { useToast } from '@/store/ToastContext';
+import { generateUUID } from '@/utils/commonUtils';
 
-import { fetchGoals, handleGoalSync, sortGoals } from '../services/goalService';
-import { STORAGE_KEYS } from '../constants';
+import { fetchGoals, handleGoalSync, sortGoals } from '@/services/goalService';
+import { STORAGE_KEYS } from '@/constants';
 
 // Modular Components
-import { GoalCard } from '../components/goals/GoalCard';
-import { GoalSortModal } from '../components/goals/GoalSortModal';
-import { GoalDeleteModal } from '../components/goals/GoalDeleteModal';
-import { GoalAddEditModal } from '../components/goals/GoalAddEditModal';
-import { FloatingActionButton } from '../components/FloatingActionButton';
-import { common } from '../styles/common';
-import { AppNavigation } from '../navigation/navigationTypes';
-import { logger } from '../utils/logger';
+import { GoalCard } from '@/components/goals/GoalCard';
+import { GoalSortModal } from '@/components/goals/GoalSortModal';
+import { GoalDeleteModal } from '@/components/goals/GoalDeleteModal';
+import { GoalAddEditModal } from '@/components/goals/GoalAddEditModal';
+import { FloatingActionButton } from '@/components/FloatingActionButton';
+import { common } from '@/styles/common';
+import { AppNavigation } from '@/navigation/navigationTypes';
+import { logger } from '@/utils/logger';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();

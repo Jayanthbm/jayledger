@@ -7,25 +7,25 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-import { useTheme } from '../../store/ThemeContext';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/navigationTypes';
-import { useReportData } from '../../hooks/useReportData';
-import { ReportSelectors } from '../../components/reports/ReportSelectors';
-import { ReportEmptyState } from '../../components/reports/ReportEmptyState';
-import { ReportDrillDownModal } from '../../components/reports/ReportDrillDownModal';
-import { ProgressBar } from '../../components/ProgressBar';
-import { common } from '../../styles/common';
+import { useTheme } from '@/store/ThemeContext';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/navigationTypes';
+import { useReportData } from '@/hooks/useReportData';
+import { ReportSelectors } from '@/components/reports/ReportSelectors';
+import { ReportEmptyState } from '@/components/reports/ReportEmptyState';
+import { ReportDrillDownModal } from '@/components/reports/ReportDrillDownModal';
+import { ProgressBar } from '@/components/ProgressBar';
+import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../store/AuthContext';
-import { FinancialListItem } from '../../components/common/FinancialListItem';
-import { formatCurrency } from '../../utils/formatters';
-import { getCategoriesSummaryByGroup, getTransactionsByGroupAndCategory } from '../../db/queries';
-import { ReportItem, Transaction, MaterialIconName } from '../../models/types';
+import { useAuth } from '@/store/AuthContext';
+import { FinancialListItem } from '@/components/common/FinancialListItem';
+import { formatCurrency } from '@/utils/formatters';
+import { getCategoriesSummaryByGroup, getTransactionsByGroupAndCategory } from '@/db/queries';
+import { ReportItem, Transaction, MaterialIconName } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { logger } from '../../utils/logger';
+import { logger } from '@/utils/logger';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'GroupSummaryReport'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'reports/group-summary'>;
 
 export default function GroupSummaryReportScreen({ route, navigation }: Props) {
   const { title = 'Transactions By Group', reportType = 'groups' } = route.params || {};
