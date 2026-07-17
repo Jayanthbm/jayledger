@@ -47,7 +47,7 @@ export const triggerSuccess = async () => {
   if (await shouldTrigger()) {
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
+    } catch {
       // Ignored: expected to catch when running on non-supported platforms or simulators
     }
   }
@@ -60,7 +60,7 @@ export const triggerWarning = async () => {
   if (await shouldTrigger()) {
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } catch (error) {
+    } catch {
       // Ignored
     }
   }
@@ -73,7 +73,7 @@ export const triggerError = async () => {
   if (await shouldTrigger()) {
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } catch (error) {
+    } catch {
       // Ignored
     }
   }
@@ -86,7 +86,7 @@ export const triggerSelection = async () => {
   if (await shouldTrigger()) {
     try {
       await Haptics.selectionAsync();
-    } catch (error) {
+    } catch {
       // Ignored
     }
   }
@@ -105,7 +105,7 @@ export const triggerImpact = async (style: 'light' | 'medium' | 'heavy' = 'mediu
             ? Haptics.ImpactFeedbackStyle.Heavy
             : Haptics.ImpactFeedbackStyle.Medium;
       await Haptics.impactAsync(feedbackStyle);
-    } catch (error) {
+    } catch {
       // Ignored
     }
   }

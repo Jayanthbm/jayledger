@@ -59,6 +59,7 @@ export default function QuickTransactionsScreen() {
   const [isReordering, setIsReordering] = useState(false);
   const [viewMode, setViewMode] = useState<'Card' | 'List'>('Card');
   const [searchQuery, setSearchQuery] = useState('');
+  const isNavigatingRef = useRef(false);
 
   const loadData = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -215,11 +216,16 @@ export default function QuickTransactionsScreen() {
   };
 
   const handleEdit = (item: QuickTransaction) => {
-    if (isReordering) return;
+    if (isReordering || isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
     router.push({
       pathname: '/add-quick-transaction',
       params: { quickTransaction: JSON.stringify(item) },
     });
+    // Reset navigation guard after a delay to allow the new screen to mount
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 500);
   };
 
   const renderItem = ({ item, index }: { item: QuickTransaction; index: number }) => {

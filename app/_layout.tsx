@@ -71,7 +71,7 @@ export default function RootLayout() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       console.log('[App] Splash screen safety timeout triggered, forcing hide');
-      SplashScreen.hideAsync().catch((error) => {
+      SplashScreen.hideAsync().catch(() => {
         // Safe to ignore if already hidden
       });
     }, 3000);
@@ -116,7 +116,7 @@ function RootLayoutNav() {
       // Redirect to home if user is authenticated and trying to access auth screens
       router.replace('/(tabs)/dashboard');
     }
-  }, [session, loading, segments]);
+  }, [session, loading, segments, router]);
 
   const standardHeaderLeft = useCallback(
     () => (

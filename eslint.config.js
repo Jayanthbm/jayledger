@@ -102,6 +102,7 @@ module.exports = [
       'build/',
       'dist/',
       '*.config.js',
+      '.freebuff/',
     ],
   },
 ];

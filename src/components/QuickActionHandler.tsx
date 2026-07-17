@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import { router } from 'expo-router';
 import { useQuickActionCallback } from 'expo-quick-actions/hooks';
@@ -10,11 +10,18 @@ import { logger } from '../utils/logger';
 export function QuickActionHandler() {
   const { session } = useAuth();
   const [pendingAction, setPendingAction] = useState<Action | null>(null);
+  const processingRef = useRef(false);
 
   // Handle quick action navigation
   const handleQuickAction = useCallback(
     (action: Action) => {
       logger.info('[QuickActions] Handling quick action:', action.id);
+
+      // Guard: prevent duplicate processing of quick actions
+      if (processingRef.current) {
+        logger.info('[QuickActions] Already processing an action, ignoring duplicate');
+        return;
+      }
 
       // Check authentication state
       if (!session) {
@@ -22,28 +29,32 @@ export function QuickActionHandler() {
         return;
       }
 
+      processingRef.current = true;
+
       // Handle known actions
       try {
-        // Use setTimeout to ensure navigation is fully ready
-        setTimeout(() => {
-          if (action.id === 'add_transaction') {
-            router.push('/add-transaction');
-            logger.info('[QuickActions] Navigated to AddTransaction via Expo Router');
-          } else if (action.id === 'quick_transaction') {
-            // Navigate to Transactions tab which will show the quick transaction modal
-            router.push('/(tabs)/transactions');
-            // Trigger the quick transaction modal via event
-            setTimeout(() => {
-              DeviceEventEmitter.emit('show_quick_transaction_modal');
-              logger.info('[QuickActions] Triggered quick transaction modal');
-            }, 200);
-          } else {
-            logger.warn('[QuickActions] Unknown action ID:', action.id);
-          }
-        }, 100);
+        if (action.id === 'add_transaction') {
+          router.push('/add-transaction');
+          logger.info('[QuickActions] Navigated to AddTransaction via Expo Router');
+        } else if (action.id === 'quick_transaction') {
+          // Use router.replace to avoid duplicate tab stack entries
+          router.replace('/(tabs)/transactions');
+          // Trigger the quick transaction modal via event
+          setTimeout(() => {
+            DeviceEventEmitter.emit('show_quick_transaction_modal');
+            logger.info('[QuickActions] Triggered quick transaction modal');
+          }, 200);
+        } else {
+          logger.warn('[QuickActions] Unknown action ID:', action.id);
+        }
       } catch (error) {
         logger.error('[QuickActions] Navigation failed:', error);
       }
+
+      // Release the processing lock after a delay to allow subsequent actions
+      setTimeout(() => {
+        processingRef.current = false;
+      }, 1000);
     },
     [session],
   );
