@@ -23,7 +23,7 @@ import {
 } from '@/db/queries';
 import { BottomSheet } from '@/components/BottomSheet';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { useNavigation, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Category, Payee, QuickTransaction } from '@/models/types';
 import { generateUUID } from '@/utils/commonUtils';
 import { validateAmount } from '@/utils/validators';
@@ -35,7 +35,7 @@ import { logger } from '@/utils/logger';
 export default function AddQuickTransactionScreen() {
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation();
+  const router = useRouter();
   const params = useLocalSearchParams<{ quickTransaction?: string }>();
   const editQt = React.useMemo(
     () =>
@@ -149,7 +149,7 @@ export default function AddQuickTransactionScreen() {
       DeviceEventEmitter.emit('module_refreshed', { module: 'Dashboard' });
       DeviceEventEmitter.emit('module_refreshed', { module: 'Budgets' });
 
-      navigation.goBack();
+      router.back();
     } catch (error) {
       logger.error('Save Quick Transaction Error:', error);
       showToast('Failed to save template', 'error');
@@ -165,7 +165,7 @@ export default function AddQuickTransactionScreen() {
     <View style={styles.container}>
       <BottomSheet
         visible={true}
-        onClose={() => navigation.goBack()}
+        onClose={() => router.back()}
         title={editQt ? 'Edit Template' : 'New Template'}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

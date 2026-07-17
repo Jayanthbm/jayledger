@@ -101,7 +101,7 @@ export default function TransactionsScreen() {
   const { showToast } = useToast();
   const navigation = useNavigation();
   const router = useRouter();
-  const params = useLocalSearchParams<any>();
+  const params = useLocalSearchParams<Record<string, string | string[]>>();
 
   const filters = useTransactionFilters({ session, params });
   const { isSyncing, lastSyncTime, handleManualSync } = useTransactionSync(
@@ -109,6 +109,7 @@ export default function TransactionsScreen() {
     filters.loadData,
   );
   const listRef = useRef<FlashListRef<FlashListItem> | null>(null);
+  const isNavigatingRef = useRef(false);
 
   const [deleteConfirmTx, setDeleteConfirmTx] = useState<Transaction | null>(null);
 
@@ -572,11 +573,16 @@ export default function TransactionsScreen() {
           onClose={() => setShowQuickModal(false)}
           quickTransactions={quickTransactions}
           onSelect={(item) => {
+            if (isNavigatingRef.current) return;
+            isNavigatingRef.current = true;
             setShowQuickModal(false);
             router.push({
               pathname: '/add-transaction',
               params: { quickTransaction: JSON.stringify(item) },
             });
+            setTimeout(() => {
+              isNavigatingRef.current = false;
+            }, 500);
           }}
         />
 
@@ -587,7 +593,14 @@ export default function TransactionsScreen() {
           <Icon name="bolt" size={28} color={colors.primary} />
         </TouchableOpacity>
         <FloatingActionButton
-          onPress={() => router.push('/add-transaction')}
+          onPress={() => {
+            if (isNavigatingRef.current) return;
+            isNavigatingRef.current = true;
+            router.push('/add-transaction');
+            setTimeout(() => {
+              isNavigatingRef.current = false;
+            }, 500);
+          }}
           iconName="add"
           backgroundColor={colors.primary}
           style={styles.fab}

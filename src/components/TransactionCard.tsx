@@ -185,7 +185,7 @@ export const TransactionCard = React.memo(
           </View>
         )}
         {groupNode && (
-          <View style={[styles.groupRowContainer, firstRowHasContent && { marginTop: 6 }]}>
+          <View style={[styles.groupRowContainer, firstRowHasContent && styles.groupRowMargin]}>
             {groupNode}
           </View>
         )}
@@ -297,6 +297,9 @@ const styles = StyleSheet.create({
   groupRowContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  groupRowMargin: {
+    marginTop: 6,
   },
   footerRow: {
     flexDirection: 'row',

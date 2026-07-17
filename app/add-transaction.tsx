@@ -16,7 +16,7 @@ import { useAuth } from '@/store/AuthContext';
 import { useToast } from '@/store/ToastContext';
 import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useNavigation, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
@@ -45,7 +45,7 @@ export default function AddTransactionScreen() {
   useKeepAwake();
   const { colors } = useTheme();
   const { session } = useAuth();
-  const navigation = useNavigation();
+  const router = useRouter();
   const params = useLocalSearchParams<{ transaction?: string; quickTransaction?: string }>();
   const editTx = useMemo(
     () => (params.transaction ? (JSON.parse(params.transaction) as Transaction) : undefined),
@@ -347,7 +347,7 @@ export default function AddTransactionScreen() {
       DeviceEventEmitter.emit('module_refreshed', { module: 'Budgets' });
 
       showToast('Transaction saved successfully', 'success');
-      navigation.goBack();
+      router.back();
     } catch (error) {
       logger.error(error);
       showToast('Failed to save transaction', 'error');
@@ -363,7 +363,7 @@ export default function AddTransactionScreen() {
     <View style={styles.container}>
       <BottomSheet
         visible={true}
-        onClose={() => navigation.goBack()}
+        onClose={() => router.back()}
         title={editTx ? 'Edit Transaction' : 'Add Transaction'}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

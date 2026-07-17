@@ -3,14 +3,14 @@
     "name": "Jmoney",
     "slug": "jmoney",
     "scheme": "jmoney",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jayanth.jmoney",
-      "buildNumber": "9"
+      "buildNumber": "10"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.jayanth.jmoney",
-      "versionCode": 9,
+      "versionCode": 10,
       "intentFilters": [
         {
           "action": "VIEW",
