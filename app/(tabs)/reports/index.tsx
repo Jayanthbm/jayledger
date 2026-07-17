@@ -75,14 +75,14 @@ const reportsList = [
     color: '#3b82f6',
   },
   {
-    title: 'payees',
+    title: 'Payees',
     description: 'Overall payee analysis',
     icon: 'people',
     view: 'payees',
     color: '#06b6d4',
   },
   {
-    title: 'categories',
+    title: 'Categories',
     description: 'Overall category analysis',
     icon: 'category',
     view: 'categories',
