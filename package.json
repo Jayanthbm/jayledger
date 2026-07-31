@@ -42,6 +42,7 @@
     "@supabase/supabase-js": "^2.110.1",
     "date-fns": "^4.4.0",
     "expo": "~57.0.4",
+    "expo-blur": "~57.0.2",
     "expo-constants": "~57.0.3",
     "expo-crypto": "~57.0.0",
     "expo-font": "~57.0.0",

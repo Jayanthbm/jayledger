@@ -433,6 +433,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   fab: {
-    bottom: Platform.OS === 'ios' ? 40 : 24,
+    bottom: Platform.OS === 'ios' ? 90 : 24,
   },
 });

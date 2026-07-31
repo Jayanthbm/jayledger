@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp, Platform, View } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { BlurView } from 'expo-blur';
 
 interface FloatingActionButtonProps {
   onPress: () => void;
@@ -16,13 +17,51 @@ interface FloatingActionButtonProps {
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   onPress,
   iconName,
-  backgroundColor = '#6200ee', // Default to a fallback if none provided
+  backgroundColor = '#6200ee', // Default fallback
   iconColor = '#fff',
   iconSize = 28,
   size = 64,
   style,
   disabled = false,
 }) => {
+  const borderRadius = size / 3;
+
+  if (Platform.OS === 'ios') {
+    return (
+      <View style={[styles.fabWrapper, style]}>
+        <BlurView
+          intensity={80}
+          tint="light"
+          style={[
+            styles.blurContainer,
+            {
+              width: size,
+              height: size,
+              borderRadius,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.fabInner,
+              {
+                backgroundColor: backgroundColor + 'CC', // 80% opacity for glass shine
+                width: size,
+                height: size,
+                borderRadius,
+              },
+            ]}
+            onPress={onPress}
+            activeOpacity={0.7}
+            disabled={disabled}
+          >
+            <MaterialIcons name={iconName} size={iconSize} color={iconColor} />
+          </TouchableOpacity>
+        </BlurView>
+      </View>
+    );
+  }
+
   return (
     <TouchableOpacity
       style={[
@@ -31,7 +70,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           backgroundColor,
           width: size,
           height: size,
-          borderRadius: size / 3, // M3 style: slightly rounded square
+          borderRadius,
         },
         style,
       ]}
@@ -45,10 +84,29 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 };
 
 const styles = StyleSheet.create({
+  fabWrapper: {
+    position: 'absolute',
+    right: 24,
+    bottom: 90,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  blurContainer: {
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.45)',
+  },
+  fabInner: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   fab: {
     position: 'absolute',
     right: 24,
-    bottom: 24,
+    bottom: Platform.OS === 'ios' ? 90 : 24,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,

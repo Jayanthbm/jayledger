@@ -162,6 +162,15 @@ export default function TransactionsScreen() {
     }
   }, []);
 
+  const hasAnyFilter =
+    !!startDate ||
+    !!endDate ||
+    selectedCats.length > 0 ||
+    selectedPayees.length > 0 ||
+    selectedGroups.length > 0;
+
+  const [showSearchFilters, setShowSearchFilters] = useState(false);
+
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
@@ -180,17 +189,41 @@ export default function TransactionsScreen() {
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity
-          onPress={handleManualSync}
-          style={common.headerRightBtn}
-          disabled={isSyncing}
-        >
-          {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Icon name="refresh" size={24} color={colors.text} />
-          )}
-        </TouchableOpacity>
+        <View style={styles.headerRightRow}>
+          <TouchableOpacity
+            onPress={() => setShowSearchFilters((prev) => !prev)}
+            style={[
+              styles.headerSearchToggleBtn,
+              (showSearchFilters || hasAnyFilter || search.length > 0) && {
+                backgroundColor: colors.primary + '20',
+              },
+            ]}
+          >
+            <Icon
+              name={showSearchFilters ? 'search-off' : 'tune'}
+              size={20}
+              color={
+                showSearchFilters || hasAnyFilter || search.length > 0
+                  ? colors.primary
+                  : colors.text
+              }
+            />
+            {hasAnyFilter && (
+              <View style={[styles.filterBadge, { backgroundColor: colors.primary }]} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleManualSync}
+            style={common.headerRightBtn}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="refresh" size={24} color={colors.text} />
+            )}
+          </TouchableOpacity>
+        </View>
       ),
     });
 
@@ -217,6 +250,9 @@ export default function TransactionsScreen() {
     handleManualSync,
     loadData,
     scrollToTop,
+    showSearchFilters,
+    hasAnyFilter,
+    search,
   ]);
 
   useFocusEffect(
@@ -279,13 +315,6 @@ export default function TransactionsScreen() {
     listData.length,
   ]);
 
-  const hasAnyFilter =
-    !!startDate ||
-    !!endDate ||
-    selectedCats.length > 0 ||
-    selectedPayees.length > 0 ||
-    selectedGroups.length > 0;
-
   const getFilterSummaryText = () => {
     const parts: string[] = [];
     if (startDate || endDate) {
@@ -319,15 +348,60 @@ export default function TransactionsScreen() {
     <DataErrorBoundary colors={colors} onReset={loadData}>
       <View style={[common.flex1, { backgroundColor: colors.background }]}>
         <SyncFeedback isSyncing={isSyncing} onRetry={handleManualSync} />
-        <View style={styles.searchContainer}>
-          <SearchBar
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search transactions..."
-            size="medium"
-            onClear={() => setSearch('')}
-          />
-        </View>
+        {showSearchFilters && (
+          <View style={styles.collapsibleControlsContainer}>
+            <View style={styles.searchContainer}>
+              <SearchBar
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search transactions..."
+                size="medium"
+                onClear={() => setSearch('')}
+              />
+            </View>
+
+            {/* Modern unified 4-icon filter toolbar */}
+            <View
+              style={[
+                styles.filterToolbar,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <FilterIconButton
+                icon="calendar-today"
+                label="Date"
+                isActive={!!startDate || !!endDate}
+                count={startDate || endDate ? 1 : 0}
+                onPress={() => setShowFilterModal('Calendar')}
+                colors={colors}
+              />
+              <FilterIconButton
+                icon="category"
+                label="Category"
+                isActive={selectedCats.length > 0}
+                count={selectedCats.length}
+                onPress={() => setShowFilterModal('Category')}
+                colors={colors}
+              />
+              <FilterIconButton
+                icon="person"
+                label="Payee"
+                isActive={selectedPayees.length > 0}
+                count={selectedPayees.length}
+                onPress={() => setShowFilterModal('Payee')}
+                colors={colors}
+              />
+              <FilterIconButton
+                icon="folder"
+                label="Groups"
+                isActive={selectedGroups.length > 0}
+                count={selectedGroups.length}
+                onPress={() => setShowFilterModal('Group')}
+                colors={colors}
+              />
+            </View>
+          </View>
+        )}
 
         {listData.length > 0 && hasAnyFilter && (
           <View style={styles.statsRow}>
@@ -356,47 +430,6 @@ export default function TransactionsScreen() {
             </TouchableOpacity>
           </View>
         )}
-
-        {/* Modern unified 4-icon filter toolbar */}
-        <View
-          style={[
-            styles.filterToolbar,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <FilterIconButton
-            icon="calendar-today"
-            label="Date"
-            isActive={!!startDate || !!endDate}
-            count={startDate || endDate ? 1 : 0}
-            onPress={() => setShowFilterModal('Calendar')}
-            colors={colors}
-          />
-          <FilterIconButton
-            icon="category"
-            label="Category"
-            isActive={selectedCats.length > 0}
-            count={selectedCats.length}
-            onPress={() => setShowFilterModal('Category')}
-            colors={colors}
-          />
-          <FilterIconButton
-            icon="person"
-            label="Payee"
-            isActive={selectedPayees.length > 0}
-            count={selectedPayees.length}
-            onPress={() => setShowFilterModal('Payee')}
-            colors={colors}
-          />
-          <FilterIconButton
-            icon="folder"
-            label="Groups"
-            isActive={selectedGroups.length > 0}
-            count={selectedGroups.length}
-            onPress={() => setShowFilterModal('Group')}
-            colors={colors}
-          />
-        </View>
 
         {/* Active Filters Summary */}
         {hasAnyFilter && (
@@ -727,9 +760,33 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  headerRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerSearchToggleBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  collapsibleControlsContainer: {
+    marginBottom: 4,
+  },
   quickFab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 110 : 94,
+    bottom: Platform.OS === 'ios' ? 160 : 94,
     right: 24,
     width: 64,
     height: 64,
@@ -745,6 +802,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   fab: {
-    bottom: Platform.OS === 'ios' ? 40 : 24,
+    bottom: Platform.OS === 'ios' ? 90 : 24,
   },
 });
