@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { AppState, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { AppState, TouchableOpacity, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -122,8 +122,8 @@ function RootLayoutNav() {
     () => (
       <TouchableOpacity
         onPress={() => router.back()}
-        style={styles.headerLeftBtn}
-        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+        style={common.headerLeftBtn}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Icon name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
@@ -322,11 +322,3 @@ function RootLayoutNav() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  headerLeftBtn: {
-    paddingRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

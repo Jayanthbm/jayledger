@@ -323,7 +323,7 @@ export default function BudgetsScreen() {
               }}
             />
           )}
-          contentContainerStyle={common.pb40}
+          contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 120 : 60 }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <MaterialIcons name="account-balance-wallet" size={64} color={colors.border} />
@@ -433,6 +433,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   fab: {
-    bottom: Platform.OS === 'ios' ? 90 : 24,
+    bottom: Platform.OS === 'ios' ? 100 : 24,
   },
 });

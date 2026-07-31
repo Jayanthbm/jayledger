@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   DeviceEventEmitter,
+  Platform,
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
@@ -109,6 +110,7 @@ export default function DashboardScreen() {
     <ScrollView
       ref={scrollRef}
       style={[common.screenPadding16, { backgroundColor: colors.background }]}
+      contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 120 : 60 }}
       showsVerticalScrollIndicator={false}
     >
       <DashboardDailyLimit dailyLimitCalc={dailyLimitCalc} colors={colors} />

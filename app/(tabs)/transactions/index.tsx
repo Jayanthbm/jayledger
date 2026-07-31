@@ -28,6 +28,8 @@ import { TransactionQuickModal } from '@/components/transactions/TransactionQuic
 import { TransactionStatsModal } from '@/components/transactions/TransactionStatsModal';
 import { TransactionSectionHeader } from '@/components/transactions/TransactionSectionHeader';
 import { syncTransactions } from '@/services/syncService';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
 import { DataErrorBoundary } from '@/components/common/ErrorBoundaries';
@@ -619,12 +621,38 @@ export default function TransactionsScreen() {
           }}
         />
 
-        <TouchableOpacity
-          style={[styles.quickFab, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => setShowQuickModal(true)}
-        >
-          <Icon name="bolt" size={28} color={colors.primary} />
-        </TouchableOpacity>
+        {Platform.OS === 'ios' ? (
+          <View style={styles.quickFabWrapper}>
+            <BlurView intensity={65} tint="light" style={styles.quickFabBlurContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.quickFabInner,
+                  {
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    borderColor: 'rgba(255, 255, 255, 0.6)',
+                  },
+                ]}
+                onPress={() => setShowQuickModal(true)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={['rgba(255, 255, 255, 0.65)', 'rgba(255, 255, 255, 0.1)', 'transparent']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickFabGradient}
+                />
+                <Icon name="bolt" size={28} color={colors.primary} />
+              </TouchableOpacity>
+            </BlurView>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.quickFab, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowQuickModal(true)}
+          >
+            <Icon name="bolt" size={28} color={colors.primary} />
+          </TouchableOpacity>
+        )}
         <FloatingActionButton
           onPress={() => {
             if (isNavigatingRef.current) return;
@@ -735,7 +763,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   listContent: {
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === 'ios' ? 180 : 120,
   },
   statsRow: {
     paddingHorizontal: 16,
@@ -763,12 +791,12 @@ const styles = StyleSheet.create({
   headerRightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingRight: Platform.OS === 'ios' ? 4 : 0,
   },
   headerSearchToggleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -784,9 +812,44 @@ const styles = StyleSheet.create({
   collapsibleControlsContainer: {
     marginBottom: 4,
   },
+  quickFabWrapper: {
+    position: 'absolute',
+    bottom: 170,
+    right: 24,
+    width: 64,
+    height: 64,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  quickFabBlurContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 64 / 3,
+    overflow: 'hidden',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.55)',
+  },
+  quickFabInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 64 / 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  quickFabGradient: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 64 / 3,
+  },
   quickFab: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 160 : 94,
+    bottom: Platform.OS === 'ios' ? 170 : 94,
     right: 24,
     width: 64,
     height: 64,
@@ -802,6 +865,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   fab: {
-    bottom: Platform.OS === 'ios' ? 90 : 24,
+    bottom: Platform.OS === 'ios' ? 100 : 24,
   },
 });

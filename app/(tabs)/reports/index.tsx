@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  Platform,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -277,7 +285,7 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   content: {
     padding: 16,
-    paddingBottom: 20,
+    paddingBottom: Platform.OS === 'ios' ? 120 : 60,
   },
   grid: {
     flexDirection: 'row',
