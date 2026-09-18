@@ -194,6 +194,9 @@ export const initDB = async () => {
         CREATE INDEX IF NOT EXISTS idx_transactions_catname ON transactions(category_name);
         CREATE INDEX IF NOT EXISTS idx_transactions_tid ON transactions(tid);
         CREATE INDEX IF NOT EXISTS idx_transactions_group ON transactions(group_id);
+        CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions(user_id, deleted, date);
+        CREATE INDEX IF NOT EXISTS idx_tx_user_cat ON transactions(user_id, deleted, category_id);
+        CREATE INDEX IF NOT EXISTS idx_tx_user_payee ON transactions(user_id, deleted, payee_id);
       `);
     } catch (e) {
       logger.warn('[DB] Index creation warning:', e);

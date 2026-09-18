@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { BottomSheet } from '../BottomSheet';
 import { TransactionCard } from '../TransactionCard';
 import { useTheme } from '../../store/ThemeContext';
@@ -39,11 +40,12 @@ export const BudgetDrillDownModal: React.FC<BudgetDrillDownModalProps> = ({
         {loading ? (
           <NativeLoadingIndicator size="large" color={colors.primary} style={common.mt40} />
         ) : (
-          <FlatList
+          <FlashList
             data={transactions}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <TransactionCard transaction={item} />}
             contentContainerStyle={dynamicStyles}
+            estimatedItemSize={88}
             ListEmptyComponent={
               <View style={styles.emptyDrill}>
                 <MaterialIcons name="search-off" size={64} color={colors.border} />
