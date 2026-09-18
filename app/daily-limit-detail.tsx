@@ -65,7 +65,6 @@ export default function DailyLimitDetailScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <TransactionCard transaction={item} />}
           contentContainerStyle={styles.listContent}
-          estimatedItemSize={88}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <MaterialIcons name="receipt" size={64} color={colors.border} />

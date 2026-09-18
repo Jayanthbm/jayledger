@@ -45,7 +45,6 @@ export const BudgetDrillDownModal: React.FC<BudgetDrillDownModalProps> = ({
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <TransactionCard transaction={item} />}
             contentContainerStyle={dynamicStyles}
-            estimatedItemSize={88}
             ListEmptyComponent={
               <View style={styles.emptyDrill}>
                 <MaterialIcons name="search-off" size={64} color={colors.border} />
