@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../../store/ThemeContext';
+import { NativeLoadingIndicator } from './NativeLoadingIndicator';
 
 export interface ConfirmationSheetProps {
   message: string;
@@ -32,7 +33,7 @@ export const ConfirmationSheet = ({
         disabled={isLoading}
       >
         {isLoading ? (
-          <ActivityIndicator color="#fff" />
+          <NativeLoadingIndicator color="#fff" />
         ) : (
           <Text style={styles.sheetButtonText}>{confirmLabel}</Text>
         )}

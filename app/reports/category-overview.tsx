@@ -1,12 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -20,6 +13,7 @@ import { ReportDrillDownModal } from '@/components/reports/ReportDrillDownModal'
 import { SearchBar } from '@/components/SearchBar';
 import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function CategoryOverviewReportScreen() {
   const navigation = useNavigation();
@@ -108,7 +102,7 @@ export default function CategoryOverviewReportScreen() {
       />
 
       {report.loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <NativeLoadingIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {report.sortedData.length === 0 ? (

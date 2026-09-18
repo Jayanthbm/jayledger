@@ -1,9 +1,10 @@
 import type { ThemeColors } from '../../models/types';
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BottomSheet } from '../BottomSheet';
 import { common } from '../../styles/common';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface DashboardSyncModalProps {
   visible: boolean;
@@ -75,7 +76,7 @@ export const DashboardSyncModal = React.memo(
                         {isDone ? (
                           <MaterialIcons name="check" size={12} color="#fff" />
                         ) : isActive ? (
-                          <ActivityIndicator size="small" color="#fff" />
+                          <NativeLoadingIndicator size="small" color="#fff" />
                         ) : null}
                       </View>
                       <Text
@@ -101,7 +102,7 @@ export const DashboardSyncModal = React.memo(
 
           {!syncError && (
             <View style={styles.spinnerContainer}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <NativeLoadingIndicator size="small" color={colors.primary} />
               <Text style={[styles.syncSubMessage, { color: colors.textSecondary }]}>
                 This may take a minute...
               </Text>

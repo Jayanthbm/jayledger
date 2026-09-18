@@ -8,7 +8,7 @@ export const cardStyles = StyleSheet.create({
    * Base card container with standard radius, border, and spacing.
    */
   container: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 20,
     marginBottom: 12,

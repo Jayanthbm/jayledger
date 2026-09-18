@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   DeviceEventEmitter,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,6 +29,7 @@ import { GoalAddEditModal } from '@/components/goals/GoalAddEditModal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function GoalsScreen() {
   const { colors } = useTheme();
@@ -150,7 +150,7 @@ export default function GoalsScreen() {
           disabled={isSyncing}
         >
           {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <NativeLoadingIndicator size="small" color={colors.primary} />
           ) : (
             <MaterialIcons name="refresh" size={24} color={colors.text} />
           )}

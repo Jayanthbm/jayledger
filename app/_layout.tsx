@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { AppState, TouchableOpacity, Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import Icon from '@expo/vector-icons/MaterialIcons';
 import { useTheme, ThemeProvider } from '../src/store/ThemeContext';
 import { useAuth, AuthProvider } from '../src/store/AuthContext';
 import { ToastProvider } from '../src/store/ToastContext';
@@ -31,7 +30,7 @@ export default function RootLayout() {
     checkBiometrics();
 
     const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+      if (appState.current?.match(/inactive|background/) && nextAppState === 'active') {
         checkBiometrics();
       }
       appState.current = nextAppState;
@@ -43,48 +42,41 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    const setup = async () => {
-      console.log('[App] Starting DB setup...');
+    async function setupDB() {
       try {
+        console.log('[App] Starting DB setup...');
         await initDB();
         console.log('[App] DB setup complete. Setting dbReady = true');
         setDbReady(true);
-      } catch (error) {
-        console.error('[App] Critical DB Setup Error:', error);
-        setDbReady(true);
+      } catch (e) {
+        console.error('Database initialization failed:', e);
       }
-    };
-    setup();
+    }
+    setupDB();
   }, []);
 
-  // Hide splash screen when DB is ready
-  useEffect(() => {
+  const onLayoutRootView = useCallback(async () => {
     if (dbReady) {
       console.log('[App] DB ready, hiding splash screen');
-      SplashScreen.hideAsync().catch((error) => {
-        console.error('[App] Error hiding splash screen:', error);
-      });
+      await SplashScreen.hideAsync().catch(() => {});
     }
   }, [dbReady]);
 
-  // Safety fallback to force hide splash screen after 3 seconds
+  // Safety fallback: Hide splash screen after 3 seconds regardless of DB state
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const timer = setTimeout(() => {
       console.log('[App] Splash screen safety timeout triggered, forcing hide');
-      SplashScreen.hideAsync().catch(() => {
-        // Safe to ignore if already hidden
-      });
+      SplashScreen.hideAsync().catch(() => {});
     }, 3000);
-
-    return () => clearTimeout(timeout);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!dbReady) {
-    return null; // Keep splash screen visible while DB initializes
+    return null;
   }
 
   return (
-    <GestureHandlerRootView style={common.flex1}>
+    <GestureHandlerRootView style={common.flex1} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
@@ -118,28 +110,17 @@ function RootLayoutNav() {
     }
   }, [session, loading, segments, router]);
 
-  const standardHeaderLeft = useCallback(
-    () => (
-      <TouchableOpacity
-        onPress={() => router.back()}
-        style={common.headerLeftBtn}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Icon name="arrow-back" size={24} color={colors.text} />
-      </TouchableOpacity>
-    ),
-    [router, colors.text],
-  );
-
   return (
     <>
       <QuickActionHandler />
       <Stack
         screenOptions={{
           headerShown: false,
-          headerBackTitle: '',
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.text,
+          headerBackButtonDisplayMode: 'minimal',
+          headerBackTitle: ' ',
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.primary,
+          headerTitleStyle: { color: colors.text },
           headerShadowVisible: false,
           animation: Platform.OS === 'android' ? 'slide_from_right' : 'default',
           gestureEnabled: true,
@@ -152,8 +133,6 @@ function RootLayoutNav() {
           options={{
             headerShown: true,
             title: 'Goals',
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
@@ -161,8 +140,6 @@ function RootLayoutNav() {
           options={{
             headerShown: true,
             title: "Today's Activity",
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
@@ -170,8 +147,6 @@ function RootLayoutNav() {
           options={{
             headerShown: true,
             title: 'Transaction Calendar',
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
@@ -196,27 +171,21 @@ function RootLayoutNav() {
           name="categories"
           options={{
             headerShown: true,
-            title: 'categories',
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
+            title: 'Categories',
           }}
         />
         <Stack.Screen
           name="payees"
           options={{
             headerShown: true,
-            title: 'payees',
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
+            title: 'Payees',
           }}
         />
         <Stack.Screen
           name="groups"
           options={{
             headerShown: true,
-            title: 'groups',
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
+            title: 'Groups',
           }}
         />
         <Stack.Screen
@@ -224,8 +193,6 @@ function RootLayoutNav() {
           options={{
             headerShown: true,
             title: 'Quick Transactions',
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
 
@@ -234,88 +201,66 @@ function RootLayoutNav() {
           name="reports/living-costs"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/subscription-bills"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/payee-summary"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/category-summary"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/group-summary"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/monthly-summary"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/yearly-summary"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/yearly-category"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/yearly-payee"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/payee-overview"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
         <Stack.Screen
           name="reports/category-overview"
           options={{
             headerShown: true,
-            headerBackTitle: ' ',
-            headerLeft: () => standardHeaderLeft(),
           }}
         />
       </Stack>

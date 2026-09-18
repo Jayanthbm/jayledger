@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { BottomSheet } from '@/components/BottomSheet';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
@@ -28,6 +21,7 @@ import {
   performQuickTransactionSync,
   backgroundPushQuickTransactions,
 } from '@/services/quickTransactionService';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function QuickTransactionsScreen() {
   const { colors } = useTheme();
@@ -170,7 +164,7 @@ export default function QuickTransactionsScreen() {
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
             {syncing ? (
-              <ActivityIndicator size="small" color={colors.primary} />
+              <NativeLoadingIndicator size="small" color={colors.primary} />
             ) : (
               <Icon name="refresh" size={24} color={colors.text} />
             )}
@@ -307,7 +301,7 @@ export default function QuickTransactionsScreen() {
   if (loading) {
     return (
       <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <NativeLoadingIndicator size="large" color={colors.primary} />
       </View>
     );
   }

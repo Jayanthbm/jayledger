@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { Payee } from '@/models/types';
@@ -33,6 +26,7 @@ import { PayeeSortModal } from '@/components/payees/PayeeSortModal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function PayeesScreen() {
   const { colors } = useTheme();
@@ -173,7 +167,7 @@ export default function PayeesScreen() {
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
             {syncing ? (
-              <ActivityIndicator size="small" color={colors.primary} />
+              <NativeLoadingIndicator size="small" color={colors.primary} />
             ) : (
               <MaterialIcons name="refresh" size={24} color={colors.text} />
             )}
@@ -205,7 +199,7 @@ export default function PayeesScreen() {
   if (loading) {
     return (
       <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
+        <NativeLoadingIndicator color={colors.primary} size="large" />
       </View>
     );
   }

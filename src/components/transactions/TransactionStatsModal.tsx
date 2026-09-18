@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
 import { common } from '../../styles/common';
 import type { MonthlyStatsBreakdown } from '../../models/types';
 import { useTheme } from '../../store/ThemeContext';
 import { formatCurrency } from '../../utils/formatters';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface TransactionStatsModalProps {
   visible: boolean;
@@ -19,7 +20,7 @@ export const TransactionStatsModal = React.memo(
     return (
       <BottomSheet visible={visible} onClose={onClose} title="Last 5 Months">
         {loadingStats ? (
-          <ActivityIndicator size="large" color={colors.primary} style={common.mt40} />
+          <NativeLoadingIndicator size="large" color={colors.primary} style={common.mt40} />
         ) : (
           <ScrollView>
             {statsBreakdown.map((s, idx) => (

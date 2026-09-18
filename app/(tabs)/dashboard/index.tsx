@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   DeviceEventEmitter,
   Platform,
 } from 'react-native';
@@ -23,6 +22,7 @@ import { DashboardTopCategories } from '@/components/dashboard/DashboardTopCateg
 import { DashboardNetWorth } from '@/components/dashboard/DashboardNetWorth';
 import { DashboardSyncModal } from '@/components/dashboard/DashboardSyncModal';
 import { common } from '@/styles/common';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
@@ -80,7 +80,7 @@ export default function DashboardScreen() {
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <NativeLoadingIndicator size="small" color={colors.primary} />
           ) : (
             <MaterialIcons name="refresh" size={24} color={colors.text} />
           )}
@@ -101,7 +101,7 @@ export default function DashboardScreen() {
   if (loading) {
     return (
       <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <NativeLoadingIndicator size="large" color={colors.primary} />
       </View>
     );
   }

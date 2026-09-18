@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
@@ -31,6 +30,7 @@ import { TransactionFormFields } from '@/components/transactions/TransactionForm
 import { TransactionSelectorRow } from '@/components/transactions/TransactionSelectorRow';
 import { ItemSelectorModal } from '@/components/transactions/ItemSelectorModal';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function AddQuickTransactionScreen() {
   const { colors } = useTheme();
@@ -237,7 +237,7 @@ export default function AddQuickTransactionScreen() {
               disabled={submitting}
             >
               {submitting ? (
-                <ActivityIndicator color="white" />
+                <NativeLoadingIndicator color="white" />
               ) : (
                 <Text style={styles.saveBtnText}>{editQt ? 'Save Changes' : 'Save Template'}</Text>
               )}

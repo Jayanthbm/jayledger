@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
@@ -13,6 +12,7 @@ import { BottomSheet } from '../BottomSheet';
 import { SegmentedControl } from '../SegmentedControl';
 import { common } from '../../styles/common';
 import { logger } from '../../utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface CategoryAddModalProps {
   visible: boolean;
@@ -99,7 +99,7 @@ export const CategoryAddModal: React.FC<CategoryAddModalProps> = ({
           disabled={!name.trim() || isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator color="#fff" />
+            <NativeLoadingIndicator color="#fff" />
           ) : (
             <Text style={common.saveButtonText}>Save Category</Text>
           )}

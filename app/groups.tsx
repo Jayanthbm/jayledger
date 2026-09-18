@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
-  ActivityIndicator,
   TouchableOpacity,
   FlatList,
   StyleSheet,
@@ -36,6 +35,7 @@ import {
   filterAndSortGroups,
 } from '@/services/groupService';
 import { updateTransactionGroupPriorities } from '@/db/queries';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function GroupsScreen() {
   const { colors } = useTheme();
@@ -209,7 +209,7 @@ export default function GroupsScreen() {
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           {syncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <NativeLoadingIndicator size="small" color={colors.primary} />
           ) : (
             <MaterialIcons name="refresh" size={24} color={colors.text} />
           )}
@@ -239,7 +239,7 @@ export default function GroupsScreen() {
   if (loading) {
     return (
       <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
+        <NativeLoadingIndicator color={colors.primary} size="large" />
       </View>
     );
   }
@@ -561,7 +561,7 @@ const GroupAddModal: React.FC<GroupAddModalProps> = ({ visible, onClose, onAdd, 
           disabled={!name.trim() || isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator color="#fff" />
+            <NativeLoadingIndicator color="#fff" />
           ) : (
             <Text style={common.saveButtonText}>Save Group</Text>
           )}
@@ -737,7 +737,7 @@ const GroupEditModal: React.FC<GroupEditModalProps> = ({
             disabled={isDeleting || isSaving}
           >
             {isDeleting ? (
-              <ActivityIndicator color={colors.danger} />
+              <NativeLoadingIndicator color={colors.danger} />
             ) : (
               <Text style={[styles.deleteButtonText, { color: colors.danger }]}>Delete</Text>
             )}
@@ -753,7 +753,7 @@ const GroupEditModal: React.FC<GroupEditModalProps> = ({
             disabled={!name.trim() || isSaving || isDeleting}
           >
             {isSaving ? (
-              <ActivityIndicator color="#fff" />
+              <NativeLoadingIndicator color="#fff" />
             ) : (
               <Text style={common.saveButtonText}>Save Changes</Text>
             )}

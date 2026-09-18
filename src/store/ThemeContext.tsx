@@ -4,24 +4,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const Colors = {
   light: {
-    background: '#FFFFFF',
-    text: '#111827',
-    textSecondary: '#6B7280',
-    primary: '#3B82F6',
-    card: '#F3F4F6',
-    border: '#E5E7EB',
-    danger: '#EF4444',
-    success: '#10B981',
+    background: '#F2F2F7', // iOS systemGroupedBackground
+    text: '#000000', // iOS label
+    textSecondary: '#8E8E93', // iOS secondaryLabel
+    primary: '#007AFF', // iOS systemBlue
+    card: '#FFFFFF', // iOS secondarySystemGroupedBackground
+    border: '#E5E5EA', // iOS separator
+    danger: '#FF3B30', // iOS systemRed
+    success: '#34C759', // iOS systemGreen
   },
   dark: {
-    background: '#111827',
-    text: '#F9FAFB',
-    textSecondary: '#9CA3AF',
-    primary: '#3B82F6',
-    card: '#1F2937',
-    border: '#374151',
-    danger: '#EF4444',
-    success: '#10B981',
+    background: '#000000', // iOS systemBackground (pure OLED black)
+    text: '#FFFFFF', // iOS label
+    textSecondary: '#8E8E93', // iOS secondaryLabel
+    primary: '#0A84FF', // iOS systemBlue (dark mode)
+    card: '#1C1C1E', // iOS secondarySystemBackground
+    border: '#2C2C2E', // iOS separator
+    danger: '#FF453A', // iOS systemRed (dark mode)
+    success: '#30D158', // iOS systemGreen (dark mode)
   },
 };
 

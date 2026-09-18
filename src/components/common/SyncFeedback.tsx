@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useTheme } from '../../store/ThemeContext';
+import { NativeLoadingIndicator } from './NativeLoadingIndicator';
 
 interface SyncFeedbackProps {
   isSyncing: boolean;
@@ -24,7 +25,7 @@ export const SyncFeedback: React.FC<SyncFeedbackProps> = ({
   if (isSyncing) {
     return (
       <View style={[styles.container, styles.syncing, { backgroundColor: colors.primary + '10' }]}>
-        <ActivityIndicator size="small" color={colors.primary} style={styles.icon} />
+        <NativeLoadingIndicator size="small" color={colors.primary} style={styles.icon} />
         <Text style={[styles.text, { color: colors.primary }]}>Syncing your data...</Text>
       </View>
     );

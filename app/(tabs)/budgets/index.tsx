@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Platform,
   DeviceEventEmitter,
 } from 'react-native';
@@ -52,6 +51,7 @@ import { BudgetAddEditModal } from '@/components/budgets/BudgetAddEditModal';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 const currentYearNum = new Date().getFullYear();
 
@@ -198,7 +198,7 @@ export default function BudgetsScreen() {
           disabled={isSyncing}
         >
           {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <NativeLoadingIndicator size="small" color={colors.primary} />
           ) : (
             <MaterialIcons name="refresh" size={24} color={colors.text} />
           )}
@@ -298,7 +298,7 @@ export default function BudgetsScreen() {
 
       {loading && data.length === 0 ? (
         <View style={common.flexCenter}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <NativeLoadingIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList

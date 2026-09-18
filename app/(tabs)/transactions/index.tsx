@@ -5,9 +5,9 @@ import {
   StyleSheet,
   Platform,
   TouchableOpacity,
-  ActivityIndicator,
   DeviceEventEmitter,
 } from 'react-native';
+
 import { format, parseISO } from 'date-fns';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
@@ -28,8 +28,6 @@ import { TransactionQuickModal } from '@/components/transactions/TransactionQuic
 import { TransactionStatsModal } from '@/components/transactions/TransactionStatsModal';
 import { TransactionSectionHeader } from '@/components/transactions/TransactionSectionHeader';
 import { syncTransactions } from '@/services/syncService';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { common } from '@/styles/common';
 import { DataErrorBoundary } from '@/components/common/ErrorBoundaries';
@@ -41,6 +39,7 @@ import { useToast } from '@/store/ToastContext';
 
 import { formatCurrency } from '@/utils/formatters';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface FilterIconButtonProps {
   icon: string;
@@ -194,16 +193,12 @@ export default function TransactionsScreen() {
         <View style={styles.headerRightRow}>
           <TouchableOpacity
             onPress={() => setShowSearchFilters((prev) => !prev)}
-            style={[
-              styles.headerSearchToggleBtn,
-              (showSearchFilters || hasAnyFilter || search.length > 0) && {
-                backgroundColor: colors.primary + '20',
-              },
-            ]}
+            style={styles.headerSearchToggleBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Icon
               name={showSearchFilters ? 'search-off' : 'tune'}
-              size={20}
+              size={22}
               color={
                 showSearchFilters || hasAnyFilter || search.length > 0
                   ? colors.primary
@@ -220,7 +215,7 @@ export default function TransactionsScreen() {
             disabled={isSyncing}
           >
             {isSyncing ? (
-              <ActivityIndicator size="small" color={colors.primary} />
+              <NativeLoadingIndicator size="small" color={colors.primary} />
             ) : (
               <Icon name="refresh" size={24} color={colors.text} />
             )}
@@ -523,6 +518,7 @@ export default function TransactionsScreen() {
             ) : null
           }
           contentContainerStyle={styles.listContent}
+          bounces={false}
         />
 
         <TransactionFilterSelector
@@ -621,38 +617,20 @@ export default function TransactionsScreen() {
           }}
         />
 
-        {Platform.OS === 'ios' ? (
-          <View style={styles.quickFabWrapper}>
-            <BlurView intensity={65} tint="light" style={styles.quickFabBlurContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.quickFabInner,
-                  {
-                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                    borderColor: 'rgba(255, 255, 255, 0.6)',
-                  },
-                ]}
-                onPress={() => setShowQuickModal(true)}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={['rgba(255, 255, 255, 0.65)', 'rgba(255, 255, 255, 0.1)', 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.quickFabGradient}
-                />
-                <Icon name="bolt" size={28} color={colors.primary} />
-              </TouchableOpacity>
-            </BlurView>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[styles.quickFab, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowQuickModal(true)}
-          >
-            <Icon name="bolt" size={28} color={colors.primary} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[
+            styles.quickFab,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              borderWidth: 1,
+            },
+          ]}
+          onPress={() => setShowQuickModal(true)}
+          activeOpacity={0.8}
+        >
+          <Icon name="bolt" size={26} color={colors.primary} />
+        </TouchableOpacity>
         <FloatingActionButton
           onPress={() => {
             if (isNavigatingRef.current) return;
@@ -812,59 +790,25 @@ const styles = StyleSheet.create({
   collapsibleControlsContainer: {
     marginBottom: 4,
   },
-  quickFabWrapper: {
+  quickFab: {
     position: 'absolute',
-    bottom: 170,
-    right: 24,
-    width: 64,
-    height: 64,
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  quickFabBlurContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 64 / 3,
-    overflow: 'hidden',
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.55)',
-  },
-  quickFabInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 64 / 3,
+    bottom: Platform.OS === 'ios' ? 164 : 88,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  quickFabGradient: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: 64 / 3,
-  },
-  quickFab: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 170 : 94,
-    right: 24,
-    width: 64,
-    height: 64,
-    borderRadius: 64 / 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 8,
-    zIndex: 10,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 99,
   },
   fab: {
-    bottom: Platform.OS === 'ios' ? 100 : 24,
+    bottom: Platform.OS === 'ios' ? 96 : 20,
+    right: 20,
   },
 });
