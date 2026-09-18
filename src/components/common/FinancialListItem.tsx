@@ -38,6 +38,15 @@ export const FinancialListItem: React.FC<FinancialListItemProps> = ({
   children,
 }) => {
   const { colors } = useTheme();
+  const lastPressRef = React.useRef(0);
+
+  const handlePress = React.useCallback(() => {
+    if (!onPress) return;
+    const now = Date.now();
+    if (now - lastPressRef.current < 600) return;
+    lastPressRef.current = now;
+    onPress();
+  }, [onPress]);
 
   return (
     <TouchableOpacity
@@ -47,7 +56,7 @@ export const FinancialListItem: React.FC<FinancialListItemProps> = ({
         compact && styles.containerCompact,
         containerStyle,
       ]}
-      onPress={onPress}
+      onPress={onPress ? handlePress : undefined}
       disabled={!onPress}
       activeOpacity={onPress ? 0.7 : 1}
     >

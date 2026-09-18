@@ -28,6 +28,16 @@ export const DashboardCard = ({
   style,
   headerRight,
 }: DashboardCardProps) => {
+  const lastPressRef = React.useRef(0);
+
+  const handlePress = React.useCallback(() => {
+    if (!onPress) return;
+    const now = Date.now();
+    if (now - lastPressRef.current < 600) return;
+    lastPressRef.current = now;
+    onPress();
+  }, [onPress]);
+
   const Container = onPress ? TouchableOpacity : View;
 
   return (
@@ -38,7 +48,7 @@ export const DashboardCard = ({
         { backgroundColor: colors.card, borderColor: colors.border },
         style,
       ]}
-      onPress={onPress}
+      onPress={onPress ? handlePress : undefined}
       activeOpacity={onPress ? 0.7 : 1}
     >
       {(title || icon) && (

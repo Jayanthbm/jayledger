@@ -15,11 +15,20 @@ export const NativeListItem: React.FC<SettingRowProps> = ({
   isLoading,
 }) => {
   const { colors } = useTheme();
+  const lastPressRef = React.useRef(0);
+
+  const handlePress = React.useCallback(() => {
+    if (!onPress) return;
+    const now = Date.now();
+    if (now - lastPressRef.current < 600) return;
+    lastPressRef.current = now;
+    onPress();
+  }, [onPress]);
 
   return (
     <TouchableOpacity
       style={styles.settingRow}
-      onPress={onPress}
+      onPress={onPress ? handlePress : undefined}
       activeOpacity={0.6}
       disabled={!onPress || isLoading}
     >
