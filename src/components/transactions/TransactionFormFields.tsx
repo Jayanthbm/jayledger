@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Keyboard } from 'react-native';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { common } from '../../styles/common';
 
@@ -47,6 +47,8 @@ export const TransactionFormFields = ({
           value={amount}
           onChangeText={setAmount}
           autoFocus={autoFocus}
+          blurOnSubmit={true}
+          onSubmitEditing={Keyboard.dismiss}
         />
       </View>
 
@@ -60,6 +62,9 @@ export const TransactionFormFields = ({
           value={description}
           onChangeText={setDescription}
           maxLength={255}
+          returnKeyType="done"
+          blurOnSubmit={true}
+          onSubmitEditing={Keyboard.dismiss}
         />
         {setIdentifier && (
           <>
@@ -72,6 +77,9 @@ export const TransactionFormFields = ({
               onChangeText={(text) => setIdentifier(text.toUpperCase().slice(0, 2))}
               maxLength={2}
               autoCapitalize="characters"
+              returnKeyType="done"
+              blurOnSubmit={true}
+              onSubmitEditing={Keyboard.dismiss}
             />
           </>
         )}
@@ -91,6 +99,9 @@ export const TransactionFormFields = ({
           onChangeText={setProductLink}
           keyboardType="url"
           autoCapitalize="none"
+          returnKeyType="done"
+          blurOnSubmit={true}
+          onSubmitEditing={Keyboard.dismiss}
         />
       </View>
     </View>

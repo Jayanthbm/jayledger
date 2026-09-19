@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState, Platform, LogBox } from 'react-native';
+
+LogBox.ignoreLogs(['[Reanimated] dependencies should only be used in web implementation.']);
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -11,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BiometricLock } from '../src/components/BiometricLock';
 import { QuickActionHandler } from '../src/components/QuickActionHandler';
+import { NativeKeyboardToolbar } from '../src/components/common';
 import { common } from '../src/styles/common';
 
 export default function RootLayout() {
@@ -264,6 +267,7 @@ function RootLayoutNav() {
           }}
         />
       </Stack>
+      <NativeKeyboardToolbar />
     </>
   );
 }

@@ -12,6 +12,7 @@ import {
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../store/ThemeContext';
+import { NativeKeyboardToolbar } from './common/NativeKeyboardToolbar';
 
 interface BottomSheetProps {
   visible: boolean;
@@ -87,6 +88,7 @@ export const BottomSheet = ({
           <View style={styles.fullHeaderContainer}>{renderHeader()}</View>
           <View style={styles.flex1}>{children}</View>
         </View>
+        {visible && <NativeKeyboardToolbar />}
       </Modal>
     );
   }
@@ -111,6 +113,7 @@ export const BottomSheet = ({
           </View>
         </View>
       </KeyboardAvoidingView>
+      {visible && <NativeKeyboardToolbar />}
     </Modal>
   );
 };

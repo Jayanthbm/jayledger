@@ -56,6 +56,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary + '90'}
+        returnKeyType="done"
         style={[
           styles.input,
           {

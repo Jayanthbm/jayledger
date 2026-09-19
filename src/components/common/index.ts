@@ -6,3 +6,4 @@ export * from './NativeDatePicker';
 export * from './NativeButton';
 export * from './NativeHeaderBackButton';
 export * from './NativeLoadingIndicator';
+export * from './NativeKeyboardToolbar';
