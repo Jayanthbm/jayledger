@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import {
-  View,
   Text,
   ScrollView,
   TouchableOpacity,
@@ -29,7 +28,7 @@ export default function DashboardScreen() {
   const { session } = useAuth();
   const navigation = useNavigation();
   const router = useRouter();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<any>(null);
 
   const scrollToTop = useCallback(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -71,13 +70,12 @@ export default function DashboardScreen() {
           ) : null}
         </TouchableOpacity>
       ),
-      headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
-          style={common.headerRightBtn}
           disabled={isSyncing}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          style={common.headerRightBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           {isSyncing ? (
             <NativeLoadingIndicator size="small" color={colors.primary} />
@@ -98,14 +96,6 @@ export default function DashboardScreen() {
     scrollToTop,
   ]);
 
-  if (loading) {
-    return (
-      <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
-        <NativeLoadingIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <ScrollView
       ref={scrollRef}
@@ -113,20 +103,22 @@ export default function DashboardScreen() {
       contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 120 : 60 }}
       showsVerticalScrollIndicator={false}
     >
-      <DashboardDailyLimit dailyLimitCalc={dailyLimitCalc} colors={colors} />
+      <DashboardDailyLimit dailyLimitCalc={dailyLimitCalc} colors={colors} loading={loading} />
 
       <DashboardRemainingCard
         monthIncome={metrics.month.income}
         monthExpense={metrics.month.expense}
         colors={colors}
+        loading={loading}
       />
 
-      <DashboardPayDay payDayInfo={payDayInfo} isDark={isDark} colors={colors} />
+      <DashboardPayDay payDayInfo={payDayInfo} isDark={isDark} colors={colors} loading={loading} />
 
       <DashboardTopCategories
         topCategories={metrics.topCategories}
         totalExpense={metrics.month.expense}
         colors={colors}
+        loading={loading}
       />
 
       <DashboardSummaryCard
@@ -136,6 +128,7 @@ export default function DashboardScreen() {
         expense={metrics.month.expense}
         prevIncome={metrics.prevMonthComp.income}
         prevExpense={metrics.prevMonthComp.expense}
+        loading={loading}
         onPress={() =>
           router.push({
             pathname: '/reports/monthly-summary',
@@ -155,6 +148,7 @@ export default function DashboardScreen() {
         expense={metrics.year.expense}
         prevIncome={metrics.prevYearComp.income}
         prevExpense={metrics.prevYearComp.expense}
+        loading={loading}
         onPress={() =>
           router.push({
             pathname: '/reports/yearly-summary',
@@ -167,7 +161,7 @@ export default function DashboardScreen() {
         colors={colors}
       />
 
-      <DashboardNetWorth netWorth={metrics.netWorth} colors={colors} />
+      <DashboardNetWorth netWorth={metrics.netWorth} colors={colors} loading={loading} />
 
       <DashboardSyncModal
         visible={showSyncModal}

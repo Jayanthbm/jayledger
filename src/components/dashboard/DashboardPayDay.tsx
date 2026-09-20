@@ -16,10 +16,11 @@ interface DashboardPayDayProps {
   };
   isDark: boolean;
   colors: ThemeColors;
+  loading?: boolean;
 }
 
 export const DashboardPayDay = React.memo(
-  ({ payDayInfo, isDark, colors }: DashboardPayDayProps) => {
+  ({ payDayInfo, isDark, colors, loading = false }: DashboardPayDayProps) => {
     const router = useRouter();
     const percentage =
       ((payDayInfo.daysInMonth - payDayInfo.remaining) / payDayInfo.daysInMonth) * 100;
@@ -29,6 +30,7 @@ export const DashboardPayDay = React.memo(
         colors={colors}
         title="PAY DAY"
         icon="event"
+        loading={loading}
         onPress={() => router.push('/calendar-view')}
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
       >

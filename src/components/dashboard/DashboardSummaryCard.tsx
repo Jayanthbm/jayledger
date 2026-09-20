@@ -17,6 +17,7 @@ interface DashboardSummaryCardProps {
   prevExpense?: number;
   onPress: () => void;
   colors: ThemeColors;
+  loading?: boolean;
 }
 
 export const DashboardSummaryCard = React.memo(
@@ -29,6 +30,7 @@ export const DashboardSummaryCard = React.memo(
     prevExpense,
     onPress,
     colors,
+    loading = false,
   }: DashboardSummaryCardProps) => {
     const renderTrend = (current: number, previous: number | undefined, isIncome: boolean) => {
       if (previous === undefined || previous === 0) return null;
@@ -59,6 +61,7 @@ export const DashboardSummaryCard = React.memo(
         title={title}
         subtitle={subtitle}
         icon={title === 'THIS YEAR' ? 'event-note' : 'calendar-today'}
+        loading={loading}
         onPress={onPress}
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
       >

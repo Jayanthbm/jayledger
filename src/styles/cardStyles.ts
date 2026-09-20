@@ -81,4 +81,10 @@ export const cardStyles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   } as TextStyle,
+  loadingContainer: {
+    minHeight: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12,
+  } as ViewStyle,
 });

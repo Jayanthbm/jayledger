@@ -16,6 +16,24 @@ export const NativeLoadingIndicator: React.FC<NativeLoadingIndicatorProps> = ({
   const { colors } = useTheme();
   const indicatorColor = color || colors.primary;
 
+  // On iOS, use native SwiftUI ProgressView if available
+  if (Platform.OS === 'ios') {
+    try {
+      const { ProgressView, Host } = require('@expo/ui/swift-ui');
+      if (ProgressView && Host) {
+        return (
+          <View style={[styles.container, style]}>
+            <Host matchContents>
+              <ProgressView color={indicatorColor} />
+            </Host>
+          </View>
+        );
+      }
+    } catch {
+      // Fall through to standard layout
+    }
+  }
+
   // On Android, use native Jetpack Compose LoadingIndicator if available
   if (Platform.OS === 'android') {
     try {

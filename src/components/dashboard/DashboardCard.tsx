@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { cardStyles } from '../../styles/cardStyles';
+import { NativeLoadingIndicator } from '../common';
 
 interface DashboardCardProps {
   children: React.ReactNode;
@@ -15,6 +16,8 @@ interface DashboardCardProps {
   isMain?: boolean;
   style?: ViewStyle;
   headerRight?: React.ReactNode;
+  loading?: boolean;
+  minHeight?: number;
 }
 
 export const DashboardCard = ({
@@ -27,18 +30,20 @@ export const DashboardCard = ({
   isMain = false,
   style,
   headerRight,
+  loading = false,
+  minHeight,
 }: DashboardCardProps) => {
   const lastPressRef = React.useRef(0);
 
   const handlePress = React.useCallback(() => {
-    if (!onPress) return;
+    if (!onPress || loading) return;
     const now = Date.now();
     if (now - lastPressRef.current < 600) return;
     lastPressRef.current = now;
     onPress();
-  }, [onPress]);
+  }, [onPress, loading]);
 
-  const Container = onPress ? TouchableOpacity : View;
+  const Container = onPress && !loading ? TouchableOpacity : View;
 
   return (
     <Container
@@ -46,10 +51,11 @@ export const DashboardCard = ({
         cardStyles.container,
         isMain && cardStyles.main,
         { backgroundColor: colors.card, borderColor: colors.border },
+        minHeight ? { minHeight } : null,
         style,
       ]}
-      onPress={onPress ? handlePress : undefined}
-      activeOpacity={onPress ? 0.7 : 1}
+      onPress={onPress && !loading ? handlePress : undefined}
+      activeOpacity={onPress && !loading ? 0.7 : 1}
     >
       {(title || icon) && (
         <View style={cardStyles.header}>
@@ -69,7 +75,13 @@ export const DashboardCard = ({
           {headerRight}
         </View>
       )}
-      {children}
+      {loading ? (
+        <View style={cardStyles.loadingContainer}>
+          <NativeLoadingIndicator size="small" color={colors.primary} />
+        </View>
+      ) : (
+        children
+      )}
     </Container>
   );
 };

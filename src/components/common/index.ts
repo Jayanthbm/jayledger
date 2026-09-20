@@ -7,3 +7,4 @@ export * from './NativeButton';
 export * from './NativeHeaderBackButton';
 export * from './NativeLoadingIndicator';
 export * from './NativeKeyboardToolbar';
+export * from './NativeHeaderIconButton';

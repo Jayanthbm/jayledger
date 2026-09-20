@@ -1,7 +1,24 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { AppState, Platform, LogBox } from 'react-native';
 
-LogBox.ignoreLogs(['[Reanimated] dependencies should only be used in web implementation.']);
+LogBox.ignoreLogs([
+  '[Reanimated] dependencies should only be used in web implementation.',
+  'dependencies should only be used in web implementation.',
+]);
+
+// Filter out reanimated web warning from terminal Metro output
+if (typeof (globalThis as any).__DEV__ !== 'undefined' && (globalThis as any).__DEV__) {
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('dependencies should only be used in web implementation')
+    ) {
+      return;
+    }
+    originalWarn(...args);
+  };
+}
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack, useRouter, useSegments } from 'expo-router';

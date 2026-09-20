@@ -17,10 +17,11 @@ interface DashboardDailyLimitProps {
     remainingPercentage: number;
   };
   colors: ThemeColors;
+  loading?: boolean;
 }
 
 export const DashboardDailyLimit = React.memo(
-  ({ dailyLimitCalc, colors }: DashboardDailyLimitProps) => {
+  ({ dailyLimitCalc, colors, loading = false }: DashboardDailyLimitProps) => {
     const router = useRouter();
     const { remainingToday, spentToday, remainingPercentage } = dailyLimitCalc;
 
@@ -31,6 +32,7 @@ export const DashboardDailyLimit = React.memo(
         colors={colors}
         title="DAILY LIMIT"
         icon="speed"
+        loading={loading}
         onPress={() => router.push('/daily-limit-detail')}
         headerRight={<MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />}
       >
