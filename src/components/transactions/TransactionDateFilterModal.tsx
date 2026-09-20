@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import {
@@ -104,40 +104,96 @@ export const TransactionDateFilterModal = ({
 
   const dateButtonBg = colors.background;
 
+  const isIOS = Platform.OS === 'ios';
+
   return (
     <BottomSheet visible={visible} onClose={onClose} title="Select Date Range">
       <View style={styles.container}>
         {/* Date Selectors */}
         <View style={styles.selectorsRow}>
-          <TouchableOpacity
-            style={[
-              styles.dateButton,
-              { backgroundColor: dateButtonBg, borderColor: colors.border },
-            ]}
-            onPress={() => setShowStartPicker(true)}
-          >
-            <Text style={[styles.dateButtonLabel, { color: colors.textSecondary }]}>
-              Start Date
-            </Text>
-            <Text style={[styles.dateButtonValue, { color: colors.text }]}>
-              {tempStart ? format(tempStart, 'dd MMM yyyy') : 'Any Date'}
-            </Text>
-          </TouchableOpacity>
+          {isIOS ? (
+            <View
+              style={[
+                styles.dateButton,
+                { backgroundColor: dateButtonBg, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.dateButtonLabel, { color: colors.textSecondary }]}>
+                Start Date
+              </Text>
+              <DateTimePicker
+                value={tempStart || new Date()}
+                mode="date"
+                display="compact"
+                onChange={(_event, date) => {
+                  if (date) {
+                    setTempStart(date);
+                    if (tempEnd && date > tempEnd) {
+                      setTempEnd(date);
+                    }
+                  }
+                }}
+              />
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.dateButton,
+                { backgroundColor: dateButtonBg, borderColor: colors.border },
+              ]}
+              onPress={() => setShowStartPicker(true)}
+            >
+              <Text style={[styles.dateButtonLabel, { color: colors.textSecondary }]}>
+                Start Date
+              </Text>
+              <Text style={[styles.dateButtonValue, { color: colors.text }]}>
+                {tempStart ? format(tempStart, 'dd MMM yyyy') : 'Any Date'}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <Icon name="arrow-forward" size={20} color={colors.textSecondary} />
 
-          <TouchableOpacity
-            style={[
-              styles.dateButton,
-              { backgroundColor: dateButtonBg, borderColor: colors.border },
-            ]}
-            onPress={() => setShowEndPicker(true)}
-          >
-            <Text style={[styles.dateButtonLabel, { color: colors.textSecondary }]}>End Date</Text>
-            <Text style={[styles.dateButtonValue, { color: colors.text }]}>
-              {tempEnd ? format(tempEnd, 'dd MMM yyyy') : 'Any Date'}
-            </Text>
-          </TouchableOpacity>
+          {isIOS ? (
+            <View
+              style={[
+                styles.dateButton,
+                { backgroundColor: dateButtonBg, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.dateButtonLabel, { color: colors.textSecondary }]}>
+                End Date
+              </Text>
+              <DateTimePicker
+                value={tempEnd || new Date()}
+                mode="date"
+                display="compact"
+                onChange={(_event, date) => {
+                  if (date) {
+                    setTempEnd(date);
+                    if (tempStart && date < tempStart) {
+                      setTempStart(date);
+                    }
+                  }
+                }}
+              />
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.dateButton,
+                { backgroundColor: dateButtonBg, borderColor: colors.border },
+              ]}
+              onPress={() => setShowEndPicker(true)}
+            >
+              <Text style={[styles.dateButtonLabel, { color: colors.textSecondary }]}>
+                End Date
+              </Text>
+              <Text style={[styles.dateButtonValue, { color: colors.text }]}>
+                {tempEnd ? format(tempEnd, 'dd MMM yyyy') : 'Any Date'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Preset Ranges */}
@@ -194,8 +250,8 @@ export const TransactionDateFilterModal = ({
           </TouchableOpacity>
         )}
 
-        {/* Native Pickers */}
-        {showStartPicker && (
+        {/* Android Native Pickers */}
+        {!isIOS && showStartPicker && (
           <DateTimePicker
             value={tempStart || new Date()}
             mode="date"
@@ -203,7 +259,7 @@ export const TransactionDateFilterModal = ({
             onChange={handleStartChange}
           />
         )}
-        {showEndPicker && (
+        {!isIOS && showEndPicker && (
           <DateTimePicker
             value={tempEnd || new Date()}
             mode="date"
@@ -226,18 +282,19 @@ export const TransactionDateFilterModal = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 10,
+    paddingBottom: Platform.OS === 'ios' ? 0 : 8,
   },
   selectorsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 16,
     gap: 12,
   },
   dateButton: {
     flex: 1,
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderRadius: 12,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -254,7 +311,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 11,
     fontWeight: '700',
-    marginBottom: 12,
+    marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -262,11 +319,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   presetItem: {
     width: '48%',
-    padding: 12,
+    padding: 10,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
@@ -279,10 +336,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 10,
     borderRadius: 12,
     borderWidth: 1,
-    marginBottom: 24,
+    marginBottom: 12,
     gap: 8,
   },
   clearButtonText: {
@@ -290,7 +347,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   applyButton: {
-    padding: 16,
+    padding: 14,
     borderRadius: 14,
     alignItems: 'center',
     shadowColor: '#000',

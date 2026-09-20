@@ -67,29 +67,45 @@ export const NativeDatePicker: React.FC<NativeDatePickerProps> = ({
   };
 
   return (
-    <View style={[styles.dateTimeRow, containerStyle]}>
+    <View style={[styles.selectorRow, containerStyle]}>
       <TouchableOpacity
         style={[
-          styles.dateTimeChip,
+          styles.selectorBtn,
           { backgroundColor: colors.background, borderColor: colors.border },
         ]}
         onPress={() => setShowAndroidDate(true)}
       >
-        <Icon name="calendar-today" size={14} color={colors.textSecondary} style={common.mr6} />
-        <Text style={[styles.dateTimeText, { color: colors.text }]}>
-          {format(date, 'dd MMM yyyy')}
-        </Text>
+        <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
+          <Icon name="calendar-today" size={18} color={colors.textSecondary} />
+        </View>
+        <View style={common.flex1}>
+          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+            Date
+          </Text>
+          <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
+            {format(date, 'dd MMM yyyy')}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={[
-          styles.dateTimeChip,
+          styles.selectorBtn,
           { backgroundColor: colors.background, borderColor: colors.border },
         ]}
         onPress={() => setShowAndroidTime(true)}
       >
-        <Icon name="schedule" size={14} color={colors.textSecondary} style={common.mr6} />
-        <Text style={[styles.dateTimeText, { color: colors.text }]}>{format(date, 'h:mm a')}</Text>
+        <View style={[styles.selectorIconBg, { backgroundColor: colors.card }]}>
+          <Icon name="schedule" size={18} color={colors.textSecondary} />
+        </View>
+        <View style={common.flex1}>
+          <Text style={[styles.selectorLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+            Time
+          </Text>
+          <Text style={[styles.selectorValue, { color: colors.text }]} numberOfLines={1}>
+            {format(date, 'h:mm a')}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {showAndroidDate && (
@@ -114,21 +130,36 @@ export const NativeDatePicker: React.FC<NativeDatePickerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  dateTimeRow: {
+  selectorRow: {
     flexDirection: 'row',
     gap: 8,
     marginBottom: 16,
   },
-  dateTimeChip: {
+  selectorBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
+    gap: 6,
   },
-  dateTimeText: {
-    fontSize: 13,
+  selectorIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectorLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  selectorValue: {
+    fontSize: 12,
     fontWeight: '600',
   },
 });
