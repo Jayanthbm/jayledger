@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text, StyleSheet, Dimensions } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -23,6 +15,7 @@ import { common } from '@/styles/common';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCategories, toggleCategoryLivingCost } from '@/db/queries';
 import { Category } from '@/models/types';
+import { NativeLoadingIndicator } from '@/components/common';
 
 const { width } = Dimensions.get('window');
 
@@ -59,11 +52,6 @@ export default function LivingCostsReportScreen() {
       headerTitle: () => (
         <TouchableOpacity activeOpacity={0.7} style={common.headerTitleContainer}>
           <Text style={[common.navHeaderTitle, { color: colors.text }]}>{displayTitle}</Text>
-        </TouchableOpacity>
-      ),
-      headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerLeftContainer}>
-          <Icon name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
       ),
       headerRight: () => (
@@ -144,7 +132,7 @@ export default function LivingCostsReportScreen() {
       />
 
       {report.loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <NativeLoadingIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {report.sortedData.length === 0 ? (
@@ -201,7 +189,6 @@ export default function LivingCostsReportScreen() {
 
 const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 16 },
-  headerLeftContainer: { paddingRight: 12, justifyContent: 'center', alignItems: 'center' },
   headerRightContainer: { paddingRight: 16 },
   loader: { marginTop: 40 },
   comparisonIconRow: {

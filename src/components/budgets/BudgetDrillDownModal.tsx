@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { BottomSheet } from '../BottomSheet';
 import { TransactionCard } from '../TransactionCard';
 import { useTheme } from '../../store/ThemeContext';
@@ -7,6 +8,7 @@ import { Transaction } from '../../models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { common } from '../../styles/common';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface BudgetDrillDownModalProps {
   visible: boolean;
@@ -36,9 +38,9 @@ export const BudgetDrillDownModal: React.FC<BudgetDrillDownModalProps> = ({
     <BottomSheet visible={visible} onClose={onClose} title={title} subtitle={subtitle} isFullScreen>
       <View style={common.flex1}>
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={common.mt40} />
+          <NativeLoadingIndicator size="large" color={colors.primary} style={common.mt40} />
         ) : (
-          <FlatList
+          <FlashList
             data={transactions}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <TransactionCard transaction={item} />}

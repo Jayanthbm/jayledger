@@ -1,12 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -15,6 +8,7 @@ import { ReportSelectors } from '@/components/reports/ReportSelectors';
 import { ReportSummary } from '@/components/reports/ReportSummary';
 import { ReportEmptyState } from '@/components/reports/ReportEmptyState';
 import { common } from '@/styles/common';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function MonthlySummaryReportScreen() {
   const navigation = useNavigation();
@@ -87,7 +81,7 @@ export default function MonthlySummaryReportScreen() {
       )}
 
       {report.loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <NativeLoadingIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {report.data.length === 0 ? (

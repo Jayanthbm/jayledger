@@ -9,18 +9,27 @@ import { formatCurrency } from '../../utils/formatters';
 interface DashboardNetWorthProps {
   netWorth: number;
   colors: ThemeColors;
+  loading?: boolean;
 }
 
-export const DashboardNetWorth = React.memo(({ netWorth, colors }: DashboardNetWorthProps) => {
-  return (
-    <DashboardCard colors={colors} title="NET WORTH" icon="stars" style={common.mb40}>
-      <Text style={[styles.rowValue, { color: netWorth >= 0 ? colors.success : colors.danger }]}>
-        {formatCurrency(netWorth)}
-      </Text>
-      <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>ALL TIME BALANCE</Text>
-    </DashboardCard>
-  );
-});
+export const DashboardNetWorth = React.memo(
+  ({ netWorth, colors, loading = false }: DashboardNetWorthProps) => {
+    return (
+      <DashboardCard
+        colors={colors}
+        title="NET WORTH"
+        icon="stars"
+        loading={loading}
+        style={common.mb40}
+      >
+        <Text style={[styles.rowValue, { color: netWorth >= 0 ? colors.success : colors.danger }]}>
+          {formatCurrency(netWorth)}
+        </Text>
+        <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>ALL TIME BALANCE</Text>
+      </DashboardCard>
+    );
+  },
+);
 DashboardNetWorth.displayName = 'DashboardNetWorth';
 
 const styles = StyleSheet.create({

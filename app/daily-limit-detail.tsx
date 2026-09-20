@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
 import { getTransactionsByDate } from '@/db/queries';
 import { Transaction } from '@/models/types';
 import { TransactionCard } from '@/components/TransactionCard';
+import { NativeLoadingIndicator } from '@/components/common';
 import { format } from 'date-fns';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
@@ -56,9 +58,9 @@ export default function DailyLimitDetailScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <NativeLoadingIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
-        <FlatList
+        <FlashList
           data={data}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <TransactionCard transaction={item} />}

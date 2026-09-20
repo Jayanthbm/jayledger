@@ -1,4 +1,4 @@
-import { StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet, ViewStyle, Platform } from 'react-native';
 import { typography } from './typography';
 import { spacing } from './spacing';
 import { layout } from './layout';
@@ -29,7 +29,7 @@ export const commonStyles = StyleSheet.create({
   listContent16T4B120: {
     ...spacing.p16,
     paddingTop: 4,
-    paddingBottom: 120,
+    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   } as ViewStyle,
   modalListContent: {
     paddingBottom: 40,
@@ -102,7 +102,18 @@ export const commonStyles = StyleSheet.create({
   // Headers
   headerTitleContainer: { alignItems: 'flex-start' } as ViewStyle,
   headerRightBtn: {
-    paddingRight: 16,
+    height: 44,
+    minWidth: 44,
+    paddingHorizontal: Platform.OS === 'ios' ? 4 : 0,
+    paddingRight: Platform.OS === 'ios' ? 8 : 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
+  headerLeftBtn: {
+    height: 44,
+    minWidth: 44,
+    paddingLeft: Platform.OS === 'ios' ? 4 : 0,
+    paddingRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
   } as ViewStyle,

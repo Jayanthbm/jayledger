@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useReportData } from '@/hooks/useReportData';
@@ -23,6 +16,7 @@ import { getCategoriesSummaryByGroup, getTransactionsByGroupAndCategory } from '
 import { ReportItem, Transaction, MaterialIconName } from '@/models/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function GroupSummaryReportScreen() {
   const navigation = useNavigation();
@@ -91,7 +85,7 @@ export default function GroupSummaryReportScreen() {
       />
 
       {report.loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <NativeLoadingIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {report.sortedData.length === 0 ? (
@@ -203,7 +197,11 @@ const GroupListItem: React.FC<GroupListItemProps> = ({
       {isExpanded && (
         <View style={[styles.categoriesContainer, { borderLeftColor: colors.border }]}>
           {loading ? (
-            <ActivityIndicator size="small" color={colors.primary} style={styles.categoryLoader} />
+            <NativeLoadingIndicator
+              size="small"
+              color={colors.primary}
+              style={styles.categoryLoader}
+            />
           ) : categories.length === 0 ? (
             <Text style={[styles.emptyCategoryText, { color: colors.textSecondary }]}>
               No categories found in this group

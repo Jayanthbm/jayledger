@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
@@ -12,6 +11,7 @@ import {
 import { BottomSheet } from '../BottomSheet';
 import { common } from '../../styles/common';
 import { logger } from '../../utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface PayeeAddModalProps {
   visible: boolean;
@@ -88,7 +88,7 @@ export const PayeeAddModal: React.FC<PayeeAddModalProps> = ({
           disabled={!name.trim() || isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator color="#fff" />
+            <NativeLoadingIndicator color="#fff" />
           ) : (
             <Text style={common.saveButtonText}>Save Payee</Text>
           )}

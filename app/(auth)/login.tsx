@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
@@ -19,6 +18,7 @@ import { useTheme } from '@/store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import appConfig from '../../app.json';
 import { useToast } from '@/store/ToastContext';
+import { NativeLoadingIndicator } from '@/components/common';
 
 const { height } = Dimensions.get('window');
 
@@ -121,7 +121,7 @@ export default function LoginScreen() {
                   activeOpacity={0.8}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#121417" />
+                    <NativeLoadingIndicator color="#121417" />
                   ) : (
                     <Text style={styles.loginBtnText}>Login</Text>
                   )}

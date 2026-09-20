@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Switch,
   Platform,
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
@@ -16,6 +15,8 @@ import { getRelativeTime } from '@/utils/dateUtils';
 import { BottomSheet } from '@/components/BottomSheet';
 import { ConfirmationSheet } from '@/components/common/ConfirmationSheet';
 import { SettingRow } from '@/components/common/SettingRow';
+import { NativeSwitch } from '@/components/common/NativeSwitch';
+
 import { useBiometrics } from '@/hooks/useBiometrics';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -197,7 +198,7 @@ export default function SettingsScreen() {
                   Protect app with Fingerprint/FaceID
                 </Text>
               </View>
-              <Switch
+              <NativeSwitch
                 value={biometricsEnabled}
                 onValueChange={handleBiometricToggle}
                 trackColor={{ false: colors.border, true: colors.primary + '80' }}
@@ -215,7 +216,7 @@ export default function SettingsScreen() {
                   Tactile feedback for button clicks and actions
                 </Text>
               </View>
-              <Switch
+              <NativeSwitch
                 value={hapticsEnabled}
                 onValueChange={handleHapticsToggle}
                 trackColor={{ false: colors.border, true: colors.primary + '80' }}
@@ -438,7 +439,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: { padding: 16, paddingBottom: 60 },
+  content: { padding: 16, paddingBottom: Platform.OS === 'ios' ? 120 : 60 },
 
   sectionHeader: {
     fontSize: 13,
@@ -467,7 +468,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  settingInfo: { flex: 1 },
+  settingInfo: {
+    flex: 1,
+    marginRight: 12,
+    flexShrink: 1,
+  },
   settingTitle: { fontSize: 16, fontWeight: '600' },
   settingValue: { fontSize: 13, marginTop: 2 },
   divider: { height: 1, marginLeft: 72 },

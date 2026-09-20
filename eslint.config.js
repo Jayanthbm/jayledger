@@ -74,6 +74,7 @@ module.exports = [
       'react/prop-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',
@@ -89,6 +90,7 @@ module.exports = [
       'react-native/no-inline-styles': 'warn',
       'react-native/no-color-literals': 'off',
       'react-native/no-raw-text': 'off',
+      'react-hooks/error-boundaries': 'off',
     },
   },
   prettier,

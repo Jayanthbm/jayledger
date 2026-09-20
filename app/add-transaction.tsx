@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
@@ -18,7 +17,7 @@ import * as Location from 'expo-location';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Icon from '@expo/vector-icons/MaterialIcons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { NativeDatePicker } from '@/components/common/NativeDatePicker';
 import { format } from 'date-fns';
 import {
   getCategories,
@@ -40,6 +39,7 @@ import { ItemSelectorModal } from '@/components/transactions/ItemSelectorModal';
 import { TransactionLocationEditRow } from '@/components/transactions/TransactionLocationEditRow';
 import { LocationEditSheet } from '@/components/transactions/LocationEditSheet';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function AddTransactionScreen() {
   useKeepAwake();
@@ -77,15 +77,9 @@ export default function AddTransactionScreen() {
     editTx?.latitude && editTx?.longitude ? 'Last Known' : null,
   );
   const [showLocationSheet, setShowLocationSheet] = useState(false);
-  const {
-    date,
-    showDatePicker,
-    setShowDatePicker,
-    handleDateChange,
-    showTimePicker,
-    setShowTimePicker,
-    handleTimeChange,
-  } = useTransactionDateTime(editTx ? new Date(editTx.transaction_timestamp) : new Date());
+  const { date, setDate } = useTransactionDateTime(
+    editTx ? new Date(editTx.transaction_timestamp) : new Date(),
+  );
 
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPayee, setSelectedPayee] = useState<Payee | null>(null);
@@ -385,38 +379,8 @@ export default function AddTransactionScreen() {
                 />
               )}
 
-              {/* Date / Time Row */}
-              <View style={styles.dateTimeRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.dateTimeChip,
-                    { backgroundColor: colors.background, borderColor: colors.border },
-                  ]}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Icon
-                    name="calendar-today"
-                    size={14}
-                    color={colors.textSecondary}
-                    style={common.mr6}
-                  />
-                  <Text style={[styles.dateTimeText, { color: colors.text }]}>
-                    {format(date, 'dd MMM yyyy')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.dateTimeChip,
-                    { backgroundColor: colors.background, borderColor: colors.border },
-                  ]}
-                  onPress={() => setShowTimePicker(true)}
-                >
-                  <Icon name="schedule" size={14} color={colors.textSecondary} style={common.mr6} />
-                  <Text style={[styles.dateTimeText, { color: colors.text }]}>
-                    {format(date, 'h:mm a')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              {/* Date / Time Selector */}
+              <NativeDatePicker date={date} onDateChange={setDate} containerStyle={common.mb12} />
 
               <TransactionSelectorRow
                 selectedPayee={selectedPayee}
@@ -468,7 +432,7 @@ export default function AddTransactionScreen() {
                     disabled={fetchingLocation}
                   >
                     {fetchingLocation ? (
-                      <ActivityIndicator size="small" color={colors.text} />
+                      <NativeLoadingIndicator size="small" color={colors.text} />
                     ) : (
                       <Icon
                         name={includeLocation ? 'location-on' : 'location-off'}
@@ -500,29 +464,11 @@ export default function AddTransactionScreen() {
               disabled={submitting}
             >
               {submitting ? (
-                <ActivityIndicator color="white" />
+                <NativeLoadingIndicator color="white" />
               ) : (
                 <Text style={styles.saveBtnText}>Save Transaction</Text>
               )}
             </TouchableOpacity>
-
-            {/* Date / Time pickers */}
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )}
-            {showTimePicker && (
-              <DateTimePicker
-                value={date}
-                mode="time"
-                display="default"
-                onChange={handleTimeChange}
-              />
-            )}
 
             <ItemSelectorModal
               visible={showModal === 'Category'}
@@ -590,25 +536,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   submitting: { opacity: 0.7 },
-  dateTimeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    gap: 12,
-  },
-  dateTimeChip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  dateTimeText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   saveBtn: {
     height: 56,
     borderRadius: 28,

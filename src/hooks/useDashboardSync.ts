@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   runFullSync,
@@ -108,14 +108,17 @@ export const useDashboardSync = (userId: string | undefined, onRefresh: () => vo
     }
   }, [userId, isSyncing, onRefresh, showToast]);
 
+  const checkedUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (userId) {
+    if (userId && checkedUserIdRef.current !== userId) {
+      checkedUserIdRef.current = userId;
       const timer = setTimeout(() => {
         checkSyncStatus();
-      }, 0);
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [userId, checkSyncStatus]); // Standard dependencies restored
+  }, [userId, checkSyncStatus]);
 
   return {
     showSyncModal,

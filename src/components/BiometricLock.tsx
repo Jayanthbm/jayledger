@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { common } from '../styles/common';
 import { logger } from '../utils/logger';
 import { triggerSuccess, triggerError } from '../utils/haptics';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface BiometricLockProps {
   onUnlock: () => void;
@@ -81,7 +82,7 @@ export const BiometricLock: React.FC<BiometricLockProps> = ({ onUnlock }) => {
           disabled={isAuthenticating}
         >
           {isAuthenticating ? (
-            <ActivityIndicator color="#fff" />
+            <NativeLoadingIndicator color="#fff" />
           ) : (
             <>
               <Icon name="lock-open" size={20} color="#fff" style={common.mr8} />

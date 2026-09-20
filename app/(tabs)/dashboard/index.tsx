@@ -1,11 +1,10 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import {
-  View,
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   DeviceEventEmitter,
+  Platform,
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
@@ -22,13 +21,14 @@ import { DashboardTopCategories } from '@/components/dashboard/DashboardTopCateg
 import { DashboardNetWorth } from '@/components/dashboard/DashboardNetWorth';
 import { DashboardSyncModal } from '@/components/dashboard/DashboardSyncModal';
 import { common } from '@/styles/common';
+import { NativeLoadingIndicator } from '@/components/common';
 
 export default function DashboardScreen() {
   const { colors, isDark } = useTheme();
   const { session } = useAuth();
   const navigation = useNavigation();
   const router = useRouter();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<any>(null);
 
   const scrollToTop = useCallback(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -70,16 +70,15 @@ export default function DashboardScreen() {
           ) : null}
         </TouchableOpacity>
       ),
-      headerTitleAlign: 'left',
       headerRight: () => (
         <TouchableOpacity
           onPress={handleManualSync}
-          style={common.headerRightBtn}
           disabled={isSyncing}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          style={common.headerRightBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <NativeLoadingIndicator size="small" color={colors.primary} />
           ) : (
             <MaterialIcons name="refresh" size={24} color={colors.text} />
           )}
@@ -97,34 +96,29 @@ export default function DashboardScreen() {
     scrollToTop,
   ]);
 
-  if (loading) {
-    return (
-      <View style={[common.flexCenter, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
-
   return (
     <ScrollView
       ref={scrollRef}
       style={[common.screenPadding16, { backgroundColor: colors.background }]}
+      contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 120 : 60 }}
       showsVerticalScrollIndicator={false}
     >
-      <DashboardDailyLimit dailyLimitCalc={dailyLimitCalc} colors={colors} />
+      <DashboardDailyLimit dailyLimitCalc={dailyLimitCalc} colors={colors} loading={loading} />
 
       <DashboardRemainingCard
         monthIncome={metrics.month.income}
         monthExpense={metrics.month.expense}
         colors={colors}
+        loading={loading}
       />
 
-      <DashboardPayDay payDayInfo={payDayInfo} isDark={isDark} colors={colors} />
+      <DashboardPayDay payDayInfo={payDayInfo} isDark={isDark} colors={colors} loading={loading} />
 
       <DashboardTopCategories
         topCategories={metrics.topCategories}
         totalExpense={metrics.month.expense}
         colors={colors}
+        loading={loading}
       />
 
       <DashboardSummaryCard
@@ -134,6 +128,7 @@ export default function DashboardScreen() {
         expense={metrics.month.expense}
         prevIncome={metrics.prevMonthComp.income}
         prevExpense={metrics.prevMonthComp.expense}
+        loading={loading}
         onPress={() =>
           router.push({
             pathname: '/reports/monthly-summary',
@@ -153,6 +148,7 @@ export default function DashboardScreen() {
         expense={metrics.year.expense}
         prevIncome={metrics.prevYearComp.income}
         prevExpense={metrics.prevYearComp.expense}
+        loading={loading}
         onPress={() =>
           router.push({
             pathname: '/reports/yearly-summary',
@@ -165,7 +161,7 @@ export default function DashboardScreen() {
         colors={colors}
       />
 
-      <DashboardNetWorth netWorth={metrics.netWorth} colors={colors} />
+      <DashboardNetWorth netWorth={metrics.netWorth} colors={colors} loading={loading} />
 
       <DashboardSyncModal
         visible={showSyncModal}

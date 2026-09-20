@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
   LayoutAnimation,
 } from 'react-native';
 import { useTheme } from '@/store/ThemeContext';
@@ -35,6 +34,7 @@ import {
 // Modular Components
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { CalendarDaySummary } from '@/components/calendar/CalendarDaySummary';
+import { NativeLoadingIndicator } from '@/components/common';
 import { logger } from '@/utils/logger';
 
 export default function CalendarViewScreen() {
@@ -191,7 +191,7 @@ export default function CalendarViewScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <NativeLoadingIndicator size="large" color={colors.primary} style={styles.loader} />
       ) : (
         <FlatList
           data={data}

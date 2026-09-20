@@ -12,16 +12,18 @@ interface DashboardTopCategoriesProps {
   topCategories: ReportItem[];
   totalExpense: number;
   colors: ThemeColors;
+  loading?: boolean;
 }
 
 export const DashboardTopCategories = React.memo(
-  ({ topCategories, totalExpense, colors }: DashboardTopCategoriesProps) => {
+  ({ topCategories, totalExpense, colors, loading = false }: DashboardTopCategoriesProps) => {
     const router = useRouter();
     return (
       <DashboardCard
         colors={colors}
         title="TOP CATEGORIES"
         icon="pie-chart"
+        loading={loading}
         onPress={() =>
           router.push({
             pathname: '/reports/category-summary',

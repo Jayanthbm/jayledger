@@ -3,7 +3,7 @@ import { View, TextInput, TouchableOpacity, StyleSheet, ViewStyle } from 'react-
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { useTheme } from '../store/ThemeContext';
 
-interface SearchBarProps {
+export interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
@@ -12,14 +12,14 @@ interface SearchBarProps {
   containerStyle?: ViewStyle;
 }
 
-export const SearchBar = ({
+export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
   placeholder = 'Search...',
   size = 'medium',
   onClear,
   containerStyle,
-}: SearchBarProps) => {
+}) => {
   const { colors } = useTheme();
 
   const getSizes = () => {
@@ -56,6 +56,7 @@ export const SearchBar = ({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary + '90'}
+        returnKeyType="done"
         style={[
           styles.input,
           {

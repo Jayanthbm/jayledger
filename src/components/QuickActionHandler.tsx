@@ -1,29 +1,28 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { DeviceEventEmitter } from 'react-native';
+import { DeviceEventEmitter, Platform } from 'react-native';
 import { router } from 'expo-router';
-import { useQuickActionCallback } from 'expo-quick-actions/hooks';
-import { setItems } from 'expo-quick-actions';
-import type { Action } from 'expo-quick-actions';
 import { useAuth } from '../store/AuthContext';
 import { logger } from '../utils/logger';
 
+interface ActionItem {
+  id: string;
+  title: string;
+}
+
 export function QuickActionHandler() {
   const { session } = useAuth();
-  const [pendingAction, setPendingAction] = useState<Action | null>(null);
+  const [pendingAction, setPendingAction] = useState<ActionItem | null>(null);
   const processingRef = useRef(false);
 
   // Handle quick action navigation
   const handleQuickAction = useCallback(
-    (action: Action) => {
+    (action: ActionItem) => {
       logger.info('[QuickActions] Handling quick action:', action.id);
 
-      // Guard: prevent duplicate processing of quick actions
       if (processingRef.current) {
-        logger.info('[QuickActions] Already processing an action, ignoring duplicate');
         return;
       }
 
-      // Check authentication state
       if (!session) {
         logger.info('[QuickActions] User not authenticated, ignoring action');
         return;
@@ -31,15 +30,12 @@ export function QuickActionHandler() {
 
       processingRef.current = true;
 
-      // Handle known actions
       try {
         if (action.id === 'add_transaction') {
           router.push('/add-transaction');
           logger.info('[QuickActions] Navigated to AddTransaction via Expo Router');
         } else if (action.id === 'quick_transaction') {
-          // Use router.replace to avoid duplicate tab stack entries
           router.replace('/(tabs)/transactions');
-          // Trigger the quick transaction modal via event
           setTimeout(() => {
             DeviceEventEmitter.emit('show_quick_transaction_modal');
             logger.info('[QuickActions] Triggered quick transaction modal');
@@ -51,7 +47,6 @@ export function QuickActionHandler() {
         logger.error('[QuickActions] Navigation failed:', error);
       }
 
-      // Release the processing lock after a delay to allow subsequent actions
       setTimeout(() => {
         processingRef.current = false;
       }, 1000);
@@ -59,36 +54,48 @@ export function QuickActionHandler() {
     [session],
   );
 
-  // Set up quick actions when component mounts
+  // Configure native shortcuts on iOS where native 3D touch is supported
   useEffect(() => {
-    logger.info('[QuickActions] Setting up quick actions');
-
-    const actions: Action[] = [
-      {
-        id: 'add_transaction',
-        title: 'New Transaction',
-        icon: 'asset:add_transaction_icon',
-      },
-      {
-        id: 'quick_transaction',
-        title: 'Quick Transaction',
-        icon: 'asset:quick_transaction_icon',
-      },
-    ];
-
-    setItems(actions)
-      .then(() => {
-        logger.info('[QuickActions] Quick actions configured successfully');
-      })
-      .catch((error) => {
-        logger.error('[QuickActions] Failed to configure quick actions:', error);
-      });
+    if (Platform.OS === 'ios') {
+      try {
+        const { setItems } = require('expo-quick-actions');
+        if (setItems) {
+          setItems([
+            {
+              id: 'add_transaction',
+              title: 'New Transaction',
+              icon: 'asset:add_transaction_icon',
+            },
+            {
+              id: 'quick_transaction',
+              title: 'Quick Transaction',
+              icon: 'asset:quick_transaction_icon',
+            },
+          ]).catch(() => {});
+        }
+      } catch {
+        // Fall through
+      }
+    }
   }, []);
 
-  // Handle navigation for pending actions once layout is ready
+  // Listen for native callbacks when available
+  useEffect(() => {
+    try {
+      const { addListener } = require('expo-quick-actions');
+      if (addListener) {
+        const sub = addListener((action: ActionItem) => {
+          handleQuickAction(action);
+        });
+        return () => sub?.remove?.();
+      }
+    } catch {
+      // Fall through
+    }
+  }, [handleQuickAction]);
+
   useEffect(() => {
     if (pendingAction) {
-      logger.info('[QuickActions] Processing pending action:', pendingAction.id);
       const timer = setTimeout(() => {
         handleQuickAction(pendingAction);
         setPendingAction(null);
@@ -97,12 +104,5 @@ export function QuickActionHandler() {
     }
   }, [pendingAction, handleQuickAction]);
 
-  // Use the expo-quick-actions hook to handle quick actions
-  useQuickActionCallback((action: Action) => {
-    logger.info('[QuickActions] Received quick action:', action.id);
-    handleQuickAction(action);
-  });
-
-  // This component doesn't render anything
   return null;
 }

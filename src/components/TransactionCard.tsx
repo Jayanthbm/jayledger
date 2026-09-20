@@ -12,7 +12,7 @@ import { Transaction, MaterialIconName } from '../models/types';
 import { useTheme } from '../store/ThemeContext';
 import Icon from '@expo/vector-icons/MaterialIcons';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { Swipeable } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { FinancialListItem } from './common/FinancialListItem';
 import { logger } from '../utils/logger';
 import { syncTransactions } from '../services/syncService';
@@ -38,7 +38,7 @@ export const TransactionCard = React.memo(
   }: TransactionCardProps) => {
     const { colors } = useTheme();
     const { session } = useAuth();
-    const swipeableRef = useRef<Swipeable>(null);
+    const swipeableRef = useRef<React.ElementRef<typeof Swipeable>>(null);
     const isIncome = transaction.type === 'Income';
 
     const handleEdit = () => {

@@ -54,15 +54,17 @@ export const fetchDashboardMetrics = async (userId: string): Promise<DashboardMe
   const prevYearStartStr = format(startOfYear(prevYearSameDate), 'yyyy-MM-dd');
   const prevYearDateStr = format(prevYearSameDate, 'yyyy-MM-dd');
 
-  // Fetching sequentially as requested
-  const monthSum = await getIncomeExpenseSummary(userId, monthStart, todayStr);
-  const prevMonthSum = await getIncomeExpenseSummary(userId, prevMonthStartStr, prevMonthDateStr);
-  const yearSum = await getIncomeExpenseSummary(userId, yearStart, todayStr);
-  const prevYearSum = await getIncomeExpenseSummary(userId, prevYearStartStr, prevYearDateStr);
-
-  const topCats = await getTransactionsByCategoryForExpense(userId, monthStart, monthEnd);
-  const totalNW = await getNetWorth(userId);
-  const todayExp = await getSpentToday(userId, todayStr);
+  // Fetch independent dashboard metrics in parallel
+  const [monthSum, prevMonthSum, yearSum, prevYearSum, topCats, totalNW, todayExp] =
+    await Promise.all([
+      getIncomeExpenseSummary(userId, monthStart, todayStr),
+      getIncomeExpenseSummary(userId, prevMonthStartStr, prevMonthDateStr),
+      getIncomeExpenseSummary(userId, yearStart, todayStr),
+      getIncomeExpenseSummary(userId, prevYearStartStr, prevYearDateStr),
+      getTransactionsByCategoryForExpense(userId, monthStart, monthEnd),
+      getNetWorth(userId),
+      getSpentToday(userId, todayStr),
+    ]);
 
   return {
     month: processSummary(monthSum),

@@ -7,7 +7,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   Keyboard,
 } from 'react-native';
 import { BottomSheet } from '../BottomSheet';
@@ -17,6 +16,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { common } from '../../styles/common';
 import { validateGoal } from '../../utils/validators';
 import { useToast } from '../../store/ToastContext';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface GoalAddEditModalProps {
   visible: boolean;
@@ -200,7 +200,7 @@ export const GoalAddEditModal: React.FC<GoalAddEditModalProps> = ({
           disabled={!name.trim() || isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator color="#fff" />
+            <NativeLoadingIndicator color="#fff" />
           ) : (
             <Text style={common.saveButtonText}>
               {editingGoal ? 'Save Changes' : 'Create Goal'}

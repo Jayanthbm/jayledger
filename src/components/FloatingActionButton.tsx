@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle, StyleProp, Platform } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useTheme } from '@/store/ThemeContext';
 
 interface FloatingActionButtonProps {
   onPress: () => void;
@@ -16,22 +17,25 @@ interface FloatingActionButtonProps {
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   onPress,
   iconName,
-  backgroundColor = '#6200ee', // Default to a fallback if none provided
-  iconColor = '#fff',
+  backgroundColor,
+  iconColor = '#FFFFFF',
   iconSize = 28,
-  size = 64,
+  size = 56,
   style,
   disabled = false,
 }) => {
+  const { colors } = useTheme();
+  const effectiveBg = backgroundColor || colors.primary;
+
   return (
     <TouchableOpacity
       style={[
         styles.fab,
         {
-          backgroundColor,
+          backgroundColor: effectiveBg,
           width: size,
           height: size,
-          borderRadius: size / 3, // M3 style: slightly rounded square
+          borderRadius: size / 2,
         },
         style,
       ]}
@@ -47,14 +51,15 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    right: 24,
-    bottom: 24,
+    right: 20,
+    bottom: Platform.OS === 'ios' ? 96 : 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
+    elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    zIndex: 99,
   },
 });

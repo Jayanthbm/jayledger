@@ -5,9 +5,9 @@ import {
   StyleSheet,
   Platform,
   TouchableOpacity,
-  ActivityIndicator,
   DeviceEventEmitter,
 } from 'react-native';
+
 import { format, parseISO } from 'date-fns';
 import { useTheme } from '@/store/ThemeContext';
 import { useAuth } from '@/store/AuthContext';
@@ -39,6 +39,7 @@ import { useToast } from '@/store/ToastContext';
 
 import { formatCurrency } from '@/utils/formatters';
 import { logger } from '@/utils/logger';
+import { NativeLoadingIndicator } from '@/components/common';
 
 interface FilterIconButtonProps {
   icon: string;
@@ -162,6 +163,15 @@ export default function TransactionsScreen() {
     }
   }, []);
 
+  const hasAnyFilter =
+    !!startDate ||
+    !!endDate ||
+    selectedCats.length > 0 ||
+    selectedPayees.length > 0 ||
+    selectedGroups.length > 0;
+
+  const [showSearchFilters, setShowSearchFilters] = useState(false);
+
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
@@ -180,17 +190,37 @@ export default function TransactionsScreen() {
       ),
       headerTitleAlign: 'left',
       headerRight: () => (
-        <TouchableOpacity
-          onPress={handleManualSync}
-          style={common.headerRightBtn}
-          disabled={isSyncing}
-        >
-          {isSyncing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Icon name="refresh" size={24} color={colors.text} />
-          )}
-        </TouchableOpacity>
+        <View style={styles.headerRightRow}>
+          <TouchableOpacity
+            onPress={() => setShowSearchFilters((prev) => !prev)}
+            style={styles.headerSearchToggleBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Icon
+              name={showSearchFilters ? 'search-off' : 'tune'}
+              size={22}
+              color={
+                showSearchFilters || hasAnyFilter || search.length > 0
+                  ? colors.primary
+                  : colors.text
+              }
+            />
+            {hasAnyFilter && (
+              <View style={[styles.filterBadge, { backgroundColor: colors.primary }]} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleManualSync}
+            style={common.headerRightBtn}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <NativeLoadingIndicator size="small" color={colors.primary} />
+            ) : (
+              <Icon name="refresh" size={24} color={colors.text} />
+            )}
+          </TouchableOpacity>
+        </View>
       ),
     });
 
@@ -217,6 +247,9 @@ export default function TransactionsScreen() {
     handleManualSync,
     loadData,
     scrollToTop,
+    showSearchFilters,
+    hasAnyFilter,
+    search,
   ]);
 
   useFocusEffect(
@@ -279,13 +312,6 @@ export default function TransactionsScreen() {
     listData.length,
   ]);
 
-  const hasAnyFilter =
-    !!startDate ||
-    !!endDate ||
-    selectedCats.length > 0 ||
-    selectedPayees.length > 0 ||
-    selectedGroups.length > 0;
-
   const getFilterSummaryText = () => {
     const parts: string[] = [];
     if (startDate || endDate) {
@@ -319,15 +345,60 @@ export default function TransactionsScreen() {
     <DataErrorBoundary colors={colors} onReset={loadData}>
       <View style={[common.flex1, { backgroundColor: colors.background }]}>
         <SyncFeedback isSyncing={isSyncing} onRetry={handleManualSync} />
-        <View style={styles.searchContainer}>
-          <SearchBar
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search transactions..."
-            size="medium"
-            onClear={() => setSearch('')}
-          />
-        </View>
+        {showSearchFilters && (
+          <View style={styles.collapsibleControlsContainer}>
+            <View style={styles.searchContainer}>
+              <SearchBar
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search transactions..."
+                size="medium"
+                onClear={() => setSearch('')}
+              />
+            </View>
+
+            {/* Modern unified 4-icon filter toolbar */}
+            <View
+              style={[
+                styles.filterToolbar,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <FilterIconButton
+                icon="calendar-today"
+                label="Date"
+                isActive={!!startDate || !!endDate}
+                count={startDate || endDate ? 1 : 0}
+                onPress={() => setShowFilterModal('Calendar')}
+                colors={colors}
+              />
+              <FilterIconButton
+                icon="category"
+                label="Category"
+                isActive={selectedCats.length > 0}
+                count={selectedCats.length}
+                onPress={() => setShowFilterModal('Category')}
+                colors={colors}
+              />
+              <FilterIconButton
+                icon="person"
+                label="Payee"
+                isActive={selectedPayees.length > 0}
+                count={selectedPayees.length}
+                onPress={() => setShowFilterModal('Payee')}
+                colors={colors}
+              />
+              <FilterIconButton
+                icon="folder"
+                label="Groups"
+                isActive={selectedGroups.length > 0}
+                count={selectedGroups.length}
+                onPress={() => setShowFilterModal('Group')}
+                colors={colors}
+              />
+            </View>
+          </View>
+        )}
 
         {listData.length > 0 && hasAnyFilter && (
           <View style={styles.statsRow}>
@@ -356,47 +427,6 @@ export default function TransactionsScreen() {
             </TouchableOpacity>
           </View>
         )}
-
-        {/* Modern unified 4-icon filter toolbar */}
-        <View
-          style={[
-            styles.filterToolbar,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <FilterIconButton
-            icon="calendar-today"
-            label="Date"
-            isActive={!!startDate || !!endDate}
-            count={startDate || endDate ? 1 : 0}
-            onPress={() => setShowFilterModal('Calendar')}
-            colors={colors}
-          />
-          <FilterIconButton
-            icon="category"
-            label="Category"
-            isActive={selectedCats.length > 0}
-            count={selectedCats.length}
-            onPress={() => setShowFilterModal('Category')}
-            colors={colors}
-          />
-          <FilterIconButton
-            icon="person"
-            label="Payee"
-            isActive={selectedPayees.length > 0}
-            count={selectedPayees.length}
-            onPress={() => setShowFilterModal('Payee')}
-            colors={colors}
-          />
-          <FilterIconButton
-            icon="folder"
-            label="Groups"
-            isActive={selectedGroups.length > 0}
-            count={selectedGroups.length}
-            onPress={() => setShowFilterModal('Group')}
-            colors={colors}
-          />
-        </View>
 
         {/* Active Filters Summary */}
         {hasAnyFilter && (
@@ -488,6 +518,7 @@ export default function TransactionsScreen() {
             ) : null
           }
           contentContainerStyle={styles.listContent}
+          bounces={false}
         />
 
         <TransactionFilterSelector
@@ -587,10 +618,18 @@ export default function TransactionsScreen() {
         />
 
         <TouchableOpacity
-          style={[styles.quickFab, { backgroundColor: colors.card, borderColor: colors.border }]}
+          style={[
+            styles.quickFab,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              borderWidth: 1,
+            },
+          ]}
           onPress={() => setShowQuickModal(true)}
+          activeOpacity={0.8}
         >
-          <Icon name="bolt" size={28} color={colors.primary} />
+          <Icon name="bolt" size={26} color={colors.primary} />
         </TouchableOpacity>
         <FloatingActionButton
           onPress={() => {
@@ -702,7 +741,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   listContent: {
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === 'ios' ? 180 : 120,
   },
   statsRow: {
     paddingHorizontal: 16,
@@ -727,24 +766,49 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  quickFab: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 110 : 94,
-    right: 24,
-    width: 64,
-    height: 64,
-    borderRadius: 64 / 3,
+  headerRightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: Platform.OS === 'ios' ? 4 : 0,
+  },
+  headerSearchToggleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    position: 'relative',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  collapsibleControlsContainer: {
+    marginBottom: 4,
+  },
+  quickFab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 164 : 88,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 8,
-    zIndex: 10,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 99,
   },
   fab: {
-    bottom: Platform.OS === 'ios' ? 40 : 24,
+    bottom: Platform.OS === 'ios' ? 96 : 20,
+    right: 20,
   },
 });
